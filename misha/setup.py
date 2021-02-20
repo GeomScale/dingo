@@ -6,16 +6,22 @@ from distutils.core import Extension
 from Cython.Build import cythonize
 from os.path import join
 import numpy
+import os
+import git
 
-
+# TODO: update these information
 version = "0.3.0"
-license='LGPL3',
+license='LGPL2',
 packages = ["volestipy"]
 description="volestipy: wrapper for the VolEsti library to sample from convex sets and compute volume."
 author = "Pedro Zuidberg Dos Martires, Haris Zafeiropoulos"
 author_email="pedro.zuidbergdosmartires@cs.kuleuven.be, haris-zaf@hcmr.gr"
 name = 'volestipy'
-zip_safe = False
+#zip_safe = False
+
+if (not os.path.isdir("eigen")) :
+    print('Cloning eigen library...')
+    git.Repo.clone_from('https://gitlab.com/libeigen/eigen.git', 'eigen', branch='3.3')
 
 source_directory_list = ['volestipy', join('volestipy','src')]
 
@@ -24,25 +30,27 @@ compiler_args = [
  "-O3",
   "-DBOOST_NO_AUTO_PTR",
  "-ldl",
- "-lm",
+ "-lm"
 ]
-
 
 link_args = ['-O3']
 
-
 extra_volesti_include_dirs = [
-# inside the volestipy directory, there is an extra volestipy folder containing a "include" folder; we add those as included dirs; the bindings.h file is located there
+# inside the volestipy directory, there is an extra volestipy folder containing
+# a "include" folder; we add those as included dirs; the bindings.h file is located there
  join("volestipy","include"),
 
-# the volesti code uses some external classes. these are located on the "external" directory and we need to add them as well
- join("..","additional_external"),
+# the volesti code uses some external classes. these are located on the "external"
+# directory and we need to add them as well
+# join("..","additional_external"),
+ join("eigen"),
  join("..","volesti","external"),
  join("..","volesti","external","minimum_ellipsoid"),
- join("..","volesti","external","LPsolve_src","run_headers"),
+# join("..","volesti","external","LPsolve_src","run_headers"),
  join("..","volesti","external","boost"),
 
-# we also move back and include and add the directories on the "include" directory (generatorors, random_walks, sampling etc)
+# we also move back and include and add the directories on the "include" directory
+# (generatorors, random_walks, sampling etc)
  join("..","volesti","include"),
  join("..","volesti","include","convex"),
  join("..","volesti","include","misc"),
@@ -51,7 +59,6 @@ extra_volesti_include_dirs = [
  join("..","volesti","include","generators"),
  join("..","volesti","include","cartesian_geom"),
 ]
-
 
 src_files = ["volestipy/volestipy.pyx","volestipy/src/bindings.cpp"]
 extra_include_dirs = [numpy.get_include()]
@@ -70,7 +77,6 @@ ext_module = Extension(
  extra_link_args = link_args,
 )
 print("The Extension function is OK.")
-
 
 ext_modules = cythonize([ext_module], gdb_debug=False)
 print("The cythonize function ran fine!")
