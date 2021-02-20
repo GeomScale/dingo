@@ -11,7 +11,7 @@ import git
 
 # TODO: update these information
 version = "0.3.0"
-license='LGPL2',
+license='LGPL3',
 packages = ["volestipy"]
 description="volestipy: wrapper for the VolEsti library to sample from convex sets and compute volume."
 author = "Pedro Zuidberg Dos Martires, Haris Zafeiropoulos"
