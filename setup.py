@@ -44,20 +44,20 @@ extra_volesti_include_dirs = [
 # directory and we need to add them as well
 # join("..","additional_external"),
  join("eigen"),
- join("..","volesti","external"),
- join("..","volesti","external","minimum_ellipsoid"),
+ join("volesti","external"),
+ join("volesti","external","minimum_ellipsoid"),
 # join("..","volesti","external","LPsolve_src","run_headers"),
- join("..","volesti","external","boost"),
+ join("volesti","external","boost"),
 
 # we also move back and include and add the directories on the "include" directory
 # (generatorors, random_walks, sampling etc)
- join("..","volesti","include"),
- join("..","volesti","include","convex"),
- join("..","volesti","include","misc"),
- join("..","volesti","include","random_walks"),
- join("..","volesti","include","volume"),
- join("..","volesti","include","generators"),
- join("..","volesti","include","cartesian_geom"),
+ join("volesti","include"),
+ join("volesti","include","convex"),
+ join("volesti","include","misc"),
+ join("volesti","include","random_walks"),
+ join("volesti","include","volume"),
+ join("volesti","include","generators"),
+ join("volesti","include","cartesian_geom"),
 ]
 
 src_files = ["volestipy/volestipy.pyx","volestipy/src/bindings.cpp"]
@@ -87,8 +87,8 @@ setup(
  author_email = author_email,
  name = name,
  packages = packages,
- ext_modules = ext_modules,
- zip_safe=zip_safe,
+ ext_modules = ext_modules
+# zip_safe=zip_safe,
 )
 
 print("Finally, the setup function was performed. We ve got out interface.")
