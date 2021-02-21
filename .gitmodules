@@ -1,0 +1,3 @@
+[submodule "volesti"]
+	path = volesti
+	url = https://github.com/GeomScale/volume_approximation
