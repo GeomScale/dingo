@@ -36,6 +36,7 @@ extra_volesti_include_dirs = [
  join("volestipy","include"),
 
 # the volesti code uses some external classes. these are located on the "external" directory and we need to add them as well
+ join("..","additional_external"),
  join("..","volesti","external"),
  join("..","volesti","external","minimum_ellipsoid"),
  join("..","volesti","external","LPsolve_src","run_headers"),
