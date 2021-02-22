@@ -1,2 +1,2 @@
 # misha
-Analyzing metabolic networks with MCMC sampling
+A python library for sampling and analysing metabolic networks
