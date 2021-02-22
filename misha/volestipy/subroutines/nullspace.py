@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import linalg
 import scipy.sparse.linalg
 import sparseqr
 
