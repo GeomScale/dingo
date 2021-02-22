@@ -25,6 +25,7 @@ import scipy.io
 from subroutines.fba import slow_fba, fast_fba
 from subroutines.fva import slow_fva, fast_fva
 from subroutines.inner_ball import slow_inner_ball, fast_inner_ball
+from subroutines.inner_ball import nullspace_dense, nullspace_sparse
 
 
 # Set the time
