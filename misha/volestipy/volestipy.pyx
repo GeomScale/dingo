@@ -22,7 +22,7 @@ import scipy.io
 # ----------------------------------------------------------------------------------
 
 #import subroutines
-from subroutines.fva.fva import slow_fva, fast_fva
+from subroutines.fva import slow_fva, fast_fva
 
 # Set the time
 def get_time_seed():
