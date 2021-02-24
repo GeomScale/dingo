@@ -24,6 +24,8 @@ import scipy.io
 #import subroutines
 from subroutines.fba import slow_fba, fast_fba
 from subroutines.fva import slow_fva, fast_fva
+from subroutines.inner_ball import slow_inner_ball, fast_inner_ball
+
 
 # Set the time
 def get_time_seed():
