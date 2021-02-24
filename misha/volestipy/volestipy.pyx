@@ -22,6 +22,7 @@ import scipy.io
 # ----------------------------------------------------------------------------------
 
 #import subroutines
+from subroutines.fba import slow_fba, fast_fba
 from subroutines.fva import slow_fva, fast_fva
 
 # Set the time
