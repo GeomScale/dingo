@@ -1,7 +1,7 @@
 import numpy as np
 import scipy.sparse as sp
 
-# A function to zoom in on the polytope
+# A function to compute  in on the polytope
 def gmscale(A, iprint, scltol):
 
    #--------------------------------------------------------------------------------------
@@ -125,4 +125,17 @@ def gmscale(A, iprint, scltol):
    return cscale, rscale
      
 
-     
+  
+# Apply the scaling to the polytope
+def apply_scaling(A, b, cs, rs):
+   
+   m = rs.shape[0] ; n = cs.shape[0]
+   r_diagonal_matrix = diags(1/rs, shape = (m,m)).toarray()
+   c_diagonal_matrix = diags(1/cs, shape = (n,n)).toarray()   
+   
+   P_A = np.dot(r_diagonal_matrix, np.dot(A, c_diagonal_matrix))
+   P_b = np.dot(r_diagonal_matrix, b)
+   
+   return P_A, P_b, c_diagonal_matrix
+  
+  
