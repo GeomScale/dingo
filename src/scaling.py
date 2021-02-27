@@ -138,4 +138,19 @@ def apply_scaling(A, b, cs, rs):
    
    return P_A, P_b, c_diagonal_matrix
   
-  
+
+def remove_almost_redundant_facets(A, b):
+
+   new_A = []
+   new_b = []
+   
+   for i in range(A.shape[0]):
+         entry = np.linalg.norm(A[i,])   
+         if entry < 1e-06:
+            continue
+         else:
+            new_A.append(A[i,:])
+            new_b.append(b[i])
+   
+   return new_A, new_b
+
