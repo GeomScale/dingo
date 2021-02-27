@@ -1,8 +1,8 @@
 import numpy as np
+import sys
+sys.path.append('../')
 from volestipy import *
-import gurobipy as gp
-from gurobipy import GRB
-import scipy.sparse as sp
+from src.inner_ball import slow_inner_ball, fast_inner_ball
 
 if __name__ == "__main__":
 
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     print("\n This is the vector b: \n")
     print(b)
 
-    max_ball = get_max_ball(A,b)
+    max_ball = slow_inner_ball(A,b)
     print("The center point of max ball is:")
     print(max_ball[0])
     print("The radius of max ball equals to:")
