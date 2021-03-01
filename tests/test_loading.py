@@ -6,8 +6,8 @@ from looading_models read_json_file, read_mat_file
 
 
 current_directory = os.getcwd()
-input_file_json = current_directory +  '../data/e_coli_core.json'
-input_file_mat = current_directory +  '../data/e_coli_core.mat'
+input_file_json = current_directory +  '../ext_data/e_coli_core.json'
+input_file_mat = current_directory +  '../ext_data/e_coli_core.mat'
 
 
 met_net = volestipy.read_json_file(input_file_json)
