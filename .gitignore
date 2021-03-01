@@ -5,5 +5,4 @@ dist
 volestipy.cpp
 volestipy.egg-info
 *.npy
-*.json
-*.mat
+
