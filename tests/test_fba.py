@@ -1,8 +1,7 @@
 #!/usr/bin/python3.6
 
 import numpy as np
-import scipy.sparse as sp
-from fba import fba 
+from fba import slow_fba 
 
 
 m = 3

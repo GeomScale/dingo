@@ -2,7 +2,8 @@
 import os
 import json
 import numpy as np
-from looading_models read_json_file, read_mat_file
+from looading_models import read_json_file, read_mat_file
+from nullspace import nullspace_dense, nullspace_sparse
 
 
 current_directory = os.getcwd()

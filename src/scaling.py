@@ -152,5 +152,8 @@ def remove_almost_redundant_facets(A, b):
             new_A.append(A[i,:])
             new_b.append(b[i])
    
+   new_A = np.array(new_A)
+   new_b = np.array(new_b)
+
    return new_A, new_b
 
