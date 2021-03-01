@@ -12,18 +12,18 @@ import git
 # TODO: update these information
 version = "0.3.0"
 license='LGPL3',
-packages = ["volestipy"]
-description="volestipy: wrapper for the VolEsti library to sample from convex sets and compute volume."
-author = "Pedro Zuidberg Dos Martires, Haris Zafeiropoulos"
-author_email="pedro.zuidbergdosmartires@cs.kuleuven.be, haris-zaf@hcmr.gr"
-name = 'volestipy'
+packages = ["src"]
+description="misha: A python library for metabolic networks sampling and analysis."
+author = "Apostolos Chalkis, Pedro Zuidberg Dos Martires, Haris Zafeiropoulos"
+author_email="tolis.chal@gmail.com, pedro.zuidbergdosmartires@cs.kuleuven.be, haris-zaf@hcmr.gr"
+name = 'misha'
 #zip_safe = False
 
 if (not os.path.isdir("eigen")) :
     print('Cloning eigen library...')
     git.Repo.clone_from('https://gitlab.com/libeigen/eigen.git', 'eigen', branch='3.3')
 
-source_directory_list = ['volestipy', join('volestipy','src')]
+source_directory_list = ['src', join('src','bindings')]
 
 compiler_args = [
  "-std=c++11",
@@ -38,7 +38,7 @@ link_args = ['-O3']
 extra_volesti_include_dirs = [
 # inside the volestipy directory, there is an extra volestipy folder containing
 # a "include" folder; we add those as included dirs; the bindings.h file is located there
- join("volestipy","include"),
+ join("src","bindings"),
 
 # the volesti code uses some external classes. these are located on the "external"
 # directory and we need to add them as well
@@ -60,7 +60,7 @@ extra_volesti_include_dirs = [
  join("volesti","include","cartesian_geom"),
 ]
 
-src_files = ["volestipy/volestipy.pyx","volestipy/src/bindings.cpp"]
+src_files = ["src/volestipy.pyx","src/bindings/bindings.cpp"]
 extra_include_dirs = [numpy.get_include()]
 # Return the directory that contains the NumPy *.h header files.
 # Extension modules that need to compile against NumPy should use this function to locate the appropriate include directory.
@@ -69,7 +69,7 @@ extra_include_dirs = [numpy.get_include()]
 #library_includes = ["lpsolve55"]
 
 ext_module = Extension(
- "volestipy",
+ "src",
  language = "c++",
  sources = src_files,
  include_dirs = extra_include_dirs + extra_volesti_include_dirs,
