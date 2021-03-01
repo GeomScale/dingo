@@ -1,5 +1,7 @@
 # misha
 
+A python library for metabolic networks sampling and analysis.  
+
 ## Installation
 
 ### Dependencies
