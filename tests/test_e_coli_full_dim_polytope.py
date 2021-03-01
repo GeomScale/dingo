@@ -9,8 +9,6 @@ from fva import slow_fva
 from src.inner_ball import slow_inner_ball
 
 
-
-
 current_directory = os.getcwd()
 input_file_json = current_directory +  '../ext_data/e_coli_core.json'
 

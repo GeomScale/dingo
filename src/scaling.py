@@ -114,13 +114,14 @@ def gmscale(A, iprint, scltol):
    cscale = np.max(SA, axis = 0)
    cscale[cscale == 0] = 1
    
-   if iprint > 0 :
+   # the following is just to analyze the scaling
+   #if iprint > 0 :
    
-      rmin = np.amin(rscale) ; imin = np.where(rscale == np.amin(rscale))
-      cmin = np.amin(cscale) ; jmin = np.where(cscale == np.amin(cscale))
+   #   rmin = np.amin(rscale) ; imin = np.where(rscale == np.amin(rscale))
+   #   cmin = np.amin(cscale) ; jmin = np.where(cscale == np.amin(cscale))
       
-      rmax = np.amax(rscale) ; imax = np.where(rscale == np.amax(rscale))
-      cmax = np.amax(cscale) ; jmax = np.where(cscale == np.amax(cscale))
+   #   rmax = np.amax(rscale) ; imax = np.where(rscale == np.amax(rscale))
+   #   cmax = np.amax(cscale) ; jmax = np.where(cscale == np.amax(cscale))
       
    return cscale, rscale
      
@@ -133,12 +134,13 @@ def apply_scaling(A, b, cs, rs):
    r_diagonal_matrix = diags(1/rs, shape = (m,m)).toarray()
    c_diagonal_matrix = diags(1/cs, shape = (n,n)).toarray()   
    
-   P_A = np.dot(r_diagonal_matrix, np.dot(A, c_diagonal_matrix))
-   P_b = np.dot(r_diagonal_matrix, b)
+   new_A = np.dot(r_diagonal_matrix, np.dot(A, c_diagonal_matrix))
+   new_b = np.dot(r_diagonal_matrix, b)
    
-   return P_A, P_b, c_diagonal_matrix
+   return new_A, new_b
   
 
+# Remove almost-zero rows
 def remove_almost_redundant_facets(A, b):
 
    new_A = []
