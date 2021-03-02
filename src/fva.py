@@ -7,7 +7,7 @@ import gurobipy as gp
 from gurobipy import GRB
 
 
-
+import sys
 # Build a Python function to perform fva using scipy.optimize LP solver `linprog`
 def slow_fva(A, b, Aeq, beq):
 

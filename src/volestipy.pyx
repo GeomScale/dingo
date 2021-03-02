@@ -22,10 +22,11 @@ import scipy.io
 # ----------------------------------------------------------------------------------
 
 #import subroutines
-from fba import slow_fba, fast_fba
-from fva import slow_fva, fast_fva
-from inner_ball import slow_inner_ball, fast_inner_ball
-from nullspace import nullspace_dense, nullspace_sparse
+#from . import fba, fva, inner_ball, nullspace, scaling
+from .fva import slow_fva, fast_fva
+from .inner_ball import slow_inner_ball, fast_inner_ball
+from .nullspace import nullspace_dense, nullspace_sparse
+from .scaling import gmscale, apply_scaling, remove_almost_redundant_facets
 
 
 # Set the time

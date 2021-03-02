@@ -22,7 +22,7 @@ def slow_inner_ball(A, b):
     column = np.asarray(extra_column)
     A_expand = np.c_[A, column]
     
-    a = np.ones((1,n+1))
+    a = -np.ones((1,n+1))
     azero = np.zeros((1,n))
     a[:,:-1] = azero
     objective_function = a[0]
@@ -35,9 +35,9 @@ def slow_inner_ball(A, b):
     point = []
     for i in range(len(sol)):
         if i == len(sol) - 1:
-            r = sol[i].x
+            r = sol[i]
         else:
-            value = sol[i].x
+            value = sol[i]
             point.append(value)
     
     # And check whether the computed radius is negative

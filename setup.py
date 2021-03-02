@@ -10,7 +10,7 @@ import os
 import git
 
 # TODO: update these information
-version = "0.3.0"
+version = "1.0.0"
 license='LGPL3',
 packages = ["src"]
 description="misha: A python library for metabolic networks sampling and analysis."

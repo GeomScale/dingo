@@ -1,7 +1,4 @@
 import numpy as np
-import sys
-sys.path.append('../')
-from volestipy import *
 from src.inner_ball import slow_inner_ball
 
 

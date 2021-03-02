@@ -1,7 +1,7 @@
 #!/usr/bin/python3.6
 
 import numpy as np
-from fba import slow_fba 
+from src.fba import slow_fba 
 
 
 m = 3
@@ -26,7 +26,7 @@ beq = np.zeros(m)
 print("\n This is the vector beq: \n")
 print(beq)
 
-obj_fun = np.random.choice(np.arange(-3, 3), p=[0.05, 0.05, 0.3, 0.5, 0.1, 0.0], size=(1,n))
+obj_fun =  np.ones(n, dtype=np.float)
 
 res = slow_fba(A, b, Aeq, beq, obj_fun)
 print("optimal solution:")

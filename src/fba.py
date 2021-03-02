@@ -17,7 +17,7 @@ def slow_fba(A, b, Aeq, beq, c):
 
     try:
 
-        #objective_function = np.asarray(c)
+        objective_function = np.asarray(c)
         objective_function = np.asarray([-x for x in c])
 
         res = linprog(objective_function, A_ub = A, b_ub = b, A_eq = Aeq, b_eq = beq, bounds = (None, None))
