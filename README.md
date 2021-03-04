@@ -8,7 +8,7 @@ A python library for metabolic networks sampling and analysis.
 
 You need `cython`, `numpy` and `setuptools`. In `debian` systems you can get then by
 ```
-sudo apt-get install cython python-numpy python-setuptools
+sudo apt-get install cython libsuitesparse-dev
 ```
 
 Finally, the [Gurobi solver](https://www.gurobi.com/) needs to be installed as well to exploit fast implementations.
@@ -23,11 +23,18 @@ $ python3
 >>> import gurobipy
 ```
 
-### Clone `volesti` submodule
-To clone `volesti` submodule run:  
+### Load `volesti` submodule
+To load `volesti` submodule run:  
  
 ```
 git submodule update --init
+```
+
+### Dependencies for PySPQR
+
+```
+sudo apt-get install libsuitesparse-dev
+pip3 install cffi
 ```
 
 ### Install *dingo*

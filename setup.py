@@ -9,6 +9,13 @@ import numpy
 import os
 import git
 
+
+import subprocess
+from os.path import join
+import numpy
+import os
+import git
+
 # TODO: update these information
 version = "1.0.0"
 license='LGPL3',
@@ -19,9 +26,22 @@ author_email="tolis.chal@gmail.com, pedro.zuidbergdosmartires@cs.kuleuven.be, ha
 name = 'dingo'
 #zip_safe = False
 
+subprocess.run("git submodule update --init", shell = True)
+
 if (not os.path.isdir("eigen")) :
     print('Cloning eigen library...')
     git.Repo.clone_from('https://gitlab.com/libeigen/eigen.git', 'eigen', branch='3.3')
+
+try:
+    import sparseqr
+except ImportError as e:
+    # module doesn't exist, deal with it.
+    print('We need a Python wrapper for SuiteSparseQR library...')
+    if (not os.path.isdir("dingo/PySPQR")) :
+        print('Cloning PySPQR (Python wrapper for SuiteSparseQR library)...')
+        git.Repo.clone_from('https://github.com/yig/PySPQR.git', 'dingo/PySPQR', branch='master')
+    subprocess.run("cd ./dingo/PySPQR && python3 setup.py install --user && cd .. && sudo rm -r PySPQR", shell=True)
+
 
 source_directory_list = ['dingo', join('dingo','bindings')]
 
@@ -65,9 +85,6 @@ extra_include_dirs = [numpy.get_include()]
 # Return the directory that contains the NumPy *.h header files.
 # Extension modules that need to compile against NumPy should use this function to locate the appropriate include directory.
 
-# here I need to check how it is actually included this library
-#library_includes = ["lpsolve55"]
-
 ext_module = Extension(
  "dingo",
  language = "c++",
@@ -88,7 +105,6 @@ setup(
  name = name,
  packages = packages,
  ext_modules = ext_modules
-# zip_safe=zip_safe,
 )
 
 print("Finally, the setup function was performed. Installation of dingo completed.")

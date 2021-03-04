@@ -1,7 +1,8 @@
 import numpy as np
 from scipy import linalg
-import scipy.sparse.linalg
 import sparseqr
+import scipy.sparse.linalg
+
 
 # Build a Python function to compute the nullspace of the stoichiometric matrix and a shifting to the origin
 def nullspace_dense(Aeq, beq):

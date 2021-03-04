@@ -21,6 +21,9 @@ import json
 import scipy.io
 # ----------------------------------------------------------------------------------
 
+#from .PySPQR.sparseqr import *
+#from .PySPQR.sparseqr.sparseqr import *
+
 #import subroutines
 #from . import fba, fva, inner_ball, nullspace, scaling
 from .fva import slow_fva, fast_fva
