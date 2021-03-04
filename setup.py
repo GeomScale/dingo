@@ -21,10 +21,9 @@ version = "1.0.0"
 license='LGPL3',
 packages = ["dingo"]
 description="dingo: A python library for metabolic networks sampling and analysis."
-author = "Apostolos Chalkis, Pedro Zuidberg Dos Martires, Haris Zafeiropoulos"
-author_email="tolis.chal@gmail.com, pedro.zuidbergdosmartires@cs.kuleuven.be, haris-zaf@hcmr.gr"
+author = "Apostolos Chalkis, Haris Zafeiropoulos, Pedro Zuidberg Dos Martires"
+author_email="tolis.chal@gmail.com, haris-zaf@hcmr.gr, pedro.zuidbergdosmartires@cs.kuleuven.be"
 name = 'dingo'
-#zip_safe = False
 
 subprocess.run("git submodule update --init", shell = True)
 

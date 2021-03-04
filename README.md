@@ -6,9 +6,10 @@ A python library for metabolic networks sampling and analysis.
 
 ### Dependencies
 
-You need `cython`, `numpy` and `setuptools`. In `debian` systems you can get then by
+Run the following commands:  
 ```
 sudo apt-get install cython libsuitesparse-dev
+pip3 install -r requirements.txt
 ```
 
 Finally, the [Gurobi solver](https://www.gurobi.com/) needs to be installed as well to exploit fast implementations.
@@ -23,20 +24,6 @@ $ python3
 >>> import gurobipy
 ```
 
-### Load `volesti` submodule
-To load `volesti` submodule run:  
- 
-```
-git submodule update --init
-```
-
-### Dependencies for PySPQR
-
-```
-sudo apt-get install libsuitesparse-dev
-pip3 install cffi
-```
-
 ### Install *dingo*
 
 After getting the dependencies run:
@@ -46,5 +33,10 @@ python3 setup.py install --user
 ```
 
 ## Run an example
+
+Test the nullspace computation:  
+```
+python3 tests/test_nullspace.py
+```
 
 
