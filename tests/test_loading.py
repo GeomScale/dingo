@@ -2,7 +2,7 @@
 import os
 import json
 import numpy as np
-from src.loading_models import read_json_file, read_mat_file
+from dingo.loading_models import read_json_file, read_mat_file
 
 
 current_directory = os.getcwd()

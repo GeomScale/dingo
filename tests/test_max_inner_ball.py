@@ -1,5 +1,5 @@
 import numpy as np
-from src.inner_ball import slow_inner_ball
+from dingo.inner_ball import slow_inner_ball
 
 
 m = 2

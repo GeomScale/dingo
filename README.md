@@ -1,4 +1,4 @@
-# misha
+# dingo
 
 A python library for metabolic networks sampling and analysis.  
 
@@ -23,8 +23,14 @@ $ python3
 >>> import gurobipy
 ```
 
+### Clone `volesti` submodule
+To clone `volesti` submodule run:  
+ 
+```
+git submodule update --init
+```
 
-### Install *misha*
+### Install *dingo*
 
 After getting the dependencies run:
 
@@ -33,4 +39,5 @@ python3 setup.py install --user
 ```
 
 ## Run an example
+
 

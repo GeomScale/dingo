@@ -12,18 +12,18 @@ import git
 # TODO: update these information
 version = "1.0.0"
 license='LGPL3',
-packages = ["src"]
-description="misha: A python library for metabolic networks sampling and analysis."
+packages = ["dingo"]
+description="dingo: A python library for metabolic networks sampling and analysis."
 author = "Apostolos Chalkis, Pedro Zuidberg Dos Martires, Haris Zafeiropoulos"
 author_email="tolis.chal@gmail.com, pedro.zuidbergdosmartires@cs.kuleuven.be, haris-zaf@hcmr.gr"
-name = 'misha'
+name = 'dingo'
 #zip_safe = False
 
 if (not os.path.isdir("eigen")) :
     print('Cloning eigen library...')
     git.Repo.clone_from('https://gitlab.com/libeigen/eigen.git', 'eigen', branch='3.3')
 
-source_directory_list = ['src', join('src','bindings')]
+source_directory_list = ['dingo', join('dingo','bindings')]
 
 compiler_args = [
  "-std=c++11",
@@ -38,7 +38,7 @@ link_args = ['-O3']
 extra_volesti_include_dirs = [
 # inside the volestipy directory, there is an extra volestipy folder containing
 # a "include" folder; we add those as included dirs; the bindings.h file is located there
- join("src","bindings"),
+ join("dingo","bindings"),
 
 # the volesti code uses some external classes. these are located on the "external"
 # directory and we need to add them as well
@@ -60,7 +60,7 @@ extra_volesti_include_dirs = [
  join("volesti","include","cartesian_geom"),
 ]
 
-src_files = ["src/volestipy.pyx","src/bindings/bindings.cpp"]
+src_files = ["dingo/volestipy.pyx","dingo/bindings/bindings.cpp"]
 extra_include_dirs = [numpy.get_include()]
 # Return the directory that contains the NumPy *.h header files.
 # Extension modules that need to compile against NumPy should use this function to locate the appropriate include directory.
@@ -69,7 +69,7 @@ extra_include_dirs = [numpy.get_include()]
 #library_includes = ["lpsolve55"]
 
 ext_module = Extension(
- "src",
+ "dingo",
  language = "c++",
  sources = src_files,
  include_dirs = extra_include_dirs + extra_volesti_include_dirs,
@@ -91,4 +91,4 @@ setup(
 # zip_safe=zip_safe,
 )
 
-print("Finally, the setup function was performed. We ve got out interface.")
+print("Finally, the setup function was performed. Installation of dingo completed.")

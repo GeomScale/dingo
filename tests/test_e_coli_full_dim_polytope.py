@@ -2,15 +2,15 @@
 import os
 import json
 import numpy as np
-from looading_models import read_json_file, read_mat_file
-from nullspace import nullspace_sparse
-from scaling import gmscale, apply_scaling, remove_almost_redundant_facets
-from fva import slow_fva 
-from src.inner_ball import slow_inner_ball
+from dingo.loading_models import read_json_file, read_mat_file
+from dingo.nullspace import nullspace_sparse
+from dingo.scaling import gmscale, apply_scaling, remove_almost_redundant_facets
+from dingo.fva import slow_fva 
+from dingo.inner_ball import slow_inner_ball
 
 
 current_directory = os.getcwd()
-input_file_json = current_directory +  '../ext_data/e_coli_core.json'
+input_file_json = current_directory +  '/ext_data/e_coli_core.json'
 
 
 e_coli_network = volestipy.read_json_file(input_file_json)

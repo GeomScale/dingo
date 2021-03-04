@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-from src.scaling import gmscale, apply_scaling 
+from dingo.scaling import gmscale, apply_scaling 
 
 
 A = np.random.choice(np.arange(-3, 3), p=[0.05, 0.05, 0.3, 0.5, 0.1, 0.0], size=(10,4))

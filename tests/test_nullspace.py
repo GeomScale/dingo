@@ -2,9 +2,9 @@
 import os
 import json
 import numpy as np
-from src.fva import slow_fva
-from src.loading_models import read_json_file, read_mat_file
-from src.nullspace import nullspace_dense
+from dingo.fva import slow_fva
+from dingo.loading_models import read_json_file, read_mat_file
+from dingo.nullspace import nullspace_dense
 
 
 current_directory = os.getcwd()

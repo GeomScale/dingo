@@ -2,7 +2,7 @@
 
 import numpy as np
 import scipy.sparse as sp
-from src.fva import slow_fva
+from dingo.fva import slow_fva
 
 
 

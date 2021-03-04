@@ -1,7 +1,7 @@
 #!/usr/bin/python3.6
 
 import numpy as np
-from src.fba import slow_fba 
+from dingo.fba import slow_fba 
 
 
 m = 3
