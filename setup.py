@@ -1,5 +1,5 @@
 
-# This is the setup Python script for building the volestipy Python module
+# This is the setup Python script for building the dingo library
 
 from distutils.core import setup
 from distutils.core import Extension
@@ -16,7 +16,7 @@ import numpy
 import os
 import git
 
-# TODO: update these information
+# information about the dingo library
 version = "1.0.0"
 license='LGPL3',
 packages = ["dingo"]
@@ -55,20 +55,17 @@ compiler_args = [
 link_args = ['-O3']
 
 extra_volesti_include_dirs = [
-# inside the volestipy directory, there is an extra volestipy folder containing
-# a "include" folder; we add those as included dirs; the bindings.h file is located there
+# include binding files
  join("dingo","bindings"),
 
 # the volesti code uses some external classes. these are located on the "external"
 # directory and we need to add them as well
-# join("..","additional_external"),
  join("eigen"),
  join("volesti","external"),
  join("volesti","external","minimum_ellipsoid"),
-# join("..","volesti","external","LPsolve_src","run_headers"),
  join("volesti","external","boost"),
 
-# we also move back and include and add the directories on the "include" directory
+# include and add the directories on the "include" directory
 # (generatorors, random_walks, sampling etc)
  join("volesti","include"),
  join("volesti","include","convex"),
@@ -80,9 +77,11 @@ extra_volesti_include_dirs = [
 ]
 
 src_files = ["dingo/volestipy.pyx","dingo/bindings/bindings.cpp"]
-extra_include_dirs = [numpy.get_include()]
+
 # Return the directory that contains the NumPy *.h header files.
-# Extension modules that need to compile against NumPy should use this function to locate the appropriate include directory.
+# Extension modules that need to compile against NumPy should use this 
+# function to locate the appropriate include directory.
+extra_include_dirs = [numpy.get_include()]
 
 ext_module = Extension(
  "dingo",
@@ -106,4 +105,6 @@ setup(
  ext_modules = ext_modules
 )
 
-print("Finally, the setup function was performed. Installation of dingo completed.")
+subprocess.run("python3 tests/unit_tests.py -v", shell=True)
+
+print("Installation of dingo completed.")

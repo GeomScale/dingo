@@ -1,3 +1,14 @@
+# This is a cython wrapper for the C++ library volesti
+# volesti (volume computation and sampling library)
+  
+# Copyright (c) 2012-2021 Vissarion Fisikopoulos
+# Copyright (c) 2018-2021 Apostolos Chalkis
+
+# Contributed and/or modified by Haris Zafeiropoulos
+# Contributed and/or modified by Pedro Zuidberg Dos Martires
+
+# Licensed under GNU LGPL.3, see LICENCE file
+
 #!python
 #cython: language_level=3
 #cython: boundscheck=False
@@ -21,11 +32,6 @@ import json
 import scipy.io
 # ----------------------------------------------------------------------------------
 
-#from .PySPQR.sparseqr import *
-#from .PySPQR.sparseqr.sparseqr import *
-
-#import subroutines
-#from . import fba, fva, inner_ball, nullspace, scaling
 from .fva import slow_fva, fast_fva
 from .inner_ball import slow_inner_ball, fast_inner_ball
 from .nullspace import nullspace_dense, nullspace_sparse

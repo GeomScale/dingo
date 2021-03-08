@@ -1,3 +1,10 @@
+# Dingo : a python library for metabolic networks sampling and analysis
+# Dingo is part of GeomScale project
+
+# Copyright (c) 2021 Apostolos Chalkis
+
+# Licensed under GNU LGPL.3, see LICENCE file
+
 import unittest
 import os
 import json

@@ -1,13 +1,18 @@
+# Dingo : a python library for metabolic networks sampling and analysis
+# Dingo is part of GeomScale project
+
+# Copyright (c) 2021 Apostolos Chalkis
+
+# Licensed under GNU LGPL.3, see LICENCE file
+
+import sys
 import numpy as np
 from scipy.optimize import linprog
-
-# For the fva, we need the following dependencies
 import scipy.sparse as sp
 import gurobipy as gp
 from gurobipy import GRB
 
 
-import sys
 # Build a Python function to perform fva using scipy.optimize LP solver `linprog`
 def slow_fva(lb, ub, S):
 
