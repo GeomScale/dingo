@@ -51,8 +51,6 @@ def read_json_file(input_file):
 
          list_of_reaction_lists.append(reaction_vector)
 
-   f.close()
-
    # Build function's output; first the A matrix
    n = len(list_of_reaction_lists)
    A = np.zeros((2*n, n), dtype=np.float)
@@ -73,13 +71,13 @@ def read_json_file(input_file):
    
    # Make everything C contigeous
    A = np.asarray(A, dtype = 'float')
-   A = np.ascontiguousarray(A, dtype='float')
+   A = np.ascontiguousarray(A, dtype = 'float')
    b = np.asarray(b, dtype = 'float')
-   b = np.ascontiguousarray(b, dtype='float')
+   b = np.ascontiguousarray(b, dtype = 'float')
    Aeq = np.asarray(Aeq, dtype = 'float')
-   Aeq = np.ascontiguousarray(Aeq, dtype='float')
+   Aeq = np.ascontiguousarray(Aeq, dtype = 'float')
    beq = np.asarray(beq, dtype = 'float')
-   beq = np.ascontiguousarray(beq, dtype='float')
+   beq = np.ascontiguousarray(beq, dtype = 'float')
 
    return A, b, Aeq, beq, metabolites, reactions
 
@@ -113,15 +111,18 @@ def read_mat_file(input_file):
 
             if metabolite not in metabolites:
                metabolites.append(metabolite)
-
+      #position 7 corresponds to the reactions
       if counter == 7:
          reactions_list = element.tolist()
          reactions = [reaction[0][0] for reaction in reactions_list]
+      #position 11 corresponds to the lower bounds
       if counter == 11:
          lb_tmp = element
          lb_tmp = lb_tmp.tolist()
+      #position 12 corresponds to the upper bounds
       if counter == 12:
          ub_tmp = element
+      #position 10 corresponds to the Stoichiometric matrix
       if counter == 10:
          Aeq = element
 

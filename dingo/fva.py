@@ -62,11 +62,7 @@ def slow_fva(A, b, Aeq, beq):
         return A, b, Aeq_new, beq_new, min_fluxes, max_fluxes
 
     except AttributeError :
-        print ("Encountered an attribute error ")
-
-
-
-
+        print ("scipy.optimize.linprog failed.")
 
 
 
@@ -82,7 +78,7 @@ def fast_fva(A, b, Aeq, beq):
 
     try:
 
-      # To avoid printint the output of the optimize() function of Gurobi, we need to set an environment like this
+        # To avoid printint the output of the optimize() function of Gurobi, we need to set an environment like this
         with gp.Env(empty=True) as env:
             env.setParam('OutputFlag', 0)
             env.start()
@@ -169,11 +165,11 @@ def fast_fva(A, b, Aeq, beq):
                 return A, b, Aeq_new, beq_new, min_fluxes, max_fluxes
 
 
-        # Print error messages
-    except gp . GurobiError as e :
-        print ("Error code " + str( e . errno ) + ": " + str( e ))
+    # Print error messages
+    except gp.GurobiError as e :
+        print('Error code ' + str(e.errno) + ": " + str(e))
     except AttributeError :
-        print ("Encountered an attribute error ")
+        print ("Gurobi solver failed.")
   
   
   

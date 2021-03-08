@@ -9,18 +9,30 @@ from gurobipy import GRB
 
 
 # Build a Python function to perform fba using scipy.optimize LP solver `linprog`
-def slow_fba(A, b, Aeq, beq, c):
+def slow_fba(lb, ub, S, c):
 
-    d = A.shape[1] ; m = Aeq.shape[0] ; n = Aeq.shape[1]
+    if (lb.size != S.shape[1] or ub.size != S.shape[1]):
+        raise Exception('The number of reactions must be equal to the number of given flux bounds.')
+    if (c.size != S.shape[1]):
+        raise Exception('The length of the lineart objective function must be equal to the number of reactions.')
+
+    m = S.shape[0] ; n = S.shape[1]
     optimum_value = 0
-    optimum_sol = np.zeros(d)
+    optimum_sol = np.zeros(n)
+
+    A = np.zeros((2*n, n), dtype=np.float)
+    A[0:n] = np.eye(n)
+    A[n:] -= np.eye(n, n, dtype=np.float)
+
+    b = np.concatenate((lb, -ub), axis=1)
+    beq = np.zeros(m)
 
     try:
 
         objective_function = np.asarray(c)
         objective_function = np.asarray([-x for x in c])
 
-        res = linprog(objective_function, A_ub = A, b_ub = b, A_eq = Aeq, b_eq = beq, bounds = (None, None))
+        res = linprog(objective_function, A_ub = A, b_ub = b, A_eq = S, b_eq = beq, bounds = (None, None))
 
         # If optimized
         if res.success:
@@ -30,21 +42,32 @@ def slow_fba(A, b, Aeq, beq, c):
         return optimum_sol, optimum_value
 
     except AttributeError :
-        print ("Encountered an attribute error ")
+        print ("scipy.optimize.linprog failed.")
 
 
 
 
 # Build a Python function to perform fba using gurobi LP solver
-def fast_fba(A, b, Aeq, beq, c):
+def fast_fba(lb, ub, S, c):
 
-    d = A.shape[1] ; m = Aeq.shape[0] ; n = Aeq.shape[1]
+    if (lb.size != S.shape[1] or ub.size != S.shape[1]):
+        raise Exception('The number of reactions must be equal to the number of given flux bounds.')
+    if (c.size != S.shape[1]):
+        raise Exception('The length of the lineart objective function must be equal to the number of reactions.')
+
+    m = S.shape[0] ; n = S.shape[1]
     optimum_value = 0
-    optimum_sol = np.zeros(d)
+    optimum_sol = np.zeros(n)
 
+    A = np.zeros((2*n, n), dtype=np.float)
+    A[0:n] = np.eye(n)
+    A[n:] -= np.eye(n, n, dtype=np.float)
+
+    b = np.concatenate((ub, -lb), axis=1)
+    beq = np.zeros(m)
     try:
 
-      # To avoid printint the output of the optimize() function of Gurobi, we need to set an environment like this
+        # To avoid printint the output of the optimize() function of Gurobi, we need to set an environment like this
         with gp.Env(empty=True) as env:
             env.setParam('OutputFlag', 0)
             env.start()
@@ -52,10 +75,10 @@ def fast_fba(A, b, Aeq, beq, c):
             with gp.Model(env=env) as model:
 
                 # Create variables
-                x = model.addMVar(shape = d, vtype = GRB.CONTINUOUS , name = "x", lb = -GRB.INFINITY, ub = GRB.INFINITY)
+                x = model.addMVar(shape = n, vtype = GRB.CONTINUOUS , name = "x", lb = -GRB.INFINITY, ub = GRB.INFINITY)
 
-                # Make sparse Aeq
-                Aeq_sparse = sp.csr_matrix(Aeq)
+                # Make sparse S
+                Aeq_sparse = sp.csr_matrix(S)
 
                 # Make A sparse
                 A_sparse = sp.csr_matrix(A)            
@@ -88,10 +111,10 @@ def fast_fba(A, b, Aeq, beq, c):
                 return optimum_sol, optimum_value
 
 
-        # Print error messages
-    except gp . GurobiError as e :
-        print ("Error code " + str( e . errno ) + ": " + str( e ))
+    # Print error messages
+    except gp.GurobiError as e:
+        print('Error code ' + str(e.errno) + ": " + str(e))
     except AttributeError :
-        print ("Encountered an attribute error ")
+        print ("Gurobi failed.")
   
   

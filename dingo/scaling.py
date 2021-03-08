@@ -162,3 +162,18 @@ def remove_almost_redundant_facets(A, b):
 
    return new_A, new_b
 
+
+# Map the points samples on the (rounded) full dimensional polytope, back to the initial one
+def map_samples_on_initial_polytope(samples, T, T_shift, N, N_shift):
+
+   samples_T = samples.T
+
+   extra_1 = np.full((samples.shape[0],samples.shape[1]), T_shift) 
+   extra_2 = np.full((samples_T.shape[1], N.shape[0]), N_shift)
+
+   extra_T = extra_1.T
+   extra_N = extra_2.T
+
+   samples_on_initial_polytope = N.dot(T.dot(samples_T) + extra_T) + extra_N 
+
+   return samples_on_initial_polytope
