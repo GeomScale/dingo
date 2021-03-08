@@ -9,10 +9,25 @@ from gurobipy import GRB
 
 import sys
 # Build a Python function to perform fva using scipy.optimize LP solver `linprog`
-def slow_fva(A, b, Aeq, beq):
+def slow_fva(lb, ub, S):
 
-    d = A.shape[1] ; m = Aeq.shape[0] ; n = Aeq.shape[1]
-    Aeq_new = Aeq
+    if (lb.size != S.shape[1] or ub.size != S.shape[1]):
+        raise Exception('The number of reactions must be equal to the number of given flux bounds.')
+    if (c.size != S.shape[1]):
+        raise Exception('The length of the lineart objective function must be equal to the number of reactions.')
+
+    m = S.shape[0]; n = S.shape[1]
+    optimum_value = 0
+    optimum_sol = np.zeros(n)
+
+    A = np.zeros((2*n, n), dtype=np.float)
+    A[0:n] = np.eye(n)
+    A[n:] -= np.eye(n, n, dtype=np.float)
+
+    b = np.concatenate((lb, -ub), axis=1)
+    beq = np.zeros(m)
+
+    Aeq_new = S
     beq_new = beq
    
     min_fluxes = []
@@ -24,7 +39,7 @@ def slow_fva(A, b, Aeq, beq):
             
             # Set the ith row of the A matrix as the objective function
             objective_function = A[i,]
-            res = linprog(objective_function, A_ub = A, b_ub = b, A_eq = Aeq, b_eq = beq, bounds = (None, None))
+            res = linprog(objective_function, A_ub = A, b_ub = b, A_eq = S, b_eq = beq, bounds = (None, None))
 
             # If optimized
             if res.success:
@@ -34,7 +49,7 @@ def slow_fva(A, b, Aeq, beq):
             
             # Set the minus of the ith row of the A matrix as the objective function
             objective_function = np.asarray([-x for x in objective_function])
-            res = linprog(objective_function, A_ub = A, b_ub = b, A_eq = Aeq, b_eq = beq, bounds = (None, None))
+            res = linprog(objective_function, A_ub = A, b_ub = b, A_eq = S, b_eq = beq, bounds = (None, None))
 
             # If optimized
             if res.success:
@@ -67,10 +82,15 @@ def slow_fva(A, b, Aeq, beq):
 
 
 # Build a Python function to perform fva using gurobi LP solver
-def fast_fva(A, b, Aeq, beq):
+def fast_fva(lb, ub, S):
 
-    d = A.shape[1] ; m = Aeq.shape[0] ; n = Aeq.shape[1]
-    Aeq_new = Aeq
+    if (lb.size != S.shape[1] or ub.size != S.shape[1]):
+        raise Exception('The number of reactions must be equal to the number of given flux bounds.')
+    if (c.size != S.shape[1]):
+        raise Exception('The length of the lineart objective function must be equal to the number of reactions.')
+
+    m = S.shape[0]; n = S.shape[1]
+    Aeq_new = S
     beq_new = beq
    
     min_fluxes = []
@@ -86,10 +106,10 @@ def fast_fva(A, b, Aeq, beq):
             with gp.Model(env=env) as model:
 
                 # Create variables
-                x = model.addMVar(shape = d, vtype = GRB.CONTINUOUS , name = "x", lb = -GRB.INFINITY, ub = GRB.INFINITY)
+                x = model.addMVar(shape = n, vtype = GRB.CONTINUOUS , name = "x", lb = -GRB.INFINITY, ub = GRB.INFINITY)
 
                 # Make sparse Aeq
-                Aeq_sparse = sp.csr_matrix(Aeq)
+                Aeq_sparse = sp.csr_matrix(S)
 
                 # Make A sparse
                 A_sparse = sp.csr_matrix(A)            

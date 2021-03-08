@@ -1,36 +1,29 @@
 #!/usr/bin/python3.6
 
 import numpy as np
+from dingo.loading_models import read_json_file
 from dingo.fba import slow_fba 
 
 
-m = 3
-n = 6
+current_directory = os.getcwd()
+input_file_json = current_directory +  '/ext_data/e_coli_core.json'
 
-A = np.zeros((2*n, n), dtype=np.float)
-A[0:n] = np.eye(n)
-A[n:] -=  np.eye(n,n, dtype=np.float)
-print("\n This is the A matrix: \n")
-print(A)
+print("\n importing e_coli model... \n")
+e_coli_network = read_json_file(input_file_json)
 
-b = np.ones(2*n, dtype=np.float)
-print("\n This is the vector b: \n")
-print(b)
+lb = e_coli_network[0]
+ub = e_coli_network[1]
+S = e_coli_network[2]
 
-# Aeq = np.random.randint(-3, 3, size=(m, n))
-Aeq = np.random.choice(np.arange(-3, 3), p=[0.05, 0.05, 0.3, 0.5, 0.1, 0.0], size=(m,n))
-print("\n This is the Aeq matrix: \n")
-print(Aeq)
-
-beq = np.zeros(m)
-print("\n This is the vector beq: \n")
-print(beq)
+n = S.shape[1]
 
 obj_fun =  np.ones(n, dtype=np.float)
+print("\n this is the objective function: \n")
+print(obj_fun)
 
-res = slow_fba(A, b, Aeq, beq, obj_fun)
-print("optimal solution:")
+res = slow_fba(lb, ub, S, obj_fun)
+print("FBA optimal solution:")
 print(res[0])
-print("optimal value:")
+print("FBA optimal value:")
 print(res[1])
 

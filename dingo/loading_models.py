@@ -52,34 +52,45 @@ def read_json_file(input_file):
          list_of_reaction_lists.append(reaction_vector)
 
    # Build function's output; first the A matrix
-   n = len(list_of_reaction_lists)
-   A = np.zeros((2*n, n), dtype=np.float)
-   A[0:n] = np.eye(n)
-   A[n:] -=  np.eye(n,n, dtype=np.float)
+   #n = len(list_of_reaction_lists)
+   #A = np.zeros((2*n, n), dtype=np.float)
+   #A[0:n] = np.eye(n)
+   #A[n:] -=  np.eye(n,n, dtype=np.float)
 
    # Now, the b vector
-   vector_of_lbs = [-x for x in vector_of_lbs]
-   b = np.asarray(vector_of_ubs + vector_of_lbs)
+   #vector_of_lbs = [-x for x in vector_of_lbs]
+   lb = np.asarray(vector_of_lbs)
+   ub = np.asarray(vector_of_ubs)
 
-   # The Aeq matrix
-   Aeq = np.asarray(list_of_reaction_lists)
-   Aeq = np.transpose(Aeq)
+   lb = np.asarray(lb, dtype = 'float')
+   lb = np.ascontiguousarray(lb, dtype = 'float')
+
+   ub = np.asarray(ub, dtype = 'float')
+   ub = np.ascontiguousarray(ub, dtype = 'float')
+   #b = np.asarray(vector_of_ubs + vector_of_lbs)
+
+   # The stoichiometric martrix S
+   S = np.asarray(list_of_reaction_lists)
+   S = np.transpose(S)
+
+   S = np.asarray(S, dtype = 'float')
+   S = np.ascontiguousarray(S, dtype = 'float')
 
    # And the beq vector
-   m = len(metabolites)
-   beq = np.zeros(m)
+   #m = len(metabolites)
+   #beq = np.zeros(m)
    
    # Make everything C contigeous
-   A = np.asarray(A, dtype = 'float')
-   A = np.ascontiguousarray(A, dtype = 'float')
-   b = np.asarray(b, dtype = 'float')
-   b = np.ascontiguousarray(b, dtype = 'float')
-   Aeq = np.asarray(Aeq, dtype = 'float')
-   Aeq = np.ascontiguousarray(Aeq, dtype = 'float')
-   beq = np.asarray(beq, dtype = 'float')
-   beq = np.ascontiguousarray(beq, dtype = 'float')
+   #A = np.asarray(A, dtype = 'float')
+   #A = np.ascontiguousarray(A, dtype = 'float')
+   #b = np.asarray(b, dtype = 'float')
+   #b = np.ascontiguousarray(b, dtype = 'float')
+   #Aeq = np.asarray(Aeq, dtype = 'float')
+   #Aeq = np.ascontiguousarray(Aeq, dtype = 'float')
+   #beq = np.asarray(beq, dtype = 'float')
+   #beq = np.ascontiguousarray(beq, dtype = 'float')
 
-   return A, b, Aeq, beq, metabolites, reactions
+   return lb, ub, S, metabolites, reactions
 
 
 # The .mat format case
@@ -129,21 +140,31 @@ def read_mat_file(input_file):
       counter += 1
 
    # Build function's output; first the A matrix
-   n = len(ub_tmp)
-   A = np.zeros((2*n, n), dtype=np.float)
-   A[0:n] = np.eye(n)
-   A[n:] -=  np.eye(n,n, dtype=np.float)
+   #n = len(ub_tmp)
+   #A = np.zeros((2*n, n), dtype=np.float)
+   #A[0:n] = np.eye(n)
+   #A[n:] -=  np.eye(n,n, dtype=np.float)
 
    # Now, the b vector
    ub = [i[0] for i in ub_tmp]
-   lb = [-x[0] for x in lb_tmp]
-   b = np.asarray(ub + lb)
+   lb = [x[0] for x in lb_tmp]
+
+   lb = np.asarray(lb)
+   ub = np.asarray(ub)
+
+   lb = np.asarray(lb, dtype = 'float')
+   lb = np.ascontiguousarray(lb, dtype = 'float')
+
+   ub = np.asarray(ub, dtype = 'float')
+   ub = np.ascontiguousarray(ub, dtype = 'float')
+
+   #b = np.asarray(ub + lb)
 
    # The Aeq matrix
-   Aeq = np.asarray(Aeq)
+   S = np.asarray(Aeq)
 
    # And the beq vector
-   beq = np.zeros(m)
+   #beq = np.zeros(m)
 
-   return A, b, Aeq, beq, metabolites, reactions
+   return lb, ub, S, metabolites, reactions
 

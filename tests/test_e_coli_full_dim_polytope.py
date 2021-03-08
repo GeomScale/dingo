@@ -2,7 +2,7 @@
 import os
 import json
 import numpy as np
-from dingo.loading_models import read_json_file, read_mat_file
+from dingo.loading_models import read_json_file
 from dingo.nullspace import nullspace_sparse
 from dingo.scaling import gmscale, apply_scaling, remove_almost_redundant_facets
 from dingo.fva import slow_fva 
@@ -12,20 +12,20 @@ from dingo.inner_ball import slow_inner_ball
 current_directory = os.getcwd()
 input_file_json = current_directory +  '/ext_data/e_coli_core.json'
 
+e_coli_network = read_json_file(input_file_json)
 
-e_coli_network = volestipy.read_json_file(input_file_json)
+lb = e_coli_network[0]
+ub = e_coli_network[1]
+S = e_coli_network[2]
 
-A = e_coli_network[0]
-b = e_coli_network[1]
-Aeq = e_coli_network[2]
-beq = e_coli_network[3]
-
-fva_res = slow_fva(A, b, Aeq, beq)
+fva_res = slow_fva(lb, ub, S)
 
 A = fva_res[0]
 b = fva_res[1]
 Aeq = fva_res[2]
 beq = fva_res[3]
+min_fluxes = fva_res[4]
+max_fluxes = fva_res[5]
 
 nullspace_res_sparse = nullspace_sparse(Aeq, beq)
 
