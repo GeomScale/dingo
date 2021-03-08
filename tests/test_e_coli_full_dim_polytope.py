@@ -27,34 +27,18 @@ beq = fva_res[3]
 min_fluxes = fva_res[4]
 max_fluxes = fva_res[5]
 
-print(A.shape[0], A.shape[1])
-print(b.size)
-print(Aeq.shape[0], Aeq.shape[1])
-print(beq.size)
-print(min_fluxes.size)
-print(max_fluxes.size)
-
 nullspace_res_sparse = nullspace_sparse(Aeq, beq)
 
 N = nullspace_res_sparse[0]
 N_shift = nullspace_res_sparse[1]
 
-print(N.shape[0], N.shape[1])
-print(N_shift.size)
-
 product = np.dot(A, N_shift)
 b = np.subtract(b, product)
 A = np.dot(A, N)
 
-print(A.shape[0], A.shape[1])
-print(b.size)
-
 res = remove_almost_redundant_facets(A, b)
 A = res[0]
 b = res[1]
-
-print(A.shape[0], A.shape[1])
-print(b.size)
 
 res = gmscale(A, 0, 0.99)
 res = apply_scaling(A, b, res[0], res[1])

@@ -3,8 +3,12 @@ import scipy.io
 import numpy as np
 
 
+## Read a Bigg file and get,
+#     (a) lower/upper flux bounds
+#     (b) the stoichiometric matrix S (dense format)
+#     (c) the list of the metabolites
+#     (d) the list of reactions
 
-## Read a Bigg file and get the necessary A and b
 # The .json format case
 def read_json_file(input_file):
 
@@ -51,14 +55,9 @@ def read_json_file(input_file):
 
          list_of_reaction_lists.append(reaction_vector)
 
-   # Build function's output; first the A matrix
-   #n = len(list_of_reaction_lists)
-   #A = np.zeros((2*n, n), dtype=np.float)
-   #A[0:n] = np.eye(n)
-   #A[n:] -=  np.eye(n,n, dtype=np.float)
-
-   # Now, the b vector
-   #vector_of_lbs = [-x for x in vector_of_lbs]
+   # Build function's output; 
+   
+   # lower and upper flux bounds
    lb = np.asarray(vector_of_lbs)
    ub = np.asarray(vector_of_ubs)
 
@@ -67,7 +66,6 @@ def read_json_file(input_file):
 
    ub = np.asarray(ub, dtype = 'float')
    ub = np.ascontiguousarray(ub, dtype = 'float')
-   #b = np.asarray(vector_of_ubs + vector_of_lbs)
 
    # The stoichiometric martrix S
    S = np.asarray(list_of_reaction_lists)
@@ -75,20 +73,6 @@ def read_json_file(input_file):
 
    S = np.asarray(S, dtype = 'float')
    S = np.ascontiguousarray(S, dtype = 'float')
-
-   # And the beq vector
-   #m = len(metabolites)
-   #beq = np.zeros(m)
-   
-   # Make everything C contigeous
-   #A = np.asarray(A, dtype = 'float')
-   #A = np.ascontiguousarray(A, dtype = 'float')
-   #b = np.asarray(b, dtype = 'float')
-   #b = np.ascontiguousarray(b, dtype = 'float')
-   #Aeq = np.asarray(Aeq, dtype = 'float')
-   #Aeq = np.ascontiguousarray(Aeq, dtype = 'float')
-   #beq = np.asarray(beq, dtype = 'float')
-   #beq = np.ascontiguousarray(beq, dtype = 'float')
 
    return lb, ub, S, metabolites, reactions
 
@@ -139,13 +123,9 @@ def read_mat_file(input_file):
 
       counter += 1
 
-   # Build function's output; first the A matrix
-   #n = len(ub_tmp)
-   #A = np.zeros((2*n, n), dtype=np.float)
-   #A[0:n] = np.eye(n)
-   #A[n:] -=  np.eye(n,n, dtype=np.float)
+   # Build function's output;
 
-   # Now, the b vector
+   # lower and upper flux bounds
    ub = [i[0] for i in ub_tmp]
    lb = [x[0] for x in lb_tmp]
 
@@ -158,13 +138,8 @@ def read_mat_file(input_file):
    ub = np.asarray(ub, dtype = 'float')
    ub = np.ascontiguousarray(ub, dtype = 'float')
 
-   #b = np.asarray(ub + lb)
-
-   # The Aeq matrix
+   # The stoichiometric martrix S
    S = np.asarray(Aeq)
-
-   # And the beq vector
-   #beq = np.zeros(m)
 
    return lb, ub, S, metabolites, reactions
 
