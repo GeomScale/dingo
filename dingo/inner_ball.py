@@ -62,8 +62,6 @@ def fast_inner_ball(A, b):
 
    column = np.asarray(extra_column)
    A_expand = np.c_[A, column]
-   print("A_expand :") ; print(A_expand)
-   print("A_expand shape :") ; print(A_expand.shape)
 
    with gp.Env(empty=True) as env:
       env.setParam('OutputFlag', 0)

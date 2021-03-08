@@ -1,8 +1,10 @@
 #!/usr/bin/python3.6
-
+import os
+import json
 import numpy as np
 from dingo.loading_models import read_json_file
-from dingo.fba import slow_fba 
+from dingo.fba import slow_fba, fast_fba
+from dingo.fva import slow_fva, fast_fva
 
 
 current_directory = os.getcwd()
@@ -21,7 +23,7 @@ obj_fun =  np.ones(n, dtype=np.float)
 print("\n this is the objective function: \n")
 print(obj_fun)
 
-res = slow_fba(lb, ub, S, obj_fun)
+res = fast_fba(lb, ub, S, obj_fun)
 print("FBA optimal solution:")
 print(res[0])
 print("FBA optimal value:")

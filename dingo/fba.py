@@ -7,7 +7,7 @@ import gurobipy as gp
 from gurobipy import GRB
 
 
-
+import sys
 # Build a Python function to perform fba using scipy.optimize LP solver `linprog`
 def slow_fba(lb, ub, S, c):
 
@@ -20,11 +20,14 @@ def slow_fba(lb, ub, S, c):
     optimum_value = 0
     optimum_sol = np.zeros(n)
 
-    A = np.zeros((2*n, n), dtype=np.float)
+    A = np.zeros((2*n, n), dtype='float')
     A[0:n] = np.eye(n)
-    A[n:] -= np.eye(n, n, dtype=np.float)
+    A[n:] -= np.eye(n, n, dtype='float')
 
-    b = np.concatenate((lb, -ub), axis=1)
+    b = np.concatenate((ub, -lb), axis=0)
+    b = np.asarray(b, dtype = 'float')
+    b = np.ascontiguousarray(b, dtype = 'float')
+
     beq = np.zeros(m)
 
     try:
@@ -55,16 +58,20 @@ def fast_fba(lb, ub, S, c):
     if (c.size != S.shape[1]):
         raise Exception('The length of the lineart objective function must be equal to the number of reactions.')
 
-    m = S.shape[0] ; n = S.shape[1]
+    m = S.shape[0]; n = S.shape[1]
     optimum_value = 0
-    optimum_sol = np.zeros(n)
+    optimum_sol = []
 
-    A = np.zeros((2*n, n), dtype=np.float)
-    A[0:n] = np.eye(n)
-    A[n:] -= np.eye(n, n, dtype=np.float)
-
-    b = np.concatenate((ub, -lb), axis=1)
     beq = np.zeros(m)
+
+    A = np.zeros((2*n, n), dtype = 'float')
+    A[0:n] = np.eye(n)
+    A[n:] -=  np.eye(n,n, dtype = 'float')
+
+    b = np.concatenate((ub, -lb), axis=0)
+    b = np.asarray(b, dtype = 'float')
+    b = np.ascontiguousarray(b, dtype = 'float')
+
     try:
 
         # To avoid printint the output of the optimize() function of Gurobi, we need to set an environment like this
@@ -77,7 +84,7 @@ def fast_fba(lb, ub, S, c):
                 # Create variables
                 x = model.addMVar(shape = n, vtype = GRB.CONTINUOUS , name = "x", lb = -GRB.INFINITY, ub = GRB.INFINITY)
 
-                # Make sparse S
+                # Make sparse Aeq
                 Aeq_sparse = sp.csr_matrix(S)
 
                 # Make A sparse
@@ -99,14 +106,25 @@ def fast_fba(lb, ub, S, c):
                 # Update the model with the extra constraints and then print it
                 model.update()
 
-                objective_function = np.asarray(c)
-                model.setMObjective(None, objective_function, 0.0, None, None, x, GRB.MAXIMIZE)
+                objective_function = np.asarray([-x for x in c])
+                
+                # Set the objective function in the model
+                model.setMObjective(None, objective_function, 0.0, None, None, x, GRB.MINIMIZE)
+                model.update()
+
+                # Optimize model
+                model.optimize()
 
                 # If optimized
                 status = model.status
                 if status == GRB.OPTIMAL:
                     optimum_value = -model.getObjective().getValue()
-                    optimum_sol = np.asarray(model.getObjective())
+                    v = model.getVars()
+
+                for i in range(n):
+                    optimum_sol.append(v[i].x)
+                
+                optimum_sol = np.asarray(optimum_sol)
 
                 return optimum_sol, optimum_value
 

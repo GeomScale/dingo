@@ -5,13 +5,13 @@ from dingo.inner_ball import slow_inner_ball
 m = 2
 n = 5
 
-A = np.zeros((2*n, n), dtype=np.float)
+A = np.zeros((2*n, n), dtype='float')
 A[0:n] = np.eye(n)
-A[n:] -=  np.eye(n,n, dtype=np.float)
+A[n:] -=  np.eye(n,n, dtype='float')
 print("\n This is the A matrix: \n")
 print(A)
 
-b = np.ones(2*n, dtype=np.float)
+b = np.ones(2*n, dtype='float')
 print("\n This is the vector b: \n")
 print(b)
 

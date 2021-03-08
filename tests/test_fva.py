@@ -1,9 +1,10 @@
 #!/usr/bin/python3.6
-
+import os
+import json
 import numpy as np
 import scipy.sparse as sp
 from dingo.loading_models import read_json_file
-from dingo.fva import slow_fva
+from dingo.fva import slow_fva, fast_fva
 
 
 current_directory = os.getcwd()
@@ -16,15 +17,15 @@ lb = e_coli_network[0]
 ub = e_coli_network[1]
 S = e_coli_network[2]
 
-res = slow_fva(lb, ub, S)
-print("new A is:")
-print(res[0])
-print("new b is:")
-print(res[1])
-print("new Aeq is:")
-print(res[2])
-print("new beq is:")
-print(res[3])
+res = fast_fva(lb, ub, S)
+print("shape of A is:")
+print(res[0].shape[0], res[0].shape[1])
+print("new b size is:")
+print(res[1].size)
+print("new Aeq size is:")
+print(res[2].shape[0], res[2].shape[1])
+print("new beq size is:")
+print(res[3].size)
 print("minimum values of fluxes:")
 print(res[4])
 print("maximum values of fluxes:")

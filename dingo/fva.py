@@ -13,18 +13,16 @@ def slow_fva(lb, ub, S):
 
     if (lb.size != S.shape[1] or ub.size != S.shape[1]):
         raise Exception('The number of reactions must be equal to the number of given flux bounds.')
-    if (c.size != S.shape[1]):
-        raise Exception('The length of the lineart objective function must be equal to the number of reactions.')
 
     m = S.shape[0]; n = S.shape[1]
-    optimum_value = 0
-    optimum_sol = np.zeros(n)
 
-    A = np.zeros((2*n, n), dtype=np.float)
+    A = np.zeros((2*n, n), dtype='float')
     A[0:n] = np.eye(n)
-    A[n:] -= np.eye(n, n, dtype=np.float)
+    A[n:] -= np.eye(n, n, dtype='float')
 
-    b = np.concatenate((lb, -ub), axis=1)
+    b = np.concatenate((ub, -lb), axis=0)
+    b = np.asarray(b, dtype = 'float')
+    b = np.ascontiguousarray(b, dtype = 'float')
     beq = np.zeros(m)
 
     Aeq_new = S
@@ -86,10 +84,18 @@ def fast_fva(lb, ub, S):
 
     if (lb.size != S.shape[1] or ub.size != S.shape[1]):
         raise Exception('The number of reactions must be equal to the number of given flux bounds.')
-    if (c.size != S.shape[1]):
-        raise Exception('The length of the lineart objective function must be equal to the number of reactions.')
 
     m = S.shape[0]; n = S.shape[1]
+    beq = np.zeros(m)
+
+    A = np.zeros((2*n, n), dtype='float')
+    A[0:n] = np.eye(n)
+    A[n:] -=  np.eye(n,n, dtype='float')
+
+    b = np.concatenate((ub, -lb), axis=0)
+    b = np.asarray(b, dtype = 'float')
+    b = np.ascontiguousarray(b, dtype = 'float')
+
     Aeq_new = S
     beq_new = beq
    

@@ -39,6 +39,9 @@ def nullspace_sparse(Aeq, beq):
         # Take the last n-r columns of Q to derive the right nullspace of Aeq
         N = Q[:, rank:]
 
+    N = np.asarray(N, dtype = 'float')
+    N = np.ascontiguousarray(N, dtype = 'float')
+    
     return N, N_shift
 
 
