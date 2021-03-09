@@ -15,7 +15,7 @@ from dingo.fba import slow_fba
 from dingo.loading_models import read_json_file
 from dingo.inner_ball import slow_inner_ball
 from dingo.nullspace import nullspace_dense, nullspace_sparse
-from dingo.scaling import gmscale
+from dingo.scaling import gmscale, apply_scaling, remove_almost_redundant_facets
 
 class TestStringMethods(unittest.TestCase):
 
@@ -31,9 +31,10 @@ class TestStringMethods(unittest.TestCase):
         
         max_ball = slow_inner_ball(A,b)
 
-        self.assertTrue(abs(max_ball[1] - 1) < 1e-05)
+        self.assertTrue(abs(max_ball[1] - 1) < 1e-10)
 
-    def test_fva_nullspace(self):
+
+    def test_ecoli_to_full_dimensional_polytope(self):
 
         current_directory = os.getcwd()
         input_file_json = current_directory +  '/ext_data/e_coli_core.json'
@@ -57,6 +58,35 @@ class TestStringMethods(unittest.TestCase):
         self.assertEqual(nullspace_res_dense[0].shape, (95, 24))
         self.assertEqual(nullspace_res_sparse[0].shape, (95, 24))
 
+        N = nullspace_res_sparse[0]
+        N_shift = nullspace_res_sparse[1]
+
+        product = np.dot(A, N_shift)
+        b = np.subtract(b, product)
+        A = np.dot(A, N)
+
+        res = remove_almost_redundant_facets(A, b)
+        A = res[0]
+        b = res[1]
+
+        res = gmscale(A, 0, 0.99)
+        res = apply_scaling(A, b, res[0], res[1])
+        A = res[0]
+        b = res[1]
+
+        res = remove_almost_redundant_facets(A, b)
+        A = res[0]
+        b = res[1]
+
+        self.assertEqual(A.shape, (174, 24))
+        self.assertEqual(b.size, 174)
+
+        max_ball = slow_inner_ball(A, b)
+
+        self.assertTrue(abs(max_ball[1] - 187.2556753095123) < 1e-10)
+        self.assertTrue(abs(scipy.linalg.norm(max_ball[0]) - 37645.55778670023) < 1e-10)
+
+
     def test_fba(self):
 
         current_directory = os.getcwd()
@@ -75,6 +105,7 @@ class TestStringMethods(unittest.TestCase):
 
         self.assertTrue(abs(res[1] - 3103.219983067629) < 1e-10)
     
+
     def test_scaling(self):
 
         current_directory = os.getcwd()
