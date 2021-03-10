@@ -1,3 +1,6 @@
 [submodule "volesti"]
 	path = volesti
 	url = https://github.com/GeomScale/volume_approximation
+[submodule "eigen"]
+	path = eigen
+	url = https://gitlab.com/libeigen/eigen.git
