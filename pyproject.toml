@@ -3,7 +3,6 @@ name = "dingo"
 version = "0.1.0"
 description = "A python library for metabolic networks sampling and analysis. dingo is part of GeomScale project"
 authors = ["Apostolos Chalkis <tolis.chal@gmail.com>"]
-licence = [LGPL3]
 
 [tool.poetry.dependencies]
 python = "^3.8"

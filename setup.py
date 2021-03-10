@@ -1,4 +1,11 @@
 
+# dingo : a python library for metabolic networks sampling and analysis
+# dingo is part of GeomScale project
+
+# Copyright (c) 2021 Apostolos Chalkis
+
+# Licensed under GNU LGPL.3, see LICENCE file
+
 # This is the setup Python script for building the dingo library
 
 from distutils.core import setup
@@ -7,14 +14,9 @@ from Cython.Build import cythonize
 from os.path import join
 import numpy
 import os
-import git
+#import git
+#import subprocess
 
-
-import subprocess
-from os.path import join
-import numpy
-import os
-import git
 
 # information about the dingo library
 version = "0.1.0"
@@ -26,15 +28,15 @@ author_email="tolis.chal@gmail.com"
 name = 'dingo'
 
 
-try:
-    import sparseqr
-except ImportError as e:
+#try:
+#    import sparseqr
+#except ImportError as e:
     # module doesn't exist, deal with it.
-    print('We need a Python wrapper for SuiteSparseQR library...')
-    if (not os.path.isdir("dingo/PySPQR")) :
-        print('Cloning PySPQR (Python wrapper for SuiteSparseQR library)...')
-        git.Repo.clone_from('https://github.com/yig/PySPQR.git', 'dingo/PySPQR', branch='master')
-    subprocess.run("cd ./dingo/PySPQR && python3 setup.py install --user && cd .. && sudo rm -r PySPQR", shell=True)
+#    print('We need a Python wrapper for SuiteSparseQR library...')
+#    if (not os.path.isdir("dingo/PySPQR")) :
+#        print('Cloning PySPQR (Python wrapper for SuiteSparseQR library)...')
+#        git.Repo.clone_from('https://github.com/yig/PySPQR.git', 'dingo/PySPQR', branch='master')
+#    subprocess.run("cd ./dingo/PySPQR && python3 setup.py install --user && cd .. && sudo rm -r PySPQR", shell=True)
 
 
 source_directory_list = ['dingo', join('dingo','bindings')]
