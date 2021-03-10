@@ -100,7 +100,7 @@ class TestStringMethods(unittest.TestCase):
 
         n = S.shape[1]
 
-        obj_fun =  np.ones(n, dtype=np.float)
+        obj_fun =  np.ones(n, dtype='float')
         res = slow_fba(lb, ub, S, obj_fun)
 
         self.assertTrue(abs(res[1] - 3103.219983067629) < 1e-10)

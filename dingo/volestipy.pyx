@@ -32,10 +32,11 @@ import json
 import scipy.io
 # ----------------------------------------------------------------------------------
 
-from .fva import slow_fva, fast_fva
-from .inner_ball import slow_inner_ball, fast_inner_ball
+from .fva import slow_fva
+from .inner_ball import slow_inner_ball
 from .nullspace import nullspace_dense, nullspace_sparse
 from .scaling import gmscale, apply_scaling, remove_almost_redundant_facets
+from .gurobi_based_implementations import fast_fva, fast_fba, fast_inner_ball
 
 
 # Set the time
