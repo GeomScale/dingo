@@ -17,19 +17,14 @@ import os
 import git
 
 # information about the dingo library
-version = "1.0.0"
+version = "0.1.0"
 license='LGPL3',
 packages = ["dingo"]
-description="dingo: A python library for metabolic networks sampling and analysis."
-author = "Apostolos Chalkis, Haris Zafeiropoulos, Pedro Zuidberg Dos Martires"
-author_email="tolis.chal@gmail.com, haris-zaf@hcmr.gr, pedro.zuidbergdosmartires@cs.kuleuven.be"
+description="A python library for metabolic networks sampling and analysis"
+author = "Apostolos Chalkis"
+author_email="tolis.chal@gmail.com"
 name = 'dingo'
 
-subprocess.run("git submodule update --init", shell = True)
-
-if (not os.path.isdir("eigen")) :
-    print('Cloning eigen library...')
-    git.Repo.clone_from('https://gitlab.com/libeigen/eigen.git', 'eigen', branch='3.3')
 
 try:
     import sparseqr
@@ -104,7 +99,5 @@ setup(
  packages = packages,
  ext_modules = ext_modules
 )
-
-subprocess.run("python3 tests/unit_tests.py -v", shell=True)
 
 print("Installation of dingo completed.")
