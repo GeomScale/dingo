@@ -3,9 +3,8 @@
   
 # Copyright (c) 2012-2021 Vissarion Fisikopoulos
 # Copyright (c) 2018-2021 Apostolos Chalkis
-
-# Contributed and/or modified by Haris Zafeiropoulos
-# Contributed and/or modified by Pedro Zuidberg Dos Martires
+# Copyright (c) 2020-2021 Pedro Zuidberg Dos Martires
+# Copyright (c) 2020-2021 Haris Zafeiropoulos
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
