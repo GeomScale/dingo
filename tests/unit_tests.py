@@ -68,7 +68,7 @@ class TestStringMethods(unittest.TestCase):
         A = res[0]
         b = res[1]
 
-        res = gmscale(A, 0, 0.99)
+        res = gmscale(A, 0.99)
         res = apply_scaling(A, b, res[0], res[1])
         A = res[0]
         b = res[1]
@@ -113,7 +113,7 @@ class TestStringMethods(unittest.TestCase):
         e_coli_network = read_json_file(input_file_json)
         S = e_coli_network[2]
 
-        res = gmscale(S, 0, 0.99)
+        res = gmscale(S, 0.99)
 
         self.assertTrue(abs(scipy.linalg.norm(res[0]) - 15.285577732002883) < 1e-10)
         self.assertTrue(abs(scipy.linalg.norm(res[1]) - 23.138373030721855) < 1e-10)
