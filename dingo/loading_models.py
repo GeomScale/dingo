@@ -11,143 +11,154 @@ import scipy.io
 import numpy as np
 
 
-## Read a Bigg file and get,
-#     (a) lower/upper flux bounds
-#     (b) the stoichiometric matrix S (dense format)
-#     (c) the list of the metabolites
-#     (d) the list of reactions
-
-# The .json format case
 def read_json_file(input_file):
+    """A Python function to Read a Bigg json file and get,
+    (a) lower/upper flux bounds
+    (b) the stoichiometric matrix S (dense format)
+    (c) the list of the metabolites
+    (d) the list of reactions
 
-   with open(input_file, 'r') as f:
+    Keyword arguments:
+    input_file -- a json file that contains the information about a mettabolic network, for example see http://bigg.ucsd.edu/models
+    """
 
-      distros_dict = json.load(f)
+    with open(input_file, "r") as f:
 
-      reactions_list = distros_dict['reactions']
+        distros_dict = json.load(f)
 
-      metabolites = []
-      reactions = []
+        reactions_list = distros_dict["reactions"]
 
-      for reaction in reactions_list:
+        metabolites = []
+        reactions = []
 
-         metabolites_dic = reaction['metabolites']
-         reaction_name = reaction['id']
-         reactions.append(reaction_name)
+        for reaction in reactions_list:
 
-         for metabolite in metabolites_dic.keys():
-            if metabolite not in metabolites:
-               metabolites.append(metabolite)
+            metabolites_dic = reaction["metabolites"]
+            reaction_name = reaction["id"]
+            reactions.append(reaction_name)
 
-      list_of_reaction_lists = []
-      vector_of_ubs = []
-      vector_of_lbs = []
+            for metabolite in metabolites_dic.keys():
+                if metabolite not in metabolites:
+                    metabolites.append(metabolite)
 
-      for reaction in reactions_list:
+        list_of_reaction_lists = []
+        vector_of_ubs = []
+        vector_of_lbs = []
 
-         ub = float(reaction['upper_bound']) ; vector_of_ubs.append(ub)
-         lb = float(reaction['lower_bound']) ; vector_of_lbs.append(lb)
+        for reaction in reactions_list:
 
-         metabolites_dic = reaction['metabolites']
-         reaction_vector = []
+            ub = float(reaction["upper_bound"])
+            vector_of_ubs.append(ub)
+            lb = float(reaction["lower_bound"])
+            vector_of_lbs.append(lb)
 
-         for term in range(len(metabolites)):
+            metabolites_dic = reaction["metabolites"]
+            reaction_vector = []
 
-            metabolite = metabolites[term]
+            for term in range(len(metabolites)):
 
-            if metabolite in metabolites_dic.keys():
+                metabolite = metabolites[term]
 
-               reaction_vector.append(metabolites_dic[metabolite])
-            else:
-               reaction_vector.append(0)
+                if metabolite in metabolites_dic.keys():
 
-         list_of_reaction_lists.append(reaction_vector)
+                    reaction_vector.append(metabolites_dic[metabolite])
+                else:
+                    reaction_vector.append(0)
 
-   # Build function's output; 
-   
-   # lower and upper flux bounds
-   lb = np.asarray(vector_of_lbs)
-   ub = np.asarray(vector_of_ubs)
+            list_of_reaction_lists.append(reaction_vector)
 
-   lb = np.asarray(lb, dtype = 'float')
-   lb = np.ascontiguousarray(lb, dtype = 'float')
+    # Build function's output;
 
-   ub = np.asarray(ub, dtype = 'float')
-   ub = np.ascontiguousarray(ub, dtype = 'float')
+    # lower and upper flux bounds
+    lb = np.asarray(vector_of_lbs)
+    ub = np.asarray(vector_of_ubs)
 
-   # The stoichiometric martrix S
-   S = np.asarray(list_of_reaction_lists)
-   S = np.transpose(S)
+    lb = np.asarray(lb, dtype="float")
+    lb = np.ascontiguousarray(lb, dtype="float")
 
-   S = np.asarray(S, dtype = 'float')
-   S = np.ascontiguousarray(S, dtype = 'float')
+    ub = np.asarray(ub, dtype="float")
+    ub = np.ascontiguousarray(ub, dtype="float")
 
-   return lb, ub, S, metabolites, reactions
+    # The stoichiometric martrix S
+    S = np.asarray(list_of_reaction_lists)
+    S = np.transpose(S)
+
+    S = np.asarray(S, dtype="float")
+    S = np.ascontiguousarray(S, dtype="float")
+
+    return lb, ub, S, metabolites, reactions
 
 
-# The .mat format case
 def read_mat_file(input_file):
+    """A Python function to Read a Bigg mat file and get,
+    (a) lower/upper flux bounds
+    (b) the stoichiometric matrix S (dense format)
+    (c) the list of the metabolites
+    (d) the list of reactions
 
-   data_from_mat = scipy.io.loadmat(input_file)
+    Keyword arguments:
+    input_file -- a mat file that contains a MATLAB structure with the information about a mettabolic network, for example see http://bigg.ucsd.edu/models
+    """
 
-   species_name = ''
-   for key in data_from_mat.keys():
-      if key[0] != "_":
-         species_name = key
+    data_from_mat = scipy.io.loadmat(input_file)
 
-   species = data_from_mat[species_name]
-   list_of_lists = species.tolist()
+    species_name = ""
+    for key in data_from_mat.keys():
+        if key[0] != "_":
+            species_name = key
 
-   counter = 0
+    species = data_from_mat[species_name]
+    list_of_lists = species.tolist()
 
-   metabolites = []
+    counter = 0
 
-   for element in list_of_lists[0][0]:
+    metabolites = []
 
-      if counter == 0:
+    for element in list_of_lists[0][0]:
 
-         m =len(element)
+        if counter == 0:
 
-         for i in element:
+            m = len(element)
 
-            metabolite = i[0][0]
+            for i in element:
 
-            if metabolite not in metabolites:
-               metabolites.append(metabolite)
-      #position 7 corresponds to the reactions
-      if counter == 7:
-         reactions_list = element.tolist()
-         reactions = [reaction[0][0] for reaction in reactions_list]
-      #position 11 corresponds to the lower bounds
-      if counter == 11:
-         lb_tmp = element
-         lb_tmp = lb_tmp.tolist()
-      #position 12 corresponds to the upper bounds
-      if counter == 12:
-         ub_tmp = element
-      #position 10 corresponds to the Stoichiometric matrix
-      if counter == 10:
-         Aeq = element
+                metabolite = i[0][0]
 
-      counter += 1
+                if metabolite not in metabolites:
+                    metabolites.append(metabolite)
+        # position 7 corresponds to the reactions
+        if counter == 7:
+            reactions_list = element.tolist()
+            reactions = [reaction[0][0] for reaction in reactions_list]
+        # position 11 corresponds to the lower bounds
+        if counter == 11:
+            lb_tmp = element
+            lb_tmp = lb_tmp.tolist()
+        # position 12 corresponds to the upper bounds
+        if counter == 12:
+            ub_tmp = element
+        # position 10 corresponds to the Stoichiometric matrix
+        if counter == 10:
+            Aeq = element
 
-   # Build function's output;
+        counter += 1
 
-   # lower and upper flux bounds
-   ub = [i[0] for i in ub_tmp]
-   lb = [x[0] for x in lb_tmp]
+    # Build function's output;
 
-   lb = np.asarray(lb)
-   ub = np.asarray(ub)
+    # lower and upper flux bounds
+    ub = [i[0] for i in ub_tmp]
+    lb = [x[0] for x in lb_tmp]
 
-   lb = np.asarray(lb, dtype = 'float')
-   lb = np.ascontiguousarray(lb, dtype = 'float')
+    lb = np.asarray(lb)
+    ub = np.asarray(ub)
 
-   ub = np.asarray(ub, dtype = 'float')
-   ub = np.ascontiguousarray(ub, dtype = 'float')
+    lb = np.asarray(lb, dtype="float")
+    lb = np.ascontiguousarray(lb, dtype="float")
 
-   # The stoichiometric martrix S
-   S = np.asarray(Aeq)
+    ub = np.asarray(ub, dtype="float")
+    ub = np.ascontiguousarray(ub, dtype="float")
 
-   return lb, ub, S, metabolites, reactions
+    # The stoichiometric martrix S
+    S = np.asarray(Aeq)
 
+    return lb, ub, S, metabolites, reactions

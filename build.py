@@ -8,6 +8,8 @@ except ImportError:
     # Got to provide this function. Otherwise, poetry will fail
     def build(setup_kwargs):
         pass
+
+
 # Cython is installed. Compile
 else:
     from setuptools import Extension
@@ -17,20 +19,19 @@ else:
     # This function will be executed in setup.py:
     def build(setup_kwargs):
         # The file you want to compile
-        extensions = [
-            "mylibrary/myfile.py"
-        ]
+        extensions = ["mylibrary/myfile.py"]
 
         # gcc arguments hack: enable optimizations
-        os.environ['CFLAGS'] = '-O3'
+        os.environ["CFLAGS"] = "-O3"
 
         # Build
-        setup_kwargs.update({
-            'ext_modules': cythonize(
-                extensions,
-                language_level=3,
-                compiler_directives={'linetrace': True},
-            ),
-            'cmdclass': {'build_ext': build_ext}
-        })
-
+        setup_kwargs.update(
+            {
+                "ext_modules": cythonize(
+                    extensions,
+                    language_level=3,
+                    compiler_directives={"linetrace": True},
+                ),
+                "cmdclass": {"build_ext": build_ext},
+            }
+        )
