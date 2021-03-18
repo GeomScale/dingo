@@ -36,7 +36,7 @@ class TestStringMethods(unittest.TestCase):
     def test_ecoli_to_full_dimensional_polytope(self):
 
         current_directory = os.getcwd()
-        input_file_json = current_directory +  '/ext_data/e_coli_core.json'
+        input_file_json = current_directory + '/ext_data/e_coli_core.json'
 
         e_coli_network = read_json_file(input_file_json)
 
@@ -89,7 +89,7 @@ class TestStringMethods(unittest.TestCase):
     def test_fba(self):
 
         current_directory = os.getcwd()
-        input_file_json = current_directory +  '/ext_data/e_coli_core.json'
+        input_file_json = current_directory + '/ext_data/e_coli_core.json'
 
         e_coli_network = read_json_file(input_file_json)
 
