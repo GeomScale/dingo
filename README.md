@@ -41,7 +41,12 @@ python3 setup.py install --user
 
 ## Unit tests
 
-You can run the unit tests by the following commands:  
+To run the tests, first, in the repository root enter
+```
+poetry shell
+```
+
+Now you can run the unit tests by the following commands:  
 ```
 python3 tests/unit_tests.py
 ```
