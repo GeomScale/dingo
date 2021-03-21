@@ -12,11 +12,13 @@ import numpy as np
 
 
 def read_json_file(input_file):
-    """A Python function to Read a Bigg json file and get,
+    """A Python function to Read a Bigg json file and returns,
     (a) lower/upper flux bounds
     (b) the stoichiometric matrix S (dense format)
     (c) the list of the metabolites
     (d) the list of reactions
+    (e) the index of the biomass pseudoreaction
+    (f) the objective function to maximize the biomass pseudoreaction
 
     Keyword arguments:
     input_file -- a json file that contains the information about a mettabolic network, for example see http://bigg.ucsd.edu/models
@@ -86,15 +88,26 @@ def read_json_file(input_file):
     S = np.asarray(S, dtype="float")
     S = np.ascontiguousarray(S, dtype="float")
 
-    return lb, ub, S, metabolites, reactions
+    # Get biomass function if there
+    biomass_function = np.zeros(S.shape[1])
+    biomass_index = None
+    for i in reactions:
+        j = i.casefold()
+        if "biom" in j:
+            biomass_index = reactions.index(i)
+            biomass_function[biomass_index] = 1
+
+    return lb, ub, S, metabolites, reactions, biomass_index, biomass_function
 
 
 def read_mat_file(input_file):
-    """A Python function to Read a Bigg mat file and get,
+    """A Python function to Read a Bigg mat file and returns,
     (a) lower/upper flux bounds
     (b) the stoichiometric matrix S (dense format)
     (c) the list of the metabolites
     (d) the list of reactions
+    (e) the index of the biomass pseudoreaction
+    (f) the objective function to maximize the biomass pseudoreaction
 
     Keyword arguments:
     input_file -- a mat file that contains a MATLAB structure with the information about a mettabolic network, for example see http://bigg.ucsd.edu/models
@@ -139,7 +152,7 @@ def read_mat_file(input_file):
             ub_tmp = element
         # position 10 corresponds to the Stoichiometric matrix
         if counter == 10:
-            Aeq = element
+            S = element
 
         counter += 1
 
@@ -159,6 +172,16 @@ def read_mat_file(input_file):
     ub = np.ascontiguousarray(ub, dtype="float")
 
     # The stoichiometric martrix S
-    S = np.asarray(Aeq)
+    S = np.asarray(S, dtype="float")
+    S = np.ascontiguousarray(S, dtype="float")
 
-    return lb, ub, S, metabolites, reactions
+    # Get biomass function if there
+    biomass_function = np.zeros(S.shape[1])
+    biomass_index = None
+    for i in reactions:
+        j = i.casefold()
+        if "biom" in j:
+            biomass_index = reactions.index(i)
+            biomass_function[biomass_index] = 1
+
+    return lb, ub, S, metabolites, reactions, biomass_index, biomass_function

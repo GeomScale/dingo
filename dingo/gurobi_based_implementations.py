@@ -9,6 +9,7 @@ import numpy as np
 import scipy.sparse as sp
 import gurobipy as gp
 from gurobipy import GRB
+import math
 
 
 def fast_fba(lb, ub, S, c):
@@ -32,6 +33,7 @@ def fast_fba(lb, ub, S, c):
         raise Exception(
             "The length of the lineart objective function must be equal to the number of reactions."
         )
+    tol = 1e-06
 
     m = S.shape[0]
     n = S.shape[1]
@@ -119,7 +121,7 @@ def fast_fba(lb, ub, S, c):
         print("Gurobi failed.")
 
 
-def fast_fva(lb, ub, S):
+def fast_fva(lb, ub, S, c, opt_percentage=100):
     """A Python function to perform fva using gurobi LP solver
     Returns the value of the optimal solution for all the following linear programs:
     min/max v_i, for all coordinates i=1,...,n, subject to,
@@ -129,12 +131,19 @@ def fast_fva(lb, ub, S):
     lb -- lower bounds for the fluxes, i.e., a n-dimensional vector
     ub -- upper bounds for the fluxes, i.e., a n-dimensional vector
     S -- the mxn stoichiometric matrix, s.t. Sv = 0
+    c -- the objective function to maximize
+    opt_percentage -- consider solutions that give you at least a certain
+                      percentage of the optimal solution (default is to consider
+                      optimal solutions only)
     """
 
     if lb.size != S.shape[1] or ub.size != S.shape[1]:
         raise Exception(
             "The number of reactions must be equal to the number of given flux bounds."
         )
+
+    # declare the tolerance that gurobi works properly (we found it experimentally)
+    tol = 1e-06
 
     m = S.shape[0]
     n = S.shape[1]
@@ -150,6 +159,16 @@ def fast_fva(lb, ub, S):
 
     Aeq_new = S
     beq_new = beq
+
+    # call fba to obtain an optimal solution
+    max_biomass_flux_vector, max_biomass_objective = fast_fba(lb, ub, S, c)
+
+    # add an additional constraint to impose solutions with at least `opt_percentage` of the optimal solution
+    A = np.vstack((A, -c))
+
+    b = np.append(
+        b, -(opt_percentage / 100) * tol * math.floor(max_biomass_objective / tol)
+    )
 
     min_fluxes = []
     max_fluxes = []
@@ -195,7 +214,7 @@ def fast_fva(lb, ub, S):
                 model.update()
 
                 # Loop through the lines of the A matrix, set objective function for each and run the model
-                for i in range(int(A.shape[0] / 2)):
+                for i in range(n):
 
                     # Set the ith row of the A matrix as the objective function
                     objective_function = A[

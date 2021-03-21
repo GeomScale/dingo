@@ -12,35 +12,36 @@ import numpy as np
 from dingo.loading_models import read_json_file
 from dingo.gurobi_based_implementations import fast_inner_ball, fast_fba, fast_fva
 
-class TestStringMethods(unittest.TestCase):
 
+class TestStringMethods(unittest.TestCase):
     def test_fast_max_bal_computation(self):
 
         m = 2
         n = 5
 
-        A = np.zeros((2*n, n), dtype='float')
+        A = np.zeros((2 * n, n), dtype="float")
         A[0:n] = np.eye(n)
-        A[n:] -=  np.eye(n,n, dtype='float')
-        b = np.ones(2*n, dtype='float')
-        
-        max_ball = fast_inner_ball(A,b)
+        A[n:] -= np.eye(n, n, dtype="float")
+        b = np.ones(2 * n, dtype="float")
 
-        self.assertTrue(abs(max_ball[1] - 1) < 1e-10)
+        max_ball = fast_inner_ball(A, b)
 
+        self.assertTrue(abs(max_ball[1] - 1) < 1e-08)
 
     def test_fast_fva(self):
 
         current_directory = os.getcwd()
-        input_file_json = current_directory +  '/ext_data/e_coli_core.json'
+        input_file_json = current_directory + "/ext_data/e_coli_core.json"
 
         e_coli_network = read_json_file(input_file_json)
 
         lb = e_coli_network[0]
         ub = e_coli_network[1]
         S = e_coli_network[2]
+        biomass_index = e_coli_network[5]
+        biomass_function = e_coli_network[6]
 
-        fva_res = fast_fva(lb, ub, S)
+        fva_res = fast_fva(lb, ub, S, biomass_function)
 
         A = fva_res[0]
         b = fva_res[1]
@@ -48,29 +49,27 @@ class TestStringMethods(unittest.TestCase):
         beq = fva_res[3]
 
         self.assertEqual(Aeq.shape, (80, 95))
-        self.assertEqual(A.shape, (190, 95))
+        self.assertEqual(A.shape, (191, 95))
         self.assertEqual(beq.size, 80)
-        self.assertEqual(b.size, 190)
-
+        self.assertEqual(b.size, 191)
 
     def test_fast_fba(self):
 
         current_directory = os.getcwd()
-        input_file_json = current_directory +  '/ext_data/e_coli_core.json'
+        input_file_json = current_directory + "/ext_data/e_coli_core.json"
 
         e_coli_network = read_json_file(input_file_json)
 
         lb = e_coli_network[0]
         ub = e_coli_network[1]
         S = e_coli_network[2]
+        biomass_index = e_coli_network[5]
+        biomass_function = e_coli_network[6]
 
-        n = S.shape[1]
+        res = fast_fba(lb, ub, S, biomass_function)
 
-        obj_fun =  np.ones(n, dtype='float')
-        res = fast_fba(lb, ub, S, obj_fun)
-
-        self.assertTrue(abs(res[1] - 3103.2200000000003) < 1e-10)
+        self.assertTrue(abs(res[1] - 0.8739215069684305) < 1e-08)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

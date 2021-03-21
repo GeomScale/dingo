@@ -22,7 +22,13 @@ else:
         extensions = ["dingo/volestipy.pyx"]
 
         # gcc arguments hack: enable optimizations
-        os.environ["CFLAGS"] = ["-std=c++11", "-O3", "-DBOOST_NO_AUTO_PTR", "-ldl", "-lm"]
+        os.environ["CFLAGS"] = [
+            "-std=c++11",
+            "-O3",
+            "-DBOOST_NO_AUTO_PTR",
+            "-ldl",
+            "-lm",
+        ]
 
         # Build
         setup_kwargs.update(
