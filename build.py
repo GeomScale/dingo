@@ -19,10 +19,10 @@ else:
     # This function will be executed in setup.py:
     def build(setup_kwargs):
         # The file you want to compile
-        extensions = ["mylibrary/myfile.py"]
+        extensions = ["dingo/volestipy.pyx"]
 
         # gcc arguments hack: enable optimizations
-        os.environ["CFLAGS"] = "-O3"
+        os.environ["CFLAGS"] = ["-std=c++11", "-O3", "-DBOOST_NO_AUTO_PTR", "-ldl", "-lm"]
 
         # Build
         setup_kwargs.update(

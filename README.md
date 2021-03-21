@@ -4,8 +4,6 @@ A python library for metabolic networks sampling and analysis.
 
 ## Installation
 
-### Dependencies
-
 To load the submodules that dingo uses run: `git submodule update --init`.  
 
 You will need to download and unzip the boost library:
@@ -15,10 +13,15 @@ tar xjf boost_1_75_0.tar.bz2
 rm boost_1_75_0.tar.bz2
 ```
 
-Then, you need to install the dependencies for PySPQR library; for debian/ubuntu linux run: `apt-get install libsuitesparse-dev`.  
+Then, you need to install the dependencies for PySPQR library; for debian/ubuntu linux run:
+
+```
+apt-get install libsuitesparse-dev
+```
 
 To install the python dependencies install [poetry](https://python-poetry.org/). Then, run:  
 ```
+poetry shell
 poetry install
 ```
 
@@ -31,22 +34,9 @@ pip3 install -i https://pypi.gurobi.com gurobipy
 Then, you will need a [license](https://www.gurobi.com/downloads/end-user-license-agreement-academic/). For more information we refer to gurobi [download center](https://www.gurobi.com/downloads/).  
 
 
-### Install *dingo*
-
-After getting the dependencies run:
-
-```
-python3 setup.py install --user
-```
-
 ## Unit tests
 
-To run the tests, first, in the repository root enter
-```
-poetry shell
-```
-
-Now you can run the unit tests by the following commands:  
+Now, you can run the unit tests by the following commands:  
 ```
 python3 tests/unit_tests.py
 ```

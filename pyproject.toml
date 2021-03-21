@@ -3,6 +3,7 @@ name = "dingo"
 version = "0.1.0"
 description = "A python library for metabolic networks sampling and analysis. dingo is part of GeomScale project"
 authors = ["Apostolos Chalkis <tolis.chal@gmail.com>"]
+build = 'build.py'
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -15,5 +16,5 @@ scipy = "^1.6.1"
 [tool.poetry.dev-dependencies]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.0.0", "cython"]
 build-backend = "poetry.core.masonry.api"
