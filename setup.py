@@ -33,12 +33,13 @@ link_args = ["-O3"]
 extra_volesti_include_dirs = [
     # include binding files
     join("dingo", "bindings"),
-    # the volesti code uses some external classes. these are located on the "external"
-    # directory and we need to add them as well
+    # the volesti code uses some external classes.
+    # external directories we need to add
     join("eigen"),
+    join("boost_1_75_0"),
+    join("boost_1_75_0", "boost"),
     join("volesti", "external"),
     join("volesti", "external", "minimum_ellipsoid"),
-    join("volesti", "external", "boost"),
     # include and add the directories on the "include" directory
     join("volesti", "include"),
     join("volesti", "include", "convex"),

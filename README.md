@@ -8,7 +8,14 @@ A python library for metabolic networks sampling and analysis.
 
 To load the submodules that dingo uses run: `git submodule update --init`.  
 
-For debian/ubuntu linux run: `apt-get install libsuitesparse-dev`.  
+You will need to download and unzip the boost library:
+```
+wget -O boost_1_75_0.tar.bz2 https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2
+tar xjf boost_1_75_0.tar.bz2
+rm boost_1_75_0.tar.bz2
+```
+
+Then, you need to install the dependencies for PySPQR library; for debian/ubuntu linux run: `apt-get install libsuitesparse-dev`.  
 
 To install the python dependencies install [poetry](https://python-poetry.org/). Then, run:  
 ```
