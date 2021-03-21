@@ -30,7 +30,7 @@ class TestStringMethods(unittest.TestCase):
         
         max_ball = slow_inner_ball(A,b)
 
-        self.assertTrue(abs(max_ball[1] - 1) < 1e-10)
+        self.assertTrue(abs(max_ball[1] - 1) < 1e-04)
 
 
     def test_ecoli_to_full_dimensional_polytope(self):
@@ -82,8 +82,8 @@ class TestStringMethods(unittest.TestCase):
 
         max_ball = slow_inner_ball(A, b)
 
-        self.assertTrue(abs(max_ball[1] - 187.2556753095123) < 1e-04)
-        self.assertTrue(abs(scipy.linalg.norm(max_ball[0]) - 37645.55778670023) < 1e-10)
+        self.assertTrue(abs(max_ball[1] - 187.2556753095123) < 1e-01)
+        self.assertTrue(abs(scipy.linalg.norm(max_ball[0]) - 37645.55778670023) < 1e-1)
 
 
     def test_fba(self):
@@ -102,7 +102,7 @@ class TestStringMethods(unittest.TestCase):
         obj_fun =  np.ones(n, dtype='float')
         res = slow_fba(lb, ub, S, obj_fun)
 
-        self.assertTrue(abs(res[1] - 3103.219983067629) < 1e-04)
+        self.assertTrue(abs(res[1] - 3103.219983067629) < 1e-01)
     
 
     def test_scaling(self):
@@ -115,8 +115,8 @@ class TestStringMethods(unittest.TestCase):
 
         res = gmscale(S, 0.99)
 
-        self.assertTrue(abs(scipy.linalg.norm(res[0]) - 15.285577732002883) < 1e-10)
-        self.assertTrue(abs(scipy.linalg.norm(res[1]) - 23.138373030721855) < 1e-10)
+        self.assertTrue(abs(scipy.linalg.norm(res[0]) - 15.285577732002883) < 1e-01)
+        self.assertTrue(abs(scipy.linalg.norm(res[1]) - 23.138373030721855) < 1e-01)
 
 
 if __name__ == '__main__':
