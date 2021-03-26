@@ -15,6 +15,7 @@ from dingo.loading_models import read_json_file
 from dingo.inner_ball import slow_inner_ball
 from dingo.nullspace import nullspace_dense, nullspace_sparse
 from dingo.scaling import gmscale, apply_scaling, remove_almost_redundant_facets
+from dingocpp import HPolytope
 
 
 class TestStringMethods(unittest.TestCase):
@@ -85,6 +86,10 @@ class TestStringMethods(unittest.TestCase):
 
         self.assertTrue(abs(max_ball[1] - 0.2100965915597044) < 1e-01)
         self.assertTrue(abs(scipy.linalg.norm(max_ball[0]) - 37970.16751141932) < 1e-1)
+
+        p = HPolytope(A,b)
+
+        self.assertEqual(p.dimension(), 24)
 
     def test_fba(self):
 
