@@ -15,8 +15,7 @@ from dingo.loading_models import read_json_file
 from dingo.inner_ball import slow_inner_ball
 from dingo.nullspace import nullspace_dense, nullspace_sparse
 from dingo.scaling import gmscale, apply_scaling, remove_almost_redundant_facets
-from dingocpp import HPolytope
-
+from dingo import HPolytope
 
 class TestStringMethods(unittest.TestCase):
     def test_max_bal_computation(self):

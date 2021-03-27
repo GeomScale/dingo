@@ -50,7 +50,7 @@ extra_volesti_include_dirs = [
     join("volesti", "include", "cartesian_geom"),
 ]
 
-src_files = ["dingo/dingocpp.pyx", "dingo/bindings/bindings.cpp"]
+src_files = ["dingo/volestipy.pyx", "dingo/bindings/bindings.cpp"]
 
 # Return the directory that contains the NumPy *.h header files.
 # Extension modules that need to compile against NumPy should use this
@@ -58,7 +58,7 @@ src_files = ["dingo/dingocpp.pyx", "dingo/bindings/bindings.cpp"]
 extra_include_dirs = [numpy.get_include()]
 
 ext_module = Extension(
-    "dingocpp",
+    "volestipy",
     language="c++",
     sources=src_files,
     include_dirs=extra_include_dirs + extra_volesti_include_dirs,
