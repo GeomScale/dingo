@@ -26,6 +26,8 @@
 #include "volume/volume_sequence_of_balls.hpp"
 #include "volume/volume_cooling_gaussians.hpp"
 #include "volume/volume_cooling_balls.hpp"
+#include "sampling/mmcs.hpp"
+#include "diagnostics/univariate_psrf.hpp"
 
 //from generate_samples, some extra headers not already included
 #include <chrono>
@@ -46,6 +48,67 @@ typedef typename Hpolytope::VT    VT;
 typedef BoostRandomNumberGenerator<boost::mt19937, double>    RNGType;
 
 
+template <typename NT, typename MT, typename VT>
+struct mmcs_parameters
+{
+public:
+
+   mmcs_parameters() {}
+
+   mmcs_parameters(int d, int ess, int _psrf_check)
+         :  T(MT::Identity(d,d))
+         ,  T_shift(VT::Zero(d))
+         ,  store_ess(VT::Zero(50))
+         ,  store_nsamples(VT::Zero(50))
+         ,  skip_phase(0)
+         ,  num_rounding_steps(20*d)
+         ,  walk_length(1)
+         ,  num_its(20)
+         ,  Neff(ess)
+         ,  fixed_Neff(ess)
+         ,  phase(0)
+         ,  window(100)
+         ,  max_num_samples(100 * d)
+         ,  round_it(1)
+         ,  total_number_of_samples_in_P0(0)
+         ,  total_neff(0)
+         ,  psrf_check(_psrf_check)
+         ,  complete(false)
+         ,  request_rounding(true)
+         ,  rounding_completed(false)
+         ,  s_cutoff(NT(3))
+   {
+      req_round_temp = request_rounding;
+   }
+
+   MT T;
+   MT samples;
+   VT T_shift;
+   VT store_ess;
+   VT store_nsamples;
+   unsigned int skip_phase;
+   unsigned int num_rounding_steps;
+   unsigned int walk_length;
+   unsigned int num_its;
+   int Neff;
+   int fixed_Neff;
+   unsigned int phase;
+   unsigned int window;
+   unsigned int max_num_samples;
+   unsigned int total_samples;
+   unsigned int nburns;
+   unsigned int round_it;
+   unsigned int total_number_of_samples_in_P0;
+   unsigned int total_neff;
+   int psrf_check;
+   bool complete;
+   bool request_rounding;
+   bool rounding_completed;
+   bool req_round_temp;
+   NT s_cutoff;
+};
+
+
 // This is the HPolytopeCPP class; the main volesti class that is running the compute_volume(), rounding() and sampling() methods
 class HPolytopeCPP{
 
@@ -55,6 +118,9 @@ class HPolytopeCPP{
 
       // regarding the rounding step
       typedef std::tuple<MT, VT, NT>    round_result;
+      typedef mmcs_parameters<NT, MT, VT> mmcs_params;
+
+      mmcs_params mmcs_set_of_parameters;
 
       // The class and its main specs
       HPolytopeCPP();
@@ -73,11 +139,13 @@ class HPolytopeCPP{
        bool max_ball, double* inner_point, double radius,
        double* samples);
 
-      // mmcs_step() impelments a single step of mmcs
-      double mmcs_step(int walk_len, int number_of_points, int number_of_points_to_burn, bool boundary, 
-       bool cdhr, bool rdhr, bool gaussian, bool set_L, bool accelerated_billiard, bool billiard, bool ball_walk, double a, double L,  
-       bool max_ball, double* inner_point, double radius,
-       double* samples);
+      void mmcs_initialize(int d, int ess, int psrf_check);
+
+      double mmcs_step(double* inner_point_for_c, double radius, int &N);
+
+      void get_mmcs_samples(double* T_matrix, double* T_shift, double* samples);
+
+      void get_polytope_as_matrices(double* new_A, double* new_b);
 
       // the rounding() function
       void rounding(char* rounding_method, double* new_A, double* new_b, double* T_matrix, double* shift, double &round_value,
@@ -85,29 +153,6 @@ class HPolytopeCPP{
       
 };
 
-// The preHPolytopeCPP class is responsible for the preprocess step of the polytope as well as for getting the full dimensional polytope
-class lowDimHPolytopeCPP{
-
-   public:
-
-      MT A,Aeq;
-      VT b,beq;
-
-      // regarding getting full dimensional polytope
-      typedef std::pair<Hpolytope, std::pair<MT, VT> > get_full_dim_pol_result;
-
-      // The class and its main specs
-      lowDimHPolytopeCPP();
-      lowDimHPolytopeCPP(double *A, double *b, double *Aeq, double *beq, int n_rows_of_A, int n_cols_of_A, int n_row_of_Aeq, int n_cols_of_Aeq);
-      Hpolytope low_HP;
-
-      // Here we use the "~" destructor; this way we avoid a memory leak.
-      ~lowDimHPolytopeCPP();
-
-      // the get_full_dimensional_polytop() function
-      int full_dimensiolal_polytope(double* N_extra_trans, double* shift, double* A_full_extra_trans, double* b_full);
-
-};
 
 #endif 
 

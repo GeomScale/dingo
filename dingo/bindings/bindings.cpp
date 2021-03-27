@@ -201,6 +201,251 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
 //////////         End of "generate_samples()"          //////////
 
 
+void HPolytopeCPP::get_polytope_as_matrices(double* new_A, double* new_b) {
+
+   int n_hyperplanes = HP.num_of_hyperplanes();
+   int n_variables = HP.dimension();
+
+   int n_si = 0;
+   MT A_to_copy = HP.get_mat();
+   for (int i = 0; i < n_hyperplanes; i++){
+      for (int j = 0; j < n_variables; j++){
+         new_A[n_si++] = A_to_copy(i, j);
+      }
+   }
+   
+   // create the new_b vector
+   VT new_b_temp = HP.get_vec();
+   for (int i=0; i < n_hyperplanes; i++){
+      new_b[i] = new_b_temp[i];
+   }
+
+}
+
+
+void HPolytopeCPP::mmcs_initialize(int d, int ess, int psrf_check) {
+
+   mmcs_set_of_parameters = mmcs_params(d, ess, psrf_check);
+
+}
+
+
+double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
+   
+   HP.normalize();
+   int d = HP.dimension();
+
+   //mmcs_set_of_parameters = mmcs_params(d, 1000, 1);
+
+   VT inner_vec(d);
+   NT max_s;
+   
+   for (int i = 0; i < d; i++){
+      inner_vec(i) = inner_point[i];
+   }
+   
+   Point inner_point2(inner_vec);   
+   CheBall = std::pair<Point, NT>(inner_point2, radius);   
+      
+   HP.set_InnerBall(CheBall);   
+
+   RNGType rng(d);
+
+   
+   if (mmcs_set_of_parameters.request_rounding && mmcs_set_of_parameters.rounding_completed) 
+   {
+      mmcs_set_of_parameters.req_round_temp = false;
+   }
+
+   if (mmcs_set_of_parameters.req_round_temp) 
+   {
+      mmcs_set_of_parameters.nburns = mmcs_set_of_parameters.num_rounding_steps / mmcs_set_of_parameters.window + 1;
+   } 
+   else 
+   {
+      mmcs_set_of_parameters.nburns = mmcs_set_of_parameters.max_num_samples / mmcs_set_of_parameters.window + 1;
+   }
+
+   NT L = NT(6) * std::sqrt(NT(d)) * CheBall.second;
+   AcceleratedBilliardWalk WalkType(L);
+
+   unsigned int Neff_sampled;
+   MT TotalRandPoints;
+   perform_mmcs_step(HP, rng, mmcs_set_of_parameters.walk_length, mmcs_set_of_parameters.Neff, mmcs_set_of_parameters.max_num_samples,
+                     mmcs_set_of_parameters.window, Neff_sampled, mmcs_set_of_parameters.total_samples, mmcs_set_of_parameters.num_rounding_steps, 
+                     TotalRandPoints, mmcs_set_of_parameters.complete, CheBall.first, mmcs_set_of_parameters.nburns, mmcs_set_of_parameters.req_round_temp,
+                     WalkType);
+
+   mmcs_set_of_parameters.store_ess(mmcs_set_of_parameters.phase) = Neff_sampled;
+   mmcs_set_of_parameters.store_nsamples(mmcs_set_of_parameters.phase) = mmcs_set_of_parameters.total_samples;
+   mmcs_set_of_parameters.phase++;
+   mmcs_set_of_parameters.Neff -= Neff_sampled;
+   std::cout << "phase " << mmcs_set_of_parameters.phase << ": number of correlated samples = " << mmcs_set_of_parameters.total_samples << ", effective sample size = " << Neff_sampled;
+   mmcs_set_of_parameters.total_neff += Neff_sampled;
+   //Neff_sampled = 0;
+        
+   MT Samples = TotalRandPoints.transpose(); //do not copy TODO!
+   for (int i = 0; i < mmcs_set_of_parameters.total_samples; i++)
+   {
+      Samples.col(i) = mmcs_set_of_parameters.T * Samples.col(i) + mmcs_set_of_parameters.T_shift;
+   }
+        
+   mmcs_set_of_parameters.samples.conservativeResize(d, mmcs_set_of_parameters.total_number_of_samples_in_P0 + mmcs_set_of_parameters.total_samples);
+
+   mmcs_set_of_parameters.samples.block(0, mmcs_set_of_parameters.total_number_of_samples_in_P0, d, mmcs_set_of_parameters.total_samples) = 
+                                          Samples.block(0, 0, d, mmcs_set_of_parameters.total_samples);
+   
+   Samples.resize(0, 0);
+
+   N = mmcs_set_of_parameters.total_number_of_samples_in_P0 + mmcs_set_of_parameters.total_samples;   
+   mmcs_set_of_parameters.total_number_of_samples_in_P0 += mmcs_set_of_parameters.total_samples;
+
+   if (!mmcs_set_of_parameters.complete) 
+   {
+      if (mmcs_set_of_parameters.request_rounding && !mmcs_set_of_parameters.rounding_completed) 
+      {
+         VT shift(d), s(d);
+         MT V(d, d), S(d, d), round_mat;
+         for (int i = 0; i < d; ++i) 
+         {
+            shift(i) = TotalRandPoints.col(i).mean();
+         }
+
+         for (int i = 0; i < mmcs_set_of_parameters.total_samples; ++i) 
+         {
+            TotalRandPoints.row(i) = TotalRandPoints.row(i) - shift.transpose();
+         }
+
+         Eigen::BDCSVD<MT> svd(TotalRandPoints, Eigen::ComputeFullV);
+         s = svd.singularValues() / svd.singularValues().minCoeff();
+
+         if (s.maxCoeff() >= 2.0) 
+         {
+            for (int i = 0; i < s.size(); ++i) 
+            {
+               if (s(i) < 2.0) 
+               {
+                  s(i) = 1.0;
+               }
+            }
+            V = svd.matrixV();
+         } 
+         else 
+         {
+            s = VT::Ones(d);
+            V = MT::Identity(d, d);
+         }
+         max_s = s.maxCoeff();
+         S = s.asDiagonal();
+         round_mat = V * S;
+
+         mmcs_set_of_parameters.round_it++;
+         HP.shift(shift);
+         HP.linear_transformIt(round_mat);
+         mmcs_set_of_parameters.T_shift += mmcs_set_of_parameters.T * shift;
+         mmcs_set_of_parameters.T = mmcs_set_of_parameters.T * round_mat;
+
+         std::cout << ", ratio of the maximum singilar value over the minimum singular value = " << max_s << std::endl;
+
+         if (max_s <= mmcs_set_of_parameters.s_cutoff || mmcs_set_of_parameters.round_it > mmcs_set_of_parameters.num_its) 
+         {
+            mmcs_set_of_parameters.rounding_completed = true;
+         }
+      }
+      else 
+      {
+         std::cout<<"\n";
+      }
+   } 
+   else if (mmcs_set_of_parameters.psrf_check == 0) 
+   {
+      NT max_psrf = univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff();
+      std::cout << "[5]total ess " << mmcs_set_of_parameters.total_neff << ": number of correlated samples = " << mmcs_set_of_parameters.samples.cols()<<std::endl;
+      std::cerr << "[5]maximum marginal PSRF: " <<  univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff() << std::endl;
+      std::cout<<"\n\n";
+      return 1.5;
+   }
+   else 
+   {
+      TotalRandPoints.resize(0, 0);
+      NT max_psrf = univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff();
+
+      if (max_psrf < 1.1 && mmcs_set_of_parameters.total_neff >= mmcs_set_of_parameters.fixed_Neff) {
+         std::cout << "[4]total ess " << mmcs_set_of_parameters.total_neff << ": number of correlated samples = " << mmcs_set_of_parameters.samples.cols()<<std::endl;
+         //std::cerr << "multivariate PSRF: " <<  multivariate_psrf<NT, VT>(mmcs_set_of_parameters.samples) << std::endl;
+         std::cerr << "[4]maximum marginal PSRF: " <<  univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff() << std::endl;
+         std::cout<<"\n\n";
+         return 1.5;
+      }
+      std::cerr << "\n [1]maximum marginal PSRF: " <<  max_psrf << std::endl;
+
+      while (max_psrf > 1.1 && mmcs_set_of_parameters.total_neff >= mmcs_set_of_parameters.fixed_Neff) {
+         
+         mmcs_set_of_parameters.Neff += mmcs_set_of_parameters.store_ess(mmcs_set_of_parameters.skip_phase);
+         mmcs_set_of_parameters.total_neff -= mmcs_set_of_parameters.store_ess(mmcs_set_of_parameters.skip_phase);
+
+         mmcs_set_of_parameters.total_number_of_samples_in_P0 -= mmcs_set_of_parameters.store_nsamples(mmcs_set_of_parameters.skip_phase);
+         N -= mmcs_set_of_parameters.store_nsamples(mmcs_set_of_parameters.skip_phase);
+
+         MT S = mmcs_set_of_parameters.samples;
+         mmcs_set_of_parameters.samples.resize(d, mmcs_set_of_parameters.total_number_of_samples_in_P0);
+         mmcs_set_of_parameters.samples = 
+                     S.block(0, mmcs_set_of_parameters.store_nsamples(mmcs_set_of_parameters.skip_phase), d, mmcs_set_of_parameters.total_number_of_samples_in_P0);
+
+         mmcs_set_of_parameters.skip_phase++;
+
+         max_psrf = univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff();
+
+         std::cerr << "[2]maximum marginal PSRF: " <<  max_psrf << std::endl;
+         std::cerr << "[2]total_Neff: " <<  mmcs_set_of_parameters.total_neff << std::endl;
+         std::cerr << "[2]Neff: " <<  mmcs_set_of_parameters.Neff << std::endl;
+
+         if (max_psrf < 1.1 && mmcs_set_of_parameters.total_neff >= mmcs_set_of_parameters.fixed_Neff) {
+            return 1.5;
+         }
+         //if (mmcs_set_of_parameters.total_neff < mmcs_set_of_parameters.fixed_Neff) {
+         //   return 0.0;
+        // }
+      }
+      std::cout << "[3]total ess " << mmcs_set_of_parameters.total_neff << ": number of correlated samples = " << mmcs_set_of_parameters.samples.cols()<<std::endl;
+      //std::cerr << "multivariate PSRF: " <<  multivariate_psrf<NT, VT>(mmcs_set_of_parameters.samples) << std::endl;
+      std::cerr << "[3]maximum marginal PSRF: " <<  univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff() << std::endl;
+      std::cout<<"\n\n";
+      return 0.0;
+   }
+
+   return 0.0;
+}
+
+
+void HPolytopeCPP::get_mmcs_samples(double* T_matrix, double* T_shift, double* samples) {
+
+   int n_variables = HP.dimension();
+
+   int t_mat_index = 0;
+   for (int i = 0; i < n_variables; i++){
+      for (int j = 0; j < n_variables; j++){
+         T_matrix[t_mat_index++] = mmcs_set_of_parameters.T(i, j);
+      }
+   }
+   
+   // create the shift vector
+   for (int i = 0; i < n_variables; i++){
+      T_shift[i] = mmcs_set_of_parameters.T_shift[i];
+   }
+
+   int N = mmcs_set_of_parameters.samples.cols();
+
+   int t_si = 0;
+   std::cerr << "N =  " <<  N << std::endl;
+   for (int i = 0; i < n_variables; i++){
+      for (int j = 0; j < N; j++){
+         samples[t_si++] = mmcs_set_of_parameters.samples(i, j);
+      }
+   }
+}
+
+
 //////////         Start of "rounding()"          //////////
 void HPolytopeCPP::rounding(char* rounding_method, double* new_A, double* new_b,
                             double* T_matrix, double* shift, double &round_value,
@@ -286,91 +531,3 @@ void HPolytopeCPP::rounding(char* rounding_method, double* new_A, double* new_b,
 
 }
 //////////         End of "rounding()"          //////////
-
-
-
-// >>> The lowDimHPolytopeCPP class; the pre_processing() and the get_full_dimensional_polytope() volesti methods are included <<<
-
-lowDimHPolytopeCPP::lowDimHPolytopeCPP() {}
-
-// Initialize the low dimensional polytope object
-lowDimHPolytopeCPP::lowDimHPolytopeCPP(double *A_np, double *b_np, double *A_aeq_np,
-                                       double *b_aeq_np, int n_rows_of_A, int n_cols_of_A,
-                                       int n_row_of_Aeq, int n_cols_of_Aeq){
-
-   A.resize(n_rows_of_A,n_cols_of_A);
-   b.resize(n_rows_of_A);
-   
-   Aeq.resize(n_row_of_Aeq, n_cols_of_Aeq);
-   beq.resize(n_row_of_Aeq);
-
-   int index_1 = 0;
-   for (int i = 0; i < n_rows_of_A; i++){
-      b(i) = b_np[i];
-      for (int j=0; j < n_cols_of_A; j++){
-         A(i,j) = A_np[index_1];
-         index_1++;
-      }
-   }
-
-   int index_2 = 0;
-   for (int i = 0; i < n_row_of_Aeq; i++){
-      beq(i) = b_aeq_np[i];
-      for (int j=0; j < n_cols_of_Aeq; j++){
-         Aeq(i,j) = A_aeq_np[index_2];
-         index_2++;
-      }
-   }   
-}
-// Destructor! - never forget about this!
-lowDimHPolytopeCPP::~lowDimHPolytopeCPP(){}
-
-
-// Function to get the full dimensional polytope
-int lowDimHPolytopeCPP::full_dimensiolal_polytope(double* N_extra_trans, double* shift,
-                                                  double* A_full_extra_trans, double* b_full){
-   
-   get_full_dim_pol_result result;
-   
-   // we now run thi C++ function for getting the full dim pol
-   result = get_full_dimensional_polytope<Hpolytope>(A, b, Aeq, beq);
-
-   // the outcome of the full_dimensional_polytope()
-   Hpolytope full_HP = result.first;
-   MT full_HP_A_trans = full_HP.get_mat().transpose();
-   VT full_HP_b = full_HP.get_vec();
-   MT N_temp_trans = result.second.first.transpose();
-   VT shift_temp = result.second.second;   
-   
-   // Here is what we need to return the output in the Python interface
-   // return the full_HP_A matrix to cython
-   auto a_si = 0;
-   for (int i = 0; i < full_HP_A_trans.rows(); i++){
-      for (int j = 0; j < full_HP_A_trans.cols(); j++){
-         A_full_extra_trans[a_si++] = full_HP_A_trans(i,j);
-      }
-   }
-   
-   // return the full_b matrix to cython
-   for (int i=0; i < full_HP_b.rows(); i++){
-      b_full[i] = full_HP_b[i];
-   }
-
-   // return the N matrix to cython
-   auto t_si = 0;
-   for (int i = 0; i < N_temp_trans.rows(); i++){
-      for (int j = 0; j < N_temp_trans.cols(); j++){
-         N_extra_trans[t_si++] = N_temp_trans(i,j);
-      }
-   }
-
-   // return the shift vector to cython
-   for (int i=0; i < shift_temp.rows(); i++){
-      shift[i] = shift_temp[i];
-   }   
-   
-   // as we know that N_temp.cols == full_HP_A.cols and likewise for their lines, 
-   // we may return just one of those vars
-   return N_temp_trans.rows();
-} 
-

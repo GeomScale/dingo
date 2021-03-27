@@ -17,6 +17,7 @@ from dingo.nullspace import nullspace_dense, nullspace_sparse
 from dingo.scaling import gmscale, apply_scaling, remove_almost_redundant_facets
 from dingo import HPolytope
 
+
 class TestStringMethods(unittest.TestCase):
     def test_max_bal_computation(self):
 
@@ -84,11 +85,13 @@ class TestStringMethods(unittest.TestCase):
         max_ball = slow_inner_ball(A, b)
 
         self.assertTrue(abs(max_ball[1] - 0.2100965915597044) < 1e-01)
-        self.assertTrue(abs(scipy.linalg.norm(max_ball[0]) - 37970.16751141932) < 1e-1)
+        self.assertTrue(abs(scipy.linalg.norm(max_ball[0]) - 37970.16751141932) < 1e-01)
 
         p = HPolytope(A,b)
 
         self.assertEqual(p.dimension(), 24)
+
+        #p.slow_mmcs()
 
     def test_fba(self):
 
