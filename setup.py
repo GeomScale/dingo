@@ -38,16 +38,16 @@ extra_volesti_include_dirs = [
     join("eigen"),
     join("boost_1_75_0"),
     join("boost_1_75_0", "boost"),
-    join("volesti", "external"),
-    join("volesti", "external", "minimum_ellipsoid"),
+    join("volume_approximation", "external"),
+    join("volume_approximation", "external", "minimum_ellipsoid"),
     # include and add the directories on the "include" directory
-    join("volesti", "include"),
-    join("volesti", "include", "convex"),
-    join("volesti", "include", "misc"),
-    join("volesti", "include", "random_walks"),
-    join("volesti", "include", "volume"),
-    join("volesti", "include", "generators"),
-    join("volesti", "include", "cartesian_geom"),
+    join("volume_approximation", "include"),
+    join("volume_approximation", "include", "convex"),
+    join("volume_approximation", "include", "misc"),
+    join("volume_approximation", "include", "random_walks"),
+    join("volume_approximation", "include", "volume"),
+    join("volume_approximation", "include", "generators"),
+    join("volume_approximation", "include", "cartesian_geom"),
 ]
 
 src_files = ["dingo/volestipy.pyx", "dingo/bindings/bindings.cpp"]
