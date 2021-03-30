@@ -29,6 +29,23 @@ from volestipy import HPolytope
 
 
 def from_model_to_steady_states_pipeline(args):
+    """A function to compute the full dimensional polytope from a model (metabolic network), sample
+    from it and to transform the sample to steady states using (M)ultiphase (M)onte (C)arlo (S)ampling algorithm
+
+    Keyword arguments:
+    args -- a Namespace that contains the input file and the requested methods, solvers and MMCS parameters; see parser.py
+
+    Keyword outputs:
+    A -- the matrix of the full dimensional polytope, s.t. Ax <= b
+    b -- the vector of the full dimensional polytope, s.t. Ax <= b
+    N -- the matrix of the right nullspace of the stoichiometric matrix S
+    N_shift -- a solution of the linear system defined by the augmented stoichiometric matrix
+    T -- the matrix of the linear transformation that maps the full dimensional polytope to a rounded polytope
+    T_shift -- the shifting vector of the linear transformation that maps the full dimensional polytope to a rounded polytope
+    min_fluxes -- the minimum values of the fluxes of each reaction
+    max_fluxes -- the maximum values of the fluxes of each reaction
+    steady_states -- a matrix that contains column-wise the generated steady states
+    """
 
     if args.solver == "gurobi":
         try:
@@ -137,6 +154,27 @@ def from_model_to_steady_states_pipeline(args):
 def from_polytope_to_steady_states_pipeline(
     args, A, b, N, N_shift, T=None, T_shift=None
 ):
+    """A function to sample from the fulldimensional polytope derived from a model (metabolic network)
+    and to transform the sample to steady states using (M)ultiphase (M)onte (C)arlo (S)ampling algorithm
+
+    Keyword arguments:
+    args -- a Namespace that contains the input file and the requested methods, solvers and MMCS parameters; see parser.py
+    A -- the matrix of the full dimensional polytope, s.t. Ax <= b
+    b -- the vector of the full dimensional polytope, s.t. Ax <= b
+    N -- the matrix of the right nullspace of the stoichiometric matrix S
+    N_shift -- a solution of the linear system defined by the augmented stoichiometric matrix
+    T -- optional; the matrix of the linear transformation that maps the full dimensional polytope to a rounded polytope
+    T_shift -- optional; the shifting vector of the linear transformation that maps the full dimensional polytope to a rounded polytope
+
+    Keyword outputs:
+    A -- the matrix of the rounded full dimensional polytope, s.t. Ax <= b
+    b -- the vector of the rounded full dimensional polytope, s.t. Ax <= b
+    N -- the matrix of the right nullspace of the stoichiometric matrix S
+    N_shift -- a solution of the linear system defined by the augmented stoichiometric matrix
+    T -- the matrix of the linear transformation that maps the full dimensional polytope to the input rounded polytope
+    T_shift -- the shifting vector of the linear transformation that maps the full dimensional polytope to the input rounded polytope
+    steady_states -- a matrix that contains column-wise the generated steady states
+    """
 
     if args.solver == "gurobi":
         try:

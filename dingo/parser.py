@@ -13,7 +13,8 @@ def dingo_args():
     parser = argparse.ArgumentParser()
 
     parser = argparse.ArgumentParser(
-        description="dingo is a Python library for the analysis of \
+        description="a parser to read the inputs of dingo package \
+         dingo is a Python library for the analysis of \
          metabolic networks developed by the \
          GeomScale group - https://geomscale.github.io/ ",
         usage="%(prog)s [--help | -h] : help \n\n \

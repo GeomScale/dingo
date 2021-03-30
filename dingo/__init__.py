@@ -36,9 +36,11 @@ from volestipy import HPolytope
 
 
 def dingo_main():
+    """A function that (a) reads the inputs using argparse package, (b) calls the proper dingo pipeline
+    and (c) saves using pickle package the outputs
+    """
 
     args = dingo_args()
-    print(args)
 
     if args.metabolic_network == None and args.polytope == None:
         raise Exception(
@@ -53,7 +55,7 @@ def dingo_main():
     if os.path.isdir(output_path_dir) == False:
         os.mkdir(output_path_dir)
 
-    # Move to the model's output directory
+    # Move to the output directory
     os.chdir(output_path_dir)
 
     if args.metabolic_network != None:
@@ -64,8 +66,6 @@ def dingo_main():
 
             polytope_info = result_obj[:4]
             network_info = result_obj[4:]
-            print(len(polytope_info))
-            print(len(network_info))
 
             with open("dingo_polytope_output", "wb") as dingo_polytope_file:
                 pickle.dump(polytope_info, dingo_polytope_file)
@@ -77,9 +77,6 @@ def dingo_main():
 
             polytope_info = result_obj[:7]
             network_info = result_obj[7:]
-
-            print(len(polytope_info))
-            print(len(network_info))
 
             with open("dingo_polytope_output", "wb") as dingo_polytope_file:
                 pickle.dump(polytope_info, dingo_polytope_file)
@@ -93,7 +90,6 @@ def dingo_main():
         object_file = pickle.load(file)
         file.close()
 
-        print(len(object_file))
         if len(object_file) == 4:
             result_obj = from_polytope_to_steady_states_pipeline(
                 args, object_file[0], object_file[1], object_file[2], object_file[3]
