@@ -125,45 +125,45 @@ def read_mat_file(input_file):
 
     counter = 0
 
-    metabolites = []
-
     for element in list_of_lists[0][0]:
-
+        
+        # position 0 corresponds to the Stoichiometric matrix
         if counter == 0:
-
-            m = len(element)
-
-            for i in element:
-
-                metabolite = i[0][0]
-
-                if metabolite not in metabolites:
-                    metabolites.append(metabolite)
-        # position 7 corresponds to the reactions
-        if counter == 7:
-            reactions_list = element.tolist()
-            reactions = [reaction[0][0] for reaction in reactions_list]
-        # position 11 corresponds to the lower bounds
-        if counter == 11:
+            S = element
+        # position 1 corresponds to the lower bounds
+        if counter == 1:
             lb_tmp = element
             lb_tmp = lb_tmp.tolist()
-        # position 12 corresponds to the upper bounds
-        if counter == 12:
+        # position 2 corresponds to the upper bounds
+        if counter == 2:
             ub_tmp = element
-        # position 10 corresponds to the Stoichiometric matrix
-        if counter == 10:
-            S = element
-
+        # position 3 corresponds to the objective function
+        if counter == 3:
+            c_tmp = element
+        # position 5 corresponds to the reactions
+        if counter == 5:
+            reactions_list = element.tolist()
+            reactions = [reaction[0][0] for reaction in reactions_list]
+        # position 6 corresponds to the metabolites
+        if counter == 6:
+            metabolites_list = element.tolist()
+            metabolites = [metabolite[0][0] for metabolite in metabolites_list]
+        
         counter += 1
 
-    # Build function's output;
+    # Build function's output
 
     # lower and upper flux bounds
     ub = [i[0] for i in ub_tmp]
     lb = [x[0] for x in lb_tmp]
+    biomass_function = [x[0] for x in c_tmp]
 
     lb = np.asarray(lb)
     ub = np.asarray(ub)
+    biomass_function = np.asarray(biomass_function)
+
+    biomass_function = np.asarray(biomass_function, dtype="float")
+    biomass_function = np.ascontiguousarray(biomass_function, dtype="float")
 
     lb = np.asarray(lb, dtype="float")
     lb = np.ascontiguousarray(lb, dtype="float")
@@ -175,13 +175,8 @@ def read_mat_file(input_file):
     S = np.asarray(S, dtype="float")
     S = np.ascontiguousarray(S, dtype="float")
 
-    # Get biomass function if there
-    biomass_function = np.zeros(S.shape[1])
-    biomass_index = None
-    for i in reactions:
-        j = i.casefold()
-        if "biom" in j:
-            biomass_index = reactions.index(i)
-            biomass_function[biomass_index] = 1
+    # Get biomass index
+    biomass_index = np.where(biomass_function == 1)
+    biomass_index = biomass_index[0][0]
 
     return lb, ub, S, metabolites, reactions, biomass_index, biomass_function

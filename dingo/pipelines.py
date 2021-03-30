@@ -8,7 +8,7 @@
 import numpy as np
 import sys
 from dingo.fva import slow_fva
-from dingo.loading_models import read_json_file
+from dingo.loading_models import read_json_file, read_mat_file
 from dingo.inner_ball import slow_inner_ball
 from dingo.nullspace import nullspace_dense, nullspace_sparse
 from dingo.scaling import (
@@ -59,8 +59,14 @@ def from_model_to_steady_states_pipeline(args):
 
     if args.nullspace != "sparseQR" and args.nullspace != "scipy":
         raise Exception("An unknown method to compute the nullspace requested.")
+    
+    if (args.metabolic_network[-3:] != "mat" and args.metabolic_network[-4:] != "json"):
+        raise Exception("An unknown format file given.")
 
-    metabolic_network = read_json_file(args.metabolic_network)
+    if (args.metabolic_network[-4:] == "json"):
+        metabolic_network = read_json_file(args.metabolic_network)
+    else:
+        metabolic_network = read_mat_file(args.metabolic_network)
 
     try:
         lb = metabolic_network[0]
