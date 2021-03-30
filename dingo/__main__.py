@@ -1,3 +1,3 @@
-from dingo import main_pipeline
+from dingo import dingo_main
 
-main_pipeline()
+dingo_main()

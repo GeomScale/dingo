@@ -132,7 +132,7 @@ def apply_scaling(A, b, cs, rs):
     new_A = np.dot(r_diagonal_matrix, np.dot(A, c_diagonal_matrix))
     new_b = np.dot(r_diagonal_matrix, b)
 
-    return new_A, new_b
+    return new_A, new_b, c_diagonal_matrix
 
 
 def remove_almost_redundant_facets(A, b):
@@ -164,10 +164,10 @@ def remove_almost_redundant_facets(A, b):
     return new_A, new_b
 
 
-# Map the points samples on the (rounded) full dimensional polytope, back to the initial one
-def map_samples_on_initial_polytope(samples, T, T_shift, N, N_shift):
+# Map the points samples on the (rounded) full dimensional polytope, back to the initial one to obtain the steady states of the metabolic network
+def map_samples_to_steady_states(samples, T, T_shift, N, N_shift):
     """A Python function to map back to the initial space the sampled points from a full dimensional polytope derived by two
-    linear transformation of a low dimensional polytope
+    linear transformation of a low dimensional polytope, to obtain the steady states of the metabolic network
 
     Keyword arguments:
     samples -- an nxN matrix that contains sample points column-wise
@@ -175,14 +175,9 @@ def map_samples_on_initial_polytope(samples, T, T_shift, N, N_shift):
     N, N_shift -- the matrix and the vector of the linear transformation applied on the low dimensional polytope to derive the full dimensional polytope
     """
 
-    samples_T = samples.T
+    extra_1 = np.full((samples.shape[1], samples.shape[0]), T_shift)
+    extra_2 = np.full((samples.shape[1], N.shape[0]), N_shift)
 
-    extra_1 = np.full((samples.shape[0], samples.shape[1]), T_shift)
-    extra_2 = np.full((samples_T.shape[1], N.shape[0]), N_shift)
+    steady_states = N.dot(T.dot(samples) + extra_1.T) + extra_2.T
 
-    extra_T = extra_1.T
-    extra_N = extra_2.T
-
-    samples_on_initial_polytope = N.dot(T.dot(samples_T) + extra_T) + extra_N
-
-    return samples_on_initial_polytope
+    return steady_states

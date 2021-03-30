@@ -27,44 +27,71 @@ def dingo_args():
 
     required = parser.add_argument_group("required arguments")
     required.add_argument(
-        "--metabolic-network",
+        "--metabolic_network",
         "-i",
-        help="metabolic network as a .json or .mat file",
+        help="the path to a metabolic network as a .json or a .mat file.",
         required=True,
         metavar="",
     )
 
     optional = parser.add_argument_group("optional arguments")
     optional.add_argument(
-        "--sample-points",
+        "--effective_sample_size",
         "-n",
-        help="number of sampling points to return",
+        help="the minimum effective sample size per marginal of the sample that the Multiphase Monte Carlo Sampling algorithm will return. The default value is 1000.",
         required=False,
         default=1000,
         metavar="",
     )
 
     optional.add_argument(
-        "--output-directory",
+        "--output_directory",
         "-o",
-        help="output directory for the dingo output",
+        help="the output directory for the dingo output",
         required=False,
         metavar="",
     )
 
     optional.add_argument(
-        "--nullspace-method",
-        "-m",
-        help="nullspace methods",
+        "--nullspace",
+        "-null",
+        help="the method to compute the right nullspace of the stoichiometric matrix. Choose between `sparseQR` and `scipy`. The default method is `sparseQR`.",
         required=False,
-        default="sparsesvd",
+        default="sparseQR",
+        metavar="",
+    )
+
+    optional.add_argument(
+        "--psrf_check",
+        "-psrf",
+        help="a boolean flag to request psrf < 1.1 for each marginal of the sample that the Multiphase Monte Carlo Sampling algorithm will return. The default value is `False`.",
+        required=False,
+        default=False,
+        metavar="",
+    )
+
+    optional.add_argument(
+        "--parallel_mmcs",
+        "-pmmcs",
+        help="a boolean flag to request sampling with parallel Multiphase Monte Carlo Sampling algorithm. The default value is `false`.",
+        required=False,
+        default=False,
+        metavar="",
+    )
+
+    optional.add_argument(
+        "--num_threads",
+        "-nt",
+        help="the number of threads to be used in parallel Multiphase Monte Carlo Sampling algorithm. The default number is 2.",
+        required=False,
+        default=2,
         metavar="",
     )
 
     optional.add_argument(
         "--distribution",
         "-d",
-        help="choose among uniform, gaussian and exponential distribution for sampling the flux space of the metabolic network",
+        help="the distribution to sample from the flux space of the metabolic network. Choose among `uniform`, `gaussian` and `exponential` distribution. The default value is `uniform`.",
         required=False,
         default="uniform",
         metavar="",
@@ -73,9 +100,9 @@ def dingo_args():
     optional.add_argument(
         "--solver",
         "-s",
-        help='if available you may set this parameter equal to "gurobi" to sample faster',
+        help="the solver to use for the linear programs. Choose between `scipy` and `gurobi` (faster computations --- it needs a licence). The default value is `scipy`.",
         required=False,
-        default="linprog",
+        default="scipy",
         metavar="",
     )
 

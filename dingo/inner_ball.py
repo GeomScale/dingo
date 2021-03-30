@@ -58,8 +58,8 @@ def slow_inner_ball(A, b):
 
     # And check whether the computed radius is negative
     if r < 0:
-        print(
-            "The radius calculated has negative value. The polytope is infeasible or something went wrong with the solver"
+        raise Exception(
+            "The full dimensional polytope is infeasible or the solver failed to compute the maximum inscribed ball."
         )
     else:
         return point, r
