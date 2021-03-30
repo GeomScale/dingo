@@ -12,6 +12,7 @@ simplejson = "^3.17.2"
 Cython = "^0.29.22"
 numpy = "^1.20.1"
 scipy = "^1.6.1"
+argparse = "^1.4.0"
 
 [tool.poetry.dev-dependencies]
 
