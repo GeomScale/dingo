@@ -223,9 +223,9 @@ void HPolytopeCPP::get_polytope_as_matrices(double* new_A, double* new_b) {
 }
 
 
-void HPolytopeCPP::mmcs_initialize(int d, int ess, int psrf_check) {
+void HPolytopeCPP::mmcs_initialize(int d, int ess, int psrf_check, int parallelism, int num_threads) {
 
-   mmcs_set_of_parameters = mmcs_params(d, ess, psrf_check);
+   mmcs_set_of_parameters = mmcs_params(d, ess, psrf_check, parallelism, num_threads);
 
 }
 
@@ -271,10 +271,21 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
 
    unsigned int Neff_sampled;
    MT TotalRandPoints;
-   perform_mmcs_step(HP, rng, mmcs_set_of_parameters.walk_length, mmcs_set_of_parameters.Neff, mmcs_set_of_parameters.max_num_samples,
-                     mmcs_set_of_parameters.window, Neff_sampled, mmcs_set_of_parameters.total_samples, mmcs_set_of_parameters.num_rounding_steps, 
-                     TotalRandPoints, mmcs_set_of_parameters.complete, CheBall.first, mmcs_set_of_parameters.nburns, mmcs_set_of_parameters.req_round_temp,
-                     WalkType);
+   if (mmcs_set_of_parameters.parallelism == 1)
+   {
+      perform_parallel_mmcs_step<AcceleratedBilliardWalkParallel>(HP, rng, mmcs_set_of_parameters.walk_length, mmcs_set_of_parameters.Neff, 
+                                                                  mmcs_set_of_parameters.max_num_samples, mmcs_set_of_parameters.window, 
+                                                                  Neff_sampled, mmcs_set_of_parameters.total_samples, mmcs_set_of_parameters.num_rounding_steps, 
+                                                                  TotalRandPoints, mmcs_set_of_parameters.complete, CheBall.first, mmcs_set_of_parameters.nburns, 
+                                                                  mmcs_set_of_parameters.num_threads, mmcs_set_of_parameters.req_round_temp, L);
+   }
+   else
+   {
+      perform_mmcs_step(HP, rng, mmcs_set_of_parameters.walk_length, mmcs_set_of_parameters.Neff, mmcs_set_of_parameters.max_num_samples,
+                        mmcs_set_of_parameters.window, Neff_sampled, mmcs_set_of_parameters.total_samples, mmcs_set_of_parameters.num_rounding_steps, 
+                        TotalRandPoints, mmcs_set_of_parameters.complete, CheBall.first, mmcs_set_of_parameters.nburns, mmcs_set_of_parameters.req_round_temp,
+                        WalkType);
+   }
 
    mmcs_set_of_parameters.store_ess(mmcs_set_of_parameters.phase) = Neff_sampled;
    mmcs_set_of_parameters.store_nsamples(mmcs_set_of_parameters.phase) = mmcs_set_of_parameters.total_samples;

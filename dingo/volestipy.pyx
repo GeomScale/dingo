@@ -64,7 +64,7 @@ cdef extern from "bindings.h":
          double a, double L, bool max_ball, double* inner_point, double radius, double* samples);
       
       # Initialize the parameters for the (m)ultiphase (m)onte (c)arlo (s)ampling algorithm
-      void mmcs_initialize(unsigned int d, int ess, int psrf_check);
+      void mmcs_initialize(unsigned int d, int ess, int psrf_check, int parallelism, int num_threads);
 
       # Perform a step of (m)ultiphase (m)onte (c)arlo (s)ampling algorithm
       double mmcs_step(double* inner_point_for_c, double radius, int &N);
@@ -190,7 +190,7 @@ cdef class HPolytope:
    
    
    # The fast version of (m)ultiphase (m)onte (c)arlo (s)ampling algorithm to generate steady states of a metabolic network
-   def fast_mmcs(self, ess = 1000, psrf_check = True):
+   def fast_mmcs(self, ess = 1000, psrf_check = True, parallelism = False, num_threads = 2):
 
       n_hyperplanes, n_variables = self._A.shape[0], self._A.shape[1]
 
@@ -201,13 +201,19 @@ cdef class HPolytope:
       cdef int N_samples
       cdef int N_ess = ess
       cdef int check_psrf
+      cdef int parallel
 
       if (psrf_check):
          check_psrf = 1
       else:
          check_psrf = 0
       
-      self.polytope_cpp.mmcs_initialize(n_variables, ess, check_psrf)
+      if (parallelism):
+         parallel = 1
+      else:
+         parallel = 0
+      
+      self.polytope_cpp.mmcs_initialize(n_variables, ess, check_psrf, parallel, num_threads)
 
       # Get max inscribed ball for the initial polytope
       temp_center, radius = fast_inner_ball(self._A, self._b)
@@ -232,7 +238,7 @@ cdef class HPolytope:
    
 
    # The slow version of (m)ultiphase (m)onte (c)arlo (s)ampling algorithm to generate steady states of a metabolic network
-   def slow_mmcs(self, ess = 1000, psrf_check = True):
+   def slow_mmcs(self, ess = 1000, psrf_check = True, parallelism = False, num_threads = 2):
 
       n_hyperplanes, n_variables = self._A.shape[0], self._A.shape[1]
 
@@ -243,13 +249,19 @@ cdef class HPolytope:
       cdef int N_samples
       cdef int N_ess = ess
       cdef int check_psrf
+      cdef int parallel
 
       if (psrf_check):
          check_psrf = 1
       else:
          check_psrf = 0
       
-      self.polytope_cpp.mmcs_initialize(n_variables, ess, check_psrf)
+      if (parallelism):
+         parallel = 1
+      else:
+         parallel = 0
+      
+      self.polytope_cpp.mmcs_initialize(n_variables, ess, check_psrf, parallel, num_threads)
 
       # Get max inscribed ball for the initial polytope
       temp_center, radius = slow_inner_ball(self._A, self._b)

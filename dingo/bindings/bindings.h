@@ -27,6 +27,7 @@
 #include "volume/volume_cooling_gaussians.hpp"
 #include "volume/volume_cooling_balls.hpp"
 #include "sampling/mmcs.hpp"
+#include "sampling/parallel_mmcs.hpp"
 #include "diagnostics/univariate_psrf.hpp"
 
 //from generate_samples, some extra headers not already included
@@ -55,7 +56,7 @@ public:
 
    mmcs_parameters() {}
 
-   mmcs_parameters(int d, int ess, int _psrf_check)
+   mmcs_parameters(int d, int ess, int _psrf_check, int _parallelism, int _num_threads)
          :  T(MT::Identity(d,d))
          ,  T_shift(VT::Zero(d))
          ,  store_ess(VT::Zero(50))
@@ -72,7 +73,9 @@ public:
          ,  round_it(1)
          ,  total_number_of_samples_in_P0(0)
          ,  total_neff(0)
+         ,  num_threads(_num_threads)
          ,  psrf_check(_psrf_check)
+         ,  parallelism(_parallelism)
          ,  complete(false)
          ,  request_rounding(true)
          ,  rounding_completed(false)
@@ -100,7 +103,9 @@ public:
    unsigned int round_it;
    unsigned int total_number_of_samples_in_P0;
    unsigned int total_neff;
+   unsigned int num_threads;
    int psrf_check;
+   int parallelism;
    bool complete;
    bool request_rounding;
    bool rounding_completed;
@@ -139,7 +144,7 @@ class HPolytopeCPP{
        bool max_ball, double* inner_point, double radius,
        double* samples);
 
-      void mmcs_initialize(int d, int ess, int psrf_check);
+      void mmcs_initialize(int d, int ess, int psrf_check, int parallelism, int num_threads);
 
       double mmcs_step(double* inner_point_for_c, double radius, int &N);
 

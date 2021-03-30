@@ -26,9 +26,9 @@ name = "dingo"
 
 source_directory_list = ["dingo", join("dingo", "bindings")]
 
-compiler_args = ["-std=c++11", "-O3", "-DBOOST_NO_AUTO_PTR", "-ldl", "-lm"]
+compiler_args = ["-std=c++11", "-O3", "-DBOOST_NO_AUTO_PTR", "-ldl", "-lm", "-fopenmp"]
 
-link_args = ["-O3"]
+link_args = ["-O3", "-fopenmp"]
 
 extra_volesti_include_dirs = [
     # include binding files

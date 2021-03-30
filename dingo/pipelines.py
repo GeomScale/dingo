@@ -128,11 +128,17 @@ def from_model_to_steady_states_pipeline(args):
 
     if args.solver == "scipy":
         A, b, T, T_shift, samples = p.slow_mmcs(
-            int(args.effective_sample_size), args.psrf_check
+            int(args.effective_sample_size),
+            args.psrf_check,
+            args.parallel_mmcs,
+            int(args.num_threads),
         )
     elif args.solver == "gurobi":
         A, b, T, T_shift, samples = p.fast_mmcs(
-            int(args.effective_sample_size), args.psrf_check
+            int(args.effective_sample_size),
+            args.psrf_check,
+            args.parallel_mmcs,
+            int(args.num_threads),
         )
 
     if (
@@ -190,11 +196,17 @@ def from_polytope_to_steady_states_pipeline(
 
     if args.solver == "scipy":
         A, b, Tr, Tr_shift, samples = p.slow_mmcs(
-            int(args.effective_sample_size), args.psrf_check
+            int(args.effective_sample_size),
+            args.psrf_check,
+            args.parallel_mmcs,
+            int(args.num_threads),
         )
     elif args.solver == "gurobi":
         A, b, Tr, Tr_shift, samples = p.fast_mmcs(
-            int(args.effective_sample_size), args.psrf_check
+            int(args.effective_sample_size),
+            args.psrf_check,
+            args.parallel_mmcs,
+            int(args.num_threads),
         )
 
     if T is not None and T_shift is not None:

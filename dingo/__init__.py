@@ -37,7 +37,7 @@ from volestipy import HPolytope
 
 def dingo_main():
     """A function that (a) reads the inputs using argparse package, (b) calls the proper dingo pipeline
-    and (c) saves using pickle package the outputs
+    and (c) saves the outputs using pickle package
     """
 
     args = dingo_args()
