@@ -1,6 +1,14 @@
+# dingo : a python library for metabolic networks sampling and analysis
+# dingo is part of GeomScale project
+
+# Copyright (c) 2021 Apostolos Chalkis
+
+# Licensed under GNU LGPL.3, see LICENCE file
+
 import numpy as np
 import sys
 import os
+import pickle
 from dingo.fva import slow_fva
 from dingo.fba import slow_fba
 from dingo.loading_models import read_json_file
@@ -13,6 +21,10 @@ from dingo.scaling import (
     map_samples_to_steady_states,
 )
 from dingo.parser import dingo_args
+from dingo.pipelines import (
+    from_model_to_steady_states_pipeline,
+    from_polytope_to_steady_states_pipeline,
+)
 
 try:
     import gurobipy
@@ -23,115 +35,15 @@ except ImportError as e:
 from volestipy import HPolytope
 
 
-def main_pipeline(args):
-
-    if args.solver == "gurobi":
-        try:
-            import gurobipy
-        except ImportError:
-            print("Library gurobi is not available.")
-            sys.exit(1)
-
-    if args.solver != "gurobi" and args.solver != "scipy":
-        raise Exception("An unknown solver requested.")
-
-    if args.nullspace != "sparseQR" and args.nullspace != "scipy":
-        raise Exception("An unknown method to compute the nullspace requested.")
-
-    metabolic_network = read_json_file(args.metabolic_network)
-
-    try:
-        lb = metabolic_network[0]
-        ub = metabolic_network[1]
-        S = metabolic_network[2]
-        biomass_index = metabolic_network[5]
-        biomass_function = metabolic_network[6]
-    except LookupError:
-        print("An unexpected error occured when reading the input file.")
-        sys.exit(1)
-
-    if args.solver == "scipy":
-        fva_res = slow_fva(lb, ub, S, biomass_function)
-    elif args.solver == "gurobi":
-        fva_res = fast_fva(lb, ub, S, biomass_function)
-
-    A = fva_res[0]
-    b = fva_res[1]
-    Aeq = fva_res[2]
-    beq = fva_res[3]
-    min_fluxes = fva_res[4]
-    max_fluxes = fva_res[5]
-
-    if A.shape[0] != b.size or A.shape[1] != Aeq.shape[1] or Aeq.shape[0] != beq.size:
-        raise Exception("FVA failed.")
-
-    if args.nullspace == "sparseQR":
-        nullspace_res = nullspace_sparse(Aeq, beq)
-    elif args.nullspace == "scipy":
-        nullspace_res = nullspace_dense(Aeq, beq)
-
-    N = nullspace_res[0]
-    N_shift = nullspace_res[1]
-
-    if A.shape[1] != N.shape[0] or N.shape[0] != N_shift.size or N.shape[1] <= 1:
-        raise Exception(
-            "The computation of the matrix of the right nullspace of the stoichiometric matrix failed."
-        )
-
-    product = np.dot(A, N_shift)
-    b = np.subtract(b, product)
-    A = np.dot(A, N)
-
-    res = remove_almost_redundant_facets(A, b)
-    A = res[0]
-    b = res[1]
-
-    try:
-        res = gmscale(A, 0.99)
-        res = apply_scaling(A, b, res[0], res[1])
-        A = res[0]
-        b = res[1]
-        N = np.dot(N, res[2])
-
-        res = remove_almost_redundant_facets(A, b)
-        A = res[0]
-        b = res[1]
-    except:
-        print("gmscale failed to compute a good scaling.")
-
-    p = HPolytope(A, b)
-
-    if args.solver == "scipy":
-        A, b, T, T_shift, samples = p.slow_mmcs(
-            args.effective_sample_size, args.psrf_check
-        )
-    elif args.solver == "gurobi":
-        A, b, T, T_shift, samples = p.fast_mmcs(
-            args.effective_sample_size, args.psrf_check
-        )
-
-    if (
-        A.shape[1] != N.shape[1]
-        or A.shape[0] != b.size
-        or A.shape[1] != T.shape[0]
-        or T.shape[1] != T_shift.size
-        or samples.shape[0] != A.shape[1]
-    ):
-        raise Exception(
-            "An unexpected error occured in Multiphase Monte Carlo Sampling algorithm."
-        )
-
-    steady_states = map_samples_to_steady_states(samples, T, T_shift, N, N_shift)
-
-    return A, b, T, T_shift, N, N_shift, min_fluxes, max_fluxes, samples, steady_states
-
-
 def dingo_main():
 
     args = dingo_args()
-    # print(args)
+    print(args)
 
-    result_obj = main_pipeline(args)
+    if args.metabolic_network == None and args.polytope == None:
+        raise Exception(
+            "You have to give as input either a model or a polytope derived from a model."
+        )
 
     if args.output_directory == None:
         output_path_dir = os.getcwd()
@@ -144,7 +56,69 @@ def dingo_main():
     # Move to the model's output directory
     os.chdir(output_path_dir)
 
-    # np.save(os.path.join(output_path_dir,'dingo_output.npy'), result_obj)
+    if args.metabolic_network != None:
+
+        result_obj = from_model_to_steady_states_pipeline(args)
+
+        if args.preprocess_only:
+
+            polytope_info = result_obj[:4]
+            network_info = result_obj[4:]
+            print(len(polytope_info))
+            print(len(network_info))
+
+            with open("dingo_polytope_output", "wb") as dingo_polytope_file:
+                pickle.dump(polytope_info, dingo_polytope_file)
+
+            with open("dingo_minmax_fluxes_output", "wb") as dingo_network_file:
+                pickle.dump(network_info, dingo_network_file)
+
+        else:
+
+            polytope_info = result_obj[:7]
+            network_info = result_obj[7:]
+
+            print(len(polytope_info))
+            print(len(network_info))
+
+            with open("dingo_polytope_output", "wb") as dingo_polytope_file:
+                pickle.dump(polytope_info, dingo_polytope_file)
+
+            with open("dingo_network_output", "wb") as dingo_network_file:
+                pickle.dump(network_info, dingo_network_file)
+
+    else:
+
+        file = open(args.polytope, "rb")
+        object_file = pickle.load(file)
+        file.close()
+
+        print(len(object_file))
+        if len(object_file) == 4:
+            result_obj = from_polytope_to_steady_states_pipeline(
+                args, object_file[0], object_file[1], object_file[2], object_file[3]
+            )
+        elif len(object_file) == 7:
+            result_obj = from_polytope_to_steady_states_pipeline(
+                args,
+                object_file[0],
+                object_file[1],
+                object_file[2],
+                object_file[3],
+                object_file[4],
+                object_file[5],
+            )
+        else:
+            raise Exception("The input file has to be generated by dingo package.")
+
+        polytope_info = result_obj[:7]
+        network_info = result_obj[7:]
+
+        with open("dingo_rounded_polytope_output", "wb") as dingo_polytope_file:
+            pickle.dump(polytope_info, dingo_polytope_file)
+
+        with open("steady_states_from_polytope", "wb") as dingo_network_file:
+            pickle.dump(network_info, dingo_network_file)
 
 
 if __name__ == "__main__":
