@@ -28,8 +28,8 @@ consumes and produces. The coefficients of all the reactions in a network,
 with $m$ metabolites and $n$ reactions ($m \le n$), form
 the stoichiometric matrix $S\in \RR^{m\times n$. 
 The nullspace of $S$ corresponds to the steady states of the network:
-$$S \cdot v = 0$$ ,
-where $v_{lb} \leq v \leq v_{ub}$ is the flux vector that contains  the fluxes
+<img src="https://render.githubusercontent.com/render/math?math=S \cdot v=0"> ,
+where <img src="https://render.githubusercontent.com/render/math?math=v_{lb}\leq v\leq v_{ub}"> is the flux vector that contains  the fluxes
 of each chemical reaction of the network while $v_{lb}$ and $v_{ub}$ denote lower and upper bound for each reaction flux respectively.
 
 dingo performs the following methods (operations) on a given metabolic network:  
