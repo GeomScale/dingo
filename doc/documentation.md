@@ -62,7 +62,7 @@ Otherwise, you can use the `matlab` script in `./ext_data` folder to transform a
 python -m dingo -i dingo_model.mat
 ```
 
-By default, dingo generates uniformly distributed steady states of the given metabolic network. In particular, it computes the full dimensional polytope implied by <img src="https://render.githubusercontent.com/render/math?math=S \cdot v=0,\ v_{lb}\leq v\leq v_{ub}"> and then samples from it using the [Multiphase Monte Carlo Sampling algorithm](https://arxiv.org/abs/2012.05503) with the target distribution being the uniform distribution. Finally, dingo saves to the current path --using `pickle` package--,  
+By default, dingo generates uniformly distributed steady states of the given metabolic network. In particular, it computes the full dimensional polytope implied by <img src="https://render.githubusercontent.com/render/math?math=S \cdot v=0,\ v_{lb}\leq v\leq v_{ub}"> and then samples from it using the [Multiphase Monte Carlo Sampling algorithm](https://arxiv.org/abs/2012.05503) (MMCS) with the target distribution being the uniform distribution. Finally, dingo saves to the current path --using `pickle` package--,  
 
 (a) a file with the generated steady states and two vectors that contain the minimum and maximum values of each flux,
 (b) a file that contains the full dimensional polytope and the matrices of the linear transformations that map the polytope to the initiale space.
@@ -73,21 +73,43 @@ You could also specify the output directory,
 python -m dingo -i model.json -o output_directory
 ```
 
+Since for high dimensional networks the complete pipeline of dingo is time consuming, you could split it into seperate steps.
+You can ask dingo to complete only the preprocessing of a model; that is computing only the full dimensional polytope,
+
+```
+python -m dingo -i model.json -o output_directory -preprocess True
+```
+
+Then, you can use the output polytope to sample from it,
+
+```
+python -m dingo -poly output_polytope
+```
+
+However, the output polytope after a complete run and the termination of MMCS algorithm is much more rounded than the polytope after the preprocessing. Thus, the samping from that polytope is more efficient. We should use that polytope to sample additional steady states.
+
 ### Statistical guarantees
 
-dingo sets by default the target effective sample size (ess) for each flux marginal equal to 1000. You could ask for a different ess,
+dingo provides two statistical guarantees for the quality of the generated sample based on two MCMC diagnostics, (a) the *effective sample size* (ESS)  and (b) the *potential scale reduction factor* (PSRF).  
+
+dingo sets by default the target effective sample size (ESS) for each flux marginal equal to 1000. You could ask for a different value of ess,
 
 ```
-python -m dingo -i model.json -n n_ess
+python -m dingo -i model.json -n 2000
 ```
 
-Then, dingo samples until it achieves the target value for each flux marginal.  
-
-You can ask for an additional statistical guarantee for the quality of the generated sample. In particular, you can set an upper bound on the *potential scale reduction factor* (PSRF) of each flux marginal,
+You can ask for an additional statistical guarantee by setting an upper bound on the value of the PSRF of each flux marginal,
 
 ```
 python -m dingo -i model.json -psrf 1.1
 ```
  
+Then, dingo samples until it achieves the target value of ESS and PSRF for each flux marginal.  
+
+### Fast and robust computations with gurobi
+
+The default Linear Program (LP) solver that dingo exploits is the 
 
 ## Use dingo as a library
+
+
