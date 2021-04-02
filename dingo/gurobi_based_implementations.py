@@ -279,7 +279,16 @@ def fast_fva(lb, ub, S, c, opt_percentage=100):
                 min_fluxes = np.asarray(min_fluxes)
                 max_fluxes = np.asarray(max_fluxes)
 
-                return A, b, Aeq_new, beq_new, min_fluxes, max_fluxes
+                return (
+                    A,
+                    b,
+                    Aeq_new,
+                    beq_new,
+                    min_fluxes,
+                    max_fluxes,
+                    max_biomass_flux_vector,
+                    max_biomass_objective,
+                )
 
     # Print error messages
     except gp.GurobiError as e:

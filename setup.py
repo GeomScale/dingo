@@ -42,8 +42,7 @@ extra_volesti_include_dirs = [
     join("volume_approximation", "external", "minimum_ellipsoid"),
     # include and add the directories on the "include" directory
     join("volume_approximation", "include"),
-    join("volume_approximation", "include", "convex"),
-    join("volume_approximation", "include", "misc"),
+    join("volume_approximation", "include", "convex_bodies"),
     join("volume_approximation", "include", "random_walks"),
     join("volume_approximation", "include", "volume"),
     join("volume_approximation", "include", "generators"),

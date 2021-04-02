@@ -24,6 +24,8 @@ from dingo.parser import dingo_args
 from dingo.pipelines import (
     from_model_to_steady_states_pipeline,
     from_polytope_to_steady_states_pipeline,
+    fva_pipeline,
+    fba_pipeline,
 )
 
 try:
@@ -42,10 +44,13 @@ def dingo_main():
 
     args = dingo_args()
 
-    if args.metabolic_network == None and args.polytope == None:
+    if args.metabolic_network is None and args.polytope is None:
         raise Exception(
             "You have to give as input either a model or a polytope derived from a model."
         )
+
+    if args.metabolic_network is None and ((args.fva) or (args.fba)):
+        raise Exception("You have to give as input a model to apply FVA or FBA method.")
 
     if args.output_directory == None:
         output_path_dir = os.getcwd()
@@ -58,7 +63,22 @@ def dingo_main():
     # Move to the output directory
     os.chdir(output_path_dir)
 
-    if args.metabolic_network != None:
+    if args.fva:
+
+        result_obj = fva_pipeline(args)
+        result_obj = result_obj[4:]
+
+        with open("dingo_fva_output", "wb") as dingo_fva_file:
+            pickle.dump(result_obj, dingo_fva_file)
+
+    elif args.fba:
+
+        result_obj = fba_pipeline(args)
+
+        with open("dingo_fba_output", "wb") as dingo_fba_file:
+            pickle.dump(result_obj, dingo_fba_file)
+
+    elif args.metabolic_network is not None:
 
         result_obj = from_model_to_steady_states_pipeline(args)
 

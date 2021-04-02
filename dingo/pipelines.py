@@ -59,11 +59,11 @@ def from_model_to_steady_states_pipeline(args):
 
     if args.nullspace != "sparseQR" and args.nullspace != "scipy":
         raise Exception("An unknown method to compute the nullspace requested.")
-    
-    if (args.metabolic_network[-3:] != "mat" and args.metabolic_network[-4:] != "json"):
+
+    if args.metabolic_network[-3:] != "mat" and args.metabolic_network[-4:] != "json":
         raise Exception("An unknown format file given.")
 
-    if (args.metabolic_network[-4:] == "json"):
+    if args.metabolic_network[-4:] == "json":
         metabolic_network = read_json_file(args.metabolic_network)
     else:
         metabolic_network = read_mat_file(args.metabolic_network)
@@ -77,6 +77,9 @@ def from_model_to_steady_states_pipeline(args):
     except LookupError:
         print("An unexpected error occured when reading the input file.")
         sys.exit(1)
+
+    if args.unbiased_analysis:
+        biomass_function = np.zeros(S.shape[1])
 
     if args.solver == "scipy":
         fva_res = slow_fva(lb, ub, S, biomass_function)
@@ -233,3 +236,77 @@ def from_polytope_to_steady_states_pipeline(
     steady_states = map_samples_to_steady_states(samples, Tr, Tr_shift, N, N_shift)
 
     return A, b, N, N_shift, Tr, Tr_shift, samples, steady_states
+
+
+def fva_pipeline(args):
+
+    if args.solver == "gurobi":
+        try:
+            import gurobipy
+        except ImportError:
+            print("Library gurobi is not available.")
+            sys.exit(1)
+
+    if args.solver != "gurobi" and args.solver != "scipy":
+        raise Exception("An unknown solver requested.")
+
+    if args.metabolic_network[-3:] != "mat" and args.metabolic_network[-4:] != "json":
+        raise Exception("An unknown format file given.")
+
+    if args.metabolic_network[-4:] == "json":
+        metabolic_network = read_json_file(args.metabolic_network)
+    else:
+        metabolic_network = read_mat_file(args.metabolic_network)
+
+    try:
+        lb = metabolic_network[0]
+        ub = metabolic_network[1]
+        S = metabolic_network[2]
+        biomass_function = metabolic_network[6]
+    except LookupError:
+        print("An unexpected error occured when reading the input file.")
+        sys.exit(1)
+
+    if args.solver == "scipy":
+        fva_res = slow_fva(lb, ub, S, biomass_function, args.opt_percentage)
+    elif args.solver == "gurobi":
+        fva_res = fast_fva(lb, ub, S, biomass_function, args.opt_percentage)
+
+    return fva_res
+
+
+def fba_pipeline(args):
+
+    if args.solver == "gurobi":
+        try:
+            import gurobipy
+        except ImportError:
+            print("Library gurobi is not available.")
+            sys.exit(1)
+
+    if args.solver != "gurobi" and args.solver != "scipy":
+        raise Exception("An unknown solver requested.")
+
+    if args.metabolic_network[-3:] != "mat" and args.metabolic_network[-4:] != "json":
+        raise Exception("An unknown format file given.")
+
+    if args.metabolic_network[-4:] == "json":
+        metabolic_network = read_json_file(args.metabolic_network)
+    else:
+        metabolic_network = read_mat_file(args.metabolic_network)
+
+    try:
+        lb = metabolic_network[0]
+        ub = metabolic_network[1]
+        S = metabolic_network[2]
+        biomass_function = metabolic_network[6]
+    except LookupError:
+        print("An unexpected error occured when reading the input file.")
+        sys.exit(1)
+
+    if args.solver == "scipy":
+        fba_res = fast_fba(lb, ub, S, biomass_function)
+    elif args.solver == "gurobi":
+        fba_res = fast_fba(lb, ub, S, biomass_function)
+
+    return fba_res

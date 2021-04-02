@@ -126,7 +126,7 @@ def read_mat_file(input_file):
     counter = 0
 
     for element in list_of_lists[0][0]:
-        
+
         # position 0 corresponds to the Stoichiometric matrix
         if counter == 0:
             S = element
@@ -148,7 +148,7 @@ def read_mat_file(input_file):
         if counter == 6:
             metabolites_list = element.tolist()
             metabolites = [metabolite[0][0] for metabolite in metabolites_list]
-        
+
         counter += 1
 
     # Build function's output
