@@ -1,11 +1,11 @@
 # Why to analyze metabolic networks?
 
-Systems biology is an approach in biological and biomedical research aiming at deciphering theunderlying mechanisms and understand the full picture of the phenomena under study.  By dictatingall the biological levels of organization of living entities, the study of metabolism is the Holy Grail for biologists.  Metabolic network reconstruction has allowed for an in-depth insight into the molecularmechanisms by providing models that correlate the genome with molecular physiology.  The analysis of such  reconstructions  allow  the  identification  of  key  features  of  metabolism,  fundamental  for a great range of fields;  from the study of ecosystems resilience to this of complex diseases (e.g.,neuro-degenerative diseases) and advanced precision medicine.  
+Systems biology is an approach in biological and biomedical research aiming at deciphering theunderlying mechanisms and understand the full picture of the phenomena under study.  By dictating all the biological levels of organization of living entities, the study of metabolism is the Holy Grail for biologists.  Metabolic network reconstruction has allowed for an in-depth insight into the molecularmechanisms by providing models that correlate the genome with molecular physiology.  The analysis of such  reconstructions  allow  the  identification  of  key  features  of  metabolism,  fundamental  for a great range of fields;  from the study of ecosystems resilience to this of complex diseases (e.g.,neuro-degenerative diseases) and advanced precision medicine.  
 
 dingo is a python package for metabolic networks sampling and
 analysis. To perform high dimensional sampling, dingo relies on the C++ package [volesti](https://github.com/GeomScale/volume_approximation), which provides several Markov Chain Monte Carlo (MCMC) algorithms for sampling high dimensional convex polytopes. dingo is part of [GeomScale](https://geomscale.github.io/) project.  
 
-# Metabolic netwrks and dingo package
+# Metabolic networks and dingo package
 
 Systems Biology expands in all the different levels of living entities, from the
 molecular, to the organismal and ecological level. The notion that
@@ -26,11 +26,13 @@ these representations *metabolic networks*.
 Stoichiometric coefficients are the number of molecules a biochemical reaction
 consumes and produces. The coefficients of all the reactions in a network,
 with $m$ metabolites and $n$ reactions ($m \le n$), form
-the stoichiometric matrix $S\in \RR^{m\times n$. 
-The nullspace of $S$ corresponds to the steady states of the network:
+the stoichiometric matrix <img src="https://render.githubusercontent.com/render/math?math=S\in \RR^{m\times n}">. 
+The nullspace of <img src="https://render.githubusercontent.com/render/math?math=S"> corresponds to the steady states of the network:
 <img src="https://render.githubusercontent.com/render/math?math=S \cdot v=0"> ,
 where <img src="https://render.githubusercontent.com/render/math?math=v_{lb}\leq v\leq v_{ub}"> is the flux vector that contains  the fluxes
-of each chemical reaction of the network while $v_{lb}$ and $v_{ub}$ denote lower and upper bound for each reaction flux respectively.
+of each chemical reaction of the network while <img src="https://render.githubusercontent.com/render/math?math=v_{lb}">
+and <img src="https://render.githubusercontent.com/render/math?math=v_{ub}">
+denote lower and upper bound for each reaction flux respectively.
 
 dingo performs the following methods (operations) on a given metabolic network:  
 
@@ -45,6 +47,47 @@ dingo performs the following methods (operations) on a given metabolic network:
  
 # How to use dingo
 
+There are two ways to run dingo. The first way is to run dingo from terminal using the main function and the second is to use dingo as a library by importing its routines in your code.
+
 ## Run dingo from terminal
+
+You can call dingo by providing the path to the `json` file (as those in [BiGG]() dataset) of a model:
+
+```
+python -m dingo -i model.json
+``` 
+Otherwise, you can use the `matlab` script in `./ext_data` folder to transform a `.mat` file (also as those in BiGG dataset) into a `.mat` file that dingo can read,
+
+```
+python -m dingo -i dingo_model.mat
+```
+
+By default, dingo generates uniformly distributed steady states of the given metabolic network. In particular, it computes the full dimensional polytope implied by <img src="https://render.githubusercontent.com/render/math?math=S \cdot v=0,\ v_{lb}\leq v\leq v_{ub}"> and then samples from it using the [Multiphase Monte Carlo Sampling algorithm](https://arxiv.org/abs/2012.05503) with the target distribution being the uniform distribution. Finally, dingo saves to the current path --using `pickle` package--,  
+
+(a) a file with the generated steady states and two vectors that contain the minimum and maximum values of each flux,
+(b) a file that contains the full dimensional polytope and the matrices of the linear transformations that map the polytope to the initiale space.
+
+You could also specify the output directory,
+
+```
+python -m dingo -i model.json -o output_directory
+```
+
+### Statistical guarantees
+
+dingo sets by default the target effective sample size (ess) for each flux marginal equal to 1000. You could ask for a different ess,
+
+```
+python -m dingo -i model.json -n n_ess
+```
+
+Then, dingo samples until it achieves the target value for each flux marginal.  
+
+You can ask for an additional statistical guarantee for the quality of the generated sample. In particular, you can set an upper bound on the *potential scale reduction factor* (PSRF) of each flux marginal,
+
+```
+python -m dingo -i model.json -psrf 1.1
+```
+ 
 
 ## Use dingo as a library
