@@ -86,7 +86,7 @@ Then, you can use the output polytope to sample from it,
 python -m dingo -poly output_polytope
 ```
 
-However, the output polytope after a complete run and the termination of MMCS algorithm is much more rounded than the polytope after the preprocessing. Thus, the sampling from that polytope is more efficient. We should use that polytope to sample additional steady states.
+However, the output polytope after a complete run and the termination of MMCS algorithm is much more rounded than the polytope just after the preprocessing. Thus, the sampling from that polytope is more efficient. You should use that polytope to sample additional steady states.
 
 ### Statistical guarantees
 
@@ -98,13 +98,13 @@ dingo sets by default the target effective sample size (ESS) for each flux margi
 python -m dingo -i model.json -n 2000
 ```
 
-You can ask for an additional statistical guarantee by setting an upper bound on the value of the PSRF of each flux marginal,
+You can also ask for an additional statistical guarantee by setting an upper bound on the values of the PSRF of each flux marginal,
 
 ```
 python -m dingo -i model.json -psrf 1.1
 ```
 
-Then, dingo samples until it achieves the target value of ESS and PSRF for each flux marginal.  
+Then, dingo samples until it achieves the target values of ESS and PSRF for each flux marginal.  
 
 ### Fast and robust computations with gurobi library
 
@@ -178,9 +178,69 @@ python -m dingo -i model.json -fba True
 
 
 
-## Use dingo as a library
+## Use dingo as a package
+
+dingo provides several `python` modules and functions to integrate into your project. The following script provides the full set of imports that are necessary to use all the cmputational options that dingo provides.
 
 ```python
-from dingo import *
+# external imports
+import numpy as np
+import pickle
+
+# dingo imports
+from dingo.fva import slow_fva
+from dingo.fba import slow_fba
+from dingo.loading_models import read_json_file
+from dingo.inner_ball import slow_inner_ball
+from dingo.nullspace import nullspace_dense, nullspace_sparse
+from dingo.scaling import (
+    gmscale,
+    apply_scaling,
+    remove_almost_redundant_facets,
+    map_samples_to_steady_states,
+)
+
+# import the fast implementations if gurobi is available
+try:
+    import gurobipy
+    from dingo.gurobi_based_implementations import fast_fba, fast_fva, fast_inner_ball
+except ImportError:
+    pass
+
+# import the C++ class representing a polytope exposed by Cython
+from dingo import HPolytope
 ```
+
+In the following scripts we assume that we have imported all the above.
+
+### Read a model and sample steady states
+
+```python
+input_file_json = "path_to/ext_data/e_coli_core.json"
+
+e_coli_network = read_json_file(input_file_json)
+
+lb = e_coli_network[0]
+ub = e_coli_network[1]
+S = e_coli_network[2]
+biomass_function = e_coli_network[6]
+
+A, b, Aeq, beq, min_fluxes, max_fluxes = fast_fva(lb, ub, S, biomass_function)
+
+N, N_shift = nullspace_sparse(Aeq, beq)
+b = np.subtract(b, np.dot(A, N_shift))
+A = np.dot(A, N)
+
+A, b = remove_almost_redundant_facets(A, b)
+res = gmscale(A, 0.99)
+A, b = apply_scaling(A, b, res[0], res[1])
+A, b = remove_almost_redundant_facets(A, b)
+
+p = HPolytope(A,b)
+p.fast_mmcs(1000, True)
+```
+
+
+
+
 
