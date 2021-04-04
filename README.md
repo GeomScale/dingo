@@ -46,3 +46,7 @@ If you have installed gurobi sucesfully then run:
 python3 tests/fast_implementation_test.py
 ```
 
+## Documentation
+
+Read [dingo documentation](https://github.com/GeomScale/dingo/tree/initialize_develop/doc)
+
