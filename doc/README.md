@@ -52,5 +52,5 @@ There are two ways to run dingo. The first way is to run dingo from terminal usi
 
 You can find more details in the following links,
 
-1. [Use dingo from terminal]()
-2. [Use dingo as a python package]()
+1. [Use dingo from terminal](https://github.com/GeomScale/dingo/blob/initialize_develop/doc/documentation_main.md)
+2. [Use dingo as a python package](https://github.com/GeomScale/dingo/blob/initialize_develop/doc/documentation_package.md)
