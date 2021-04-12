@@ -143,7 +143,7 @@ python3 -m dingo -hist True -st dingo_steady_states_model -mr dingo_metabolites_
 
 For example the following plot corresponds to the reaction `Acetate_kinase`of the `e_coli_core` model.
 
-![histogram](doc/e_coli_flux_histogram.png)
+![histogram](../doc/e_coli_flux_histogram.png)
 
 ### FVA method
 
