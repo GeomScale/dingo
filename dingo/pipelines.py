@@ -166,7 +166,20 @@ def from_model_to_steady_states_pipeline(args):
 
     steady_states = map_samples_to_steady_states(samples, N, N_shift)
 
-    return A, b, N, N_shift, T, T_shift, samples, min_fluxes, max_fluxes, metabolites, reactions, steady_states
+    return (
+        A,
+        b,
+        N,
+        N_shift,
+        T,
+        T_shift,
+        samples,
+        min_fluxes,
+        max_fluxes,
+        metabolites,
+        reactions,
+        steady_states,
+    )
 
 
 def from_polytope_to_steady_states_pipeline(
@@ -314,16 +327,19 @@ def fba_pipeline(args):
 
     return fba_res
 
+
 def plot_histogram(reaction_fluxes, reaction, n_bins):
 
-    plt.figure(figsize=(7,7))
+    plt.figure(figsize=(7, 7))
 
-    n, bins, patches = plt.hist(reaction_fluxes, bins=n_bins, density=False, facecolor='red', ec='black')
+    n, bins, patches = plt.hist(
+        reaction_fluxes, bins=n_bins, density=False, facecolor="red", ec="black"
+    )
 
-    plt.xlabel('Flux (mmol/gDW/h)', fontsize=16)
-    plt.ylabel('Frequency (#samples: '+str(reaction_fluxes.size)+")", fontsize=14)
+    plt.xlabel("Flux (mmol/gDW/h)", fontsize=16)
+    plt.ylabel("Frequency (#samples: " + str(reaction_fluxes.size) + ")", fontsize=14)
     plt.grid(True)
-    plt.title('Reaction: '+reaction, fontweight="bold",fontsize=18)
-    plt.axis([np.amin(reaction_fluxes), np.amax(reaction_fluxes), 0, np.amax(n)*1.2])
+    plt.title("Reaction: " + reaction, fontweight="bold", fontsize=18)
+    plt.axis([np.amin(reaction_fluxes), np.amax(reaction_fluxes), 0, np.amax(n) * 1.2])
 
     plt.show()

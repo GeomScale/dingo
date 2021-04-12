@@ -26,7 +26,7 @@ from dingo.pipelines import (
     from_polytope_to_steady_states_pipeline,
     fva_pipeline,
     fba_pipeline,
-    plot_histogram
+    plot_histogram,
 )
 
 try:
@@ -37,20 +37,21 @@ except ImportError as e:
 
 from volestipy import HPolytope
 
+
 def get_name(args_network):
 
     position = [pos for pos, char in enumerate(args_network) if char == "/"]
-    
+
     if args_network[-4:] == "json":
         if position == []:
             name = args_network[0:-5]
         else:
-            name = args_network[(position[-1]+1):-5]
+            name = args_network[(position[-1] + 1) : -5]
     elif args_network[-3:] == "mat":
         if position == []:
             name = args_network[0:-4]
         else:
-            name = args_network[(position[-1]+1):-4]
+            name = args_network[(position[-1] + 1) : -4]
     print(name)
     return name
 
@@ -81,20 +82,23 @@ def dingo_main():
     # Move to the output directory
     os.chdir(output_path_dir)
 
-    
-    if (args.model_name is None):
-        if (args.metabolic_network is not None):
+    if args.model_name is None:
+        if args.metabolic_network is not None:
             name = get_name(args.metabolic_network)
     else:
         name = args.model_name
-    
+
     if args.histogram:
 
         if args.steady_states is None:
-            raise Exception("A path to a pickle file that contains steady states of the model has to be given.")
-        
+            raise Exception(
+                "A path to a pickle file that contains steady states of the model has to be given."
+            )
+
         if args.metabolites_reactions is None:
-            raise Exception("A path to a pickle file that contains the names of the metabolites and the reactions of the model has to be given.")
+            raise Exception(
+                "A path to a pickle file that contains the names of the metabolites and the reactions of the model has to be given."
+            )
 
         if int(args.reaction_index) <= 0:
             raise Exception("The index of the reaction has to be a positive integer.")
@@ -111,21 +115,25 @@ def dingo_main():
 
         reactions = meta_reactions[1]
 
-        plot_histogram(steady_states[int(args.reaction_index) - 1], reactions[int(args.reaction_index) - 1], int(args.n_bins))
+        plot_histogram(
+            steady_states[int(args.reaction_index) - 1],
+            reactions[int(args.reaction_index) - 1],
+            int(args.n_bins),
+        )
 
     elif args.fva:
 
         result_obj = fva_pipeline(args)
         result_obj = result_obj[4:]
 
-        with open("dingo_fva_"+name, "wb") as dingo_fva_file:
+        with open("dingo_fva_" + name, "wb") as dingo_fva_file:
             pickle.dump(result_obj, dingo_fva_file)
 
     elif args.fba:
 
         result_obj = fba_pipeline(args)
 
-        with open("dingo_fba_"+name, "wb") as dingo_fba_file:
+        with open("dingo_fba_" + name, "wb") as dingo_fba_file:
             pickle.dump(result_obj, dingo_fba_file)
 
     elif args.metabolic_network is not None:
@@ -138,15 +146,17 @@ def dingo_main():
             network_info = result_obj[4:6]
             metabol_reaction = result_obj[6:]
 
-            polytope_info = polytope_info + (name, )
+            polytope_info = polytope_info + (name,)
 
-            with open("dingo_polytope_"+name, "wb") as dingo_polytope_file:
+            with open("dingo_polytope_" + name, "wb") as dingo_polytope_file:
                 pickle.dump(polytope_info, dingo_polytope_file)
-            
-            with open("dingo_metabolites_reactions_"+name, "wb") as dingo_metabolreactions_file:
+
+            with open(
+                "dingo_metabolites_reactions_" + name, "wb"
+            ) as dingo_metabolreactions_file:
                 pickle.dump(metabol_reaction, dingo_metabolreactions_file)
 
-            with open("dingo_minmax_fluxes_"+name, "wb") as dingo_network_file:
+            with open("dingo_minmax_fluxes_" + name, "wb") as dingo_network_file:
                 pickle.dump(network_info, dingo_network_file)
 
         else:
@@ -156,18 +166,20 @@ def dingo_main():
             metabol_reaction = result_obj[9:11]
             steadystates = result_obj[11:]
 
-            polytope_info = polytope_info + (name, )
-            
-            with open("dingo_rounded_polytope_"+name, "wb") as dingo_polytope_file:
+            polytope_info = polytope_info + (name,)
+
+            with open("dingo_rounded_polytope_" + name, "wb") as dingo_polytope_file:
                 pickle.dump(polytope_info, dingo_polytope_file)
 
-            with open("dingo_minmax_fluxes_"+name, "wb") as dingo_network_file:
+            with open("dingo_minmax_fluxes_" + name, "wb") as dingo_network_file:
                 pickle.dump(network_info, dingo_network_file)
-            
-            with open("dingo_metabolites_reactions_"+name, "wb") as dingo_metabolreactions_file:
+
+            with open(
+                "dingo_metabolites_reactions_" + name, "wb"
+            ) as dingo_metabolreactions_file:
                 pickle.dump(metabol_reaction, dingo_metabolreactions_file)
-            
-            with open("dingo_steady_states_"+name, "wb") as dingo_steadystates_file:
+
+            with open("dingo_steady_states_" + name, "wb") as dingo_steadystates_file:
                 pickle.dump(steadystates, dingo_steadystates_file)
 
     else:
@@ -196,15 +208,15 @@ def dingo_main():
         polytope_info = result_obj[:7]
         network_info = result_obj[7:]
 
-        if (args.model_name is None):
+        if args.model_name is None:
             name = object_file[-1]
-        
-        polytope_info = polytope_info + (name, )
 
-        with open("dingo_double_rounded_polytope_"+name, "wb") as dingo_polytope_file:
+        polytope_info = polytope_info + (name,)
+
+        with open("dingo_double_rounded_polytope_" + name, "wb") as dingo_polytope_file:
             pickle.dump(polytope_info, dingo_polytope_file)
 
-        with open("dingo_steady_states_"+name, "wb") as dingo_network_file:
+        with open("dingo_steady_states_" + name, "wb") as dingo_network_file:
             pickle.dump(network_info, dingo_network_file)
 
 

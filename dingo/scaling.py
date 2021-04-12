@@ -176,7 +176,7 @@ def map_samples_to_steady_states(samples, N, N_shift, T=None, T_shift=None):
     """
 
     extra_2 = np.full((samples.shape[1], N.shape[0]), N_shift)
-    if (T is None or T_shift is None):
+    if T is None or T_shift is None:
         steady_states = N.dot(samples) + extra_2.T
     else:
         extra_1 = np.full((samples.shape[1], samples.shape[0]), T_shift)
