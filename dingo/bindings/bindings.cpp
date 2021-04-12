@@ -293,20 +293,13 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
    mmcs_set_of_parameters.Neff -= Neff_sampled;
    std::cout << "phase " << mmcs_set_of_parameters.phase << ": number of correlated samples = " << mmcs_set_of_parameters.total_samples << ", effective sample size = " << Neff_sampled;
    mmcs_set_of_parameters.total_neff += Neff_sampled;
-   //Neff_sampled = 0;
-        
-   MT Samples = TotalRandPoints.transpose(); //do not copy TODO!
+   
+   mmcs_set_of_parameters.samples.conservativeResize(d, mmcs_set_of_parameters.total_number_of_samples_in_P0 + mmcs_set_of_parameters.total_samples);
    for (int i = 0; i < mmcs_set_of_parameters.total_samples; i++)
    {
-      Samples.col(i) = mmcs_set_of_parameters.T * Samples.col(i) + mmcs_set_of_parameters.T_shift;
+      mmcs_set_of_parameters.samples.col(i + mmcs_set_of_parameters.total_number_of_samples_in_P0) = 
+                              mmcs_set_of_parameters.T * TotalRandPoints.row(i).transpose() + mmcs_set_of_parameters.T_shift;
    }
-        
-   mmcs_set_of_parameters.samples.conservativeResize(d, mmcs_set_of_parameters.total_number_of_samples_in_P0 + mmcs_set_of_parameters.total_samples);
-
-   mmcs_set_of_parameters.samples.block(0, mmcs_set_of_parameters.total_number_of_samples_in_P0, d, mmcs_set_of_parameters.total_samples) = 
-                                          Samples.block(0, 0, d, mmcs_set_of_parameters.total_samples);
-   
-   Samples.resize(0, 0);
 
    N = mmcs_set_of_parameters.total_number_of_samples_in_P0 + mmcs_set_of_parameters.total_samples;   
    mmcs_set_of_parameters.total_number_of_samples_in_P0 += mmcs_set_of_parameters.total_samples;
