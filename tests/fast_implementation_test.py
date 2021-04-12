@@ -17,6 +17,7 @@ from dingo import HPolytope
 
 
 class TestStringMethods(unittest.TestCase):
+    
     def test_fast_max_bal_computation(self):
 
         m = 2

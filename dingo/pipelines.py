@@ -72,6 +72,8 @@ def from_model_to_steady_states_pipeline(args):
         lb = metabolic_network[0]
         ub = metabolic_network[1]
         S = metabolic_network[2]
+        metabolites = metabolic_network[3]
+        reactions = metabolic_network[4]
         biomass_index = metabolic_network[5]
         biomass_function = metabolic_network[6]
     except LookupError:
@@ -131,7 +133,7 @@ def from_model_to_steady_states_pipeline(args):
         print("gmscale failed to compute a good scaling.")
 
     if args.preprocess_only:
-        return A, b, N, N_shift, min_fluxes, max_fluxes
+        return A, b, N, N_shift, min_fluxes, max_fluxes, metabolites, reactions
 
     p = HPolytope(A, b)
 
@@ -163,7 +165,7 @@ def from_model_to_steady_states_pipeline(args):
 
     steady_states = map_samples_to_steady_states(samples, N, N_shift)
 
-    return A, b, N, N_shift, T, T_shift, samples, min_fluxes, max_fluxes, steady_states
+    return A, b, N, N_shift, T, T_shift, samples, min_fluxes, max_fluxes, metabolites, reactions, steady_states
 
 
 def from_polytope_to_steady_states_pipeline(

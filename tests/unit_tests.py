@@ -19,6 +19,7 @@ from dingo import HPolytope
 
 
 class TestStringMethods(unittest.TestCase):
+    
     def test_max_bal_computation(self):
 
         m = 2
@@ -89,8 +90,6 @@ class TestStringMethods(unittest.TestCase):
         p = HPolytope(A,b)
 
         self.assertEqual(p.dimension(), 24)
-
-        #p.slow_mmcs()
 
     def test_fba(self):
 

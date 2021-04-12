@@ -66,6 +66,15 @@ def dingo_args():
     )
 
     optional.add_argument(
+        "--model_name",
+        "-name",
+        help="The name of the input model.",
+        required=False,
+        default=None,
+        metavar="",
+    )
+
+    optional.add_argument(
         "--fva",
         "-fva",
         help="a boolean flag to request FVA method. The default value is False.",
