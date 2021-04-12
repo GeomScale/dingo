@@ -21,10 +21,21 @@ python -m dingo -i dingo_model.mat
 
 By default, dingo generates uniformly distributed steady states of the given metabolic network. In particular, it computes the full dimensional polytope implied by <img src="https://render.githubusercontent.com/render/math?math=S \cdot v=0,\ v_{lb}\leq v\leq v_{ub}"> and then samples from it using the [Multiphase Monte Carlo Sampling algorithm](https://arxiv.org/abs/2012.05503) (MMCS) with the target distribution being the uniform distribution. Finally, dingo saves to the current path --using `pickle` package--,  
 
-(a) a file with the generated steady states and two vectors that contain the minimum and maximum values of each flux,
-(b) a file that contains the full dimensional polytope and the matrices of the linear transformations that map the polytope to the initial space.
+(a) a `pickle` file`dingo_metabolites_reactions_model` that contains two lists with the names of the metabolites and the reactions of the model,  
 
-You could also specify the output directory,
+(b) a `pickle` file `dingo_minmax_fluxes_model` that contains two vectors with the minimum and maximum flux values,  
+
+(b) a `pickle` file `dingo_steady_states_model` with the generated steady states of the model,  
+
+(c) a `pickle` file `dingo_rounded_polytope_model` that contains the matrices of the full dimensional polytope and the matrices of the linear transformations that map the polytope to the initial space.  
+
+Instead of `_model` the output files have the name of the input model. However, you could specify the name by,
+
+```
+python -m dingo -i model.json -name model_name
+```
+
+You could also specify the output directory,  
 
 ```
 python -m dingo -i model.json -o output_directory
@@ -37,13 +48,21 @@ You can ask dingo to complete only the preprocessing of a model; that is computi
 python -m dingo -i model.json -o output_directory -preprocess True
 ```
 
-Then, you can use the output polytope to sample from it,
+This command saves,  
+
+(a) a `pickle` file`dingo_metabolites_reactions_model` similar to the above file,  
+
+(b) a `pickle` file `dingo_minmax_fluxes_model` similar to the above,  
+
+(c) a `pickle` file `dingo_polytope_model` similar to the above, however the full dimensional polytope is not necessarily rounded.  
+
+Finally, you can use the output polytope to sample from it,
 
 ```
-python -m dingo -poly output_polytope
+python -m dingo -poly dingo_rounded_polytope_model
 ```
 
-However, the output polytope after a complete run and the termination of MMCS algorithm is much more rounded than the polytope just after the preprocessing. Thus, the sampling from that polytope is more efficient. You should use that polytope to sample additional steady states.
+Moreover, the sampling from a rounded polytope is more efficient. You should use that polytope to sample additional steady states.
 
 ### Statistical guarantees
 
@@ -55,10 +74,10 @@ dingo sets by default the target effective sample size (ESS) for each flux margi
 python -m dingo -i model.json -n 2000
 ```
 
-You can also ask for an additional statistical guarantee by setting an upper bound on the values of the PSRF of each flux marginal,
+You can also ask for an additional statistical guarantee by setting an upper bound equal to 1.1 on the values of the PSRF of each flux marginal,
 
 ```
-python -m dingo -i model.json -psrf 1.1
+python -m dingo -i model.json -psrf True
 ```
 
 Then, dingo samples until it achieves the target values of ESS and PSRF for each flux marginal.  
@@ -153,7 +172,9 @@ To call FVA method run the following command,
 python -m dingo -i model.json -fva True -opt opt_percentage
 ```
 
-while the `-opt` flag is optional with the default percentage equal to `100%`.
+while the `-opt` flag is optional with the default percentage equal to `100%`. This command saves a `pickle` file `dingo_fva_model` that contains the vectors of min and max fluxes of the reactions, the biomass objective function optimal flux vector/solution and the biomass objective function optimal value.
+
+
 
 ### FBA method
 
@@ -163,3 +184,4 @@ To call FBA method run the following command,
 python -m dingo -i model.json -fba True
 ```
 
+This command saves the biomass objective function optimal flux vector/solution and the biomass objective function optimal value.
