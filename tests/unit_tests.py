@@ -84,8 +84,7 @@ class TestStringMethods(unittest.TestCase):
 
         max_ball = slow_inner_ball(A, b)
 
-        self.assertTrue(abs(max_ball[1] - 0.2100965915597044) < 1e-01)
-        self.assertTrue(abs(scipy.linalg.norm(max_ball[0]) - 37970.16751141932) < 1e-01)
+        self.assertTrue(abs(max_ball[1] - 0.2100965915597044) < 1e-03)
 
         p = HPolytope(A,b)
 
@@ -120,8 +119,8 @@ class TestStringMethods(unittest.TestCase):
 
         res = gmscale(S, 0.99)
 
-        self.assertTrue(abs(scipy.linalg.norm(res[0]) - 15.285577732002883) < 1e-01)
-        self.assertTrue(abs(scipy.linalg.norm(res[1]) - 23.138373030721855) < 1e-01)
+        self.assertTrue(abs(scipy.linalg.norm(res[0]) - 15.285577732002883) < 1e-03)
+        self.assertTrue(abs(scipy.linalg.norm(res[1]) - 23.138373030721855) < 1e-03)
 
 
 if __name__ == "__main__":

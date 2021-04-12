@@ -161,7 +161,7 @@ def from_model_to_steady_states_pipeline(args):
             "An unexpected error occured in Multiphase Monte Carlo Sampling algorithm."
         )
 
-    steady_states = map_samples_to_steady_states(samples, T, T_shift, N, N_shift)
+    steady_states = map_samples_to_steady_states(samples, N, N_shift)
 
     return A, b, N, N_shift, T, T_shift, samples, min_fluxes, max_fluxes, steady_states
 
@@ -233,7 +233,7 @@ def from_polytope_to_steady_states_pipeline(
             "An unexpected error occured in Multiphase Monte Carlo Sampling algorithm."
         )
 
-    steady_states = map_samples_to_steady_states(samples, Tr, Tr_shift, N, N_shift)
+    steady_states = map_samples_to_steady_states(samples, N, N_shift, T, T_shift)
 
     return A, b, N, N_shift, Tr, Tr_shift, samples, steady_states
 

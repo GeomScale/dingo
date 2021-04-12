@@ -447,6 +447,7 @@ void HPolytopeCPP::get_mmcs_samples(double* T_matrix, double* T_shift, double* s
          samples[t_si++] = mmcs_set_of_parameters.samples(i, j);
       }
    }
+   mmcs_set_of_parameters.samples.resize(0,0);
 }
 
 

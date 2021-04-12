@@ -106,7 +106,6 @@ class TestStringMethods(unittest.TestCase):
         max_ball = fast_inner_ball(A, b)
 
         self.assertTrue(abs(max_ball[1] - 0.00011558487362508822) < 1e-05)
-        self.assertTrue(abs(scipy.linalg.norm(max_ball[0]) - 75962.67878547237) < 1e-05)
 
         p = HPolytope(A,b)
 

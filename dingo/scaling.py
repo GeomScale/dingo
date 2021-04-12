@@ -165,19 +165,21 @@ def remove_almost_redundant_facets(A, b):
 
 
 # Map the points samples on the (rounded) full dimensional polytope, back to the initial one to obtain the steady states of the metabolic network
-def map_samples_to_steady_states(samples, T, T_shift, N, N_shift):
+def map_samples_to_steady_states(samples, N, N_shift, T=None, T_shift=None):
     """A Python function to map back to the initial space the sampled points from a full dimensional polytope derived by two
     linear transformation of a low dimensional polytope, to obtain the steady states of the metabolic network
 
     Keyword arguments:
     samples -- an nxN matrix that contains sample points column-wise
-    T, T_shift -- the matrix and the vector of the linear transformation applied on the full dimensional polytope
     N, N_shift -- the matrix and the vector of the linear transformation applied on the low dimensional polytope to derive the full dimensional polytope
+    T, T_shift -- the matrix and the vector of the linear transformation applied on the full dimensional polytope
     """
 
-    extra_1 = np.full((samples.shape[1], samples.shape[0]), T_shift)
     extra_2 = np.full((samples.shape[1], N.shape[0]), N_shift)
-
-    steady_states = N.dot(T.dot(samples) + extra_1.T) + extra_2.T
+    if (T is None or T_shift is None):
+        steady_states = N.dot(samples) + extra_2.T
+    else:
+        extra_1 = np.full((samples.shape[1], samples.shape[0]), T_shift)
+        steady_states = N.dot(T.dot(samples) + extra_1.T) + extra_2.T
 
     return steady_states
