@@ -26,6 +26,7 @@ from dingo.pipelines import (
     from_polytope_to_steady_states_pipeline,
     fva_pipeline,
     fba_pipeline,
+    plot_histogram
 )
 
 try:
@@ -60,9 +61,8 @@ def dingo_main():
     """
 
     args = dingo_args()
-    print(args)
 
-    if args.metabolic_network is None and args.polytope is None:
+    if args.metabolic_network is None and args.polytope is None and not args.histogram:
         raise Exception(
             "You have to give as input either a model or a polytope derived from a model."
         )
@@ -88,19 +88,44 @@ def dingo_main():
     else:
         name = args.model_name
     
-    if args.fva:
+    if args.histogram:
+
+        if args.steady_states is None:
+            raise Exception("A path to a pickle file that contains steady states of the model has to be given.")
+        
+        if args.metabolites_reactions is None:
+            raise Exception("A path to a pickle file that contains the names of the metabolites and the reactions of the model has to be given.")
+
+        if int(args.reaction_index) <= 0:
+            raise Exception("The index of the reaction has to be a positive integer.")
+
+        file = open(args.steady_states, "rb")
+        steady_states = pickle.load(file)
+        file.close()
+
+        steady_states = steady_states[0]
+
+        file = open(args.metabolites_reactions, "rb")
+        meta_reactions = pickle.load(file)
+        file.close()
+
+        reactions = meta_reactions[1]
+
+        plot_histogram(steady_states[int(args.reaction_index) - 1], reactions[int(args.reaction_index) - 1], int(args.n_bins))
+
+    elif args.fva:
 
         result_obj = fva_pipeline(args)
         result_obj = result_obj[4:]
 
-        with open("dingo_fva_output", "wb") as dingo_fva_file:
+        with open("dingo_fva_"+name, "wb") as dingo_fva_file:
             pickle.dump(result_obj, dingo_fva_file)
 
     elif args.fba:
 
         result_obj = fba_pipeline(args)
 
-        with open("dingo_fba_output", "wb") as dingo_fba_file:
+        with open("dingo_fba_"+name, "wb") as dingo_fba_file:
             pickle.dump(result_obj, dingo_fba_file)
 
     elif args.metabolic_network is not None:

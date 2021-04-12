@@ -7,6 +7,7 @@
 
 import numpy as np
 import sys
+import matplotlib.pyplot as plt
 from dingo.fva import slow_fva
 from dingo.loading_models import read_json_file, read_mat_file
 from dingo.inner_ball import slow_inner_ball
@@ -312,3 +313,17 @@ def fba_pipeline(args):
         fba_res = fast_fba(lb, ub, S, biomass_function)
 
     return fba_res
+
+def plot_histogram(reaction_fluxes, reaction, n_bins):
+
+    plt.figure(figsize=(7,7))
+
+    n, bins, patches = plt.hist(reaction_fluxes, bins=n_bins, density=False, facecolor='red', ec='black')
+
+    plt.xlabel('Flux (mmol/gDW/h)', fontsize=16)
+    plt.ylabel('Frequency (#samples: '+str(reaction_fluxes.size)+")", fontsize=14)
+    plt.grid(True)
+    plt.title('Reaction: '+reaction, fontweight="bold",fontsize=18)
+    plt.axis([np.amin(reaction_fluxes), np.amax(reaction_fluxes), 0, np.amax(n)*1.2])
+
+    plt.show()
