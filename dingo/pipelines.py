@@ -26,7 +26,7 @@ try:
 except ImportError as e:
     pass
 
-from volestipy import HPolytope
+from dingo import HPolytope
 
 
 def from_model_to_steady_states_pipeline(args):
