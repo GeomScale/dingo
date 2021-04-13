@@ -1,0 +1,10 @@
+build
+dist
+boost_1_75_0
+dingo.egg-info
+*.pyc
+*.so
+volestipy.cpp
+volestipy.egg-info
+*.npy
+
