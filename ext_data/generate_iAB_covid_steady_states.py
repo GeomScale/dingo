@@ -55,14 +55,14 @@ name = "iAB_AMO1410_SARS_CoV_2"
 
 for i in range(12):
 
-    if (i == 11):
+    if i == 11:
         biomass_function = np.zeros(S.shape[1])
     else:
         biomass_function[human_biomass_index] = human_coeff
         biomass_function[covid_biomass_index] = covid_coeff
 
-    print("covid: "+str(human_coeff))
-    print("human: "+str(covid_coeff))
+    print("covid: " + str(human_coeff))
+    print("human: " + str(covid_coeff))
 
     print("computing FVA...")
     fva_res = fast_fva(lb, ub, S, biomass_function)
@@ -100,30 +100,76 @@ for i in range(12):
         b = res[1]
     except:
         print("gmscale failed to compute a good scaling.")
-    
+
     p = HPolytope(A, b)
 
     A, b, T, T_shift, samples = p.fast_mmcs(1000, True)
 
     steady_states = map_samples_to_steady_states(samples, N, N_shift)
 
-    polytope_info = (A,b,N,N_shift,T,T_shift,samples,)
-    network_info = (min_fluxes, max_fluxes,)
-    metabol_reaction = (metabolites, reactions,)
+    polytope_info = (
+        A,
+        b,
+        N,
+        N_shift,
+        T,
+        T_shift,
+        samples,
+    )
+    network_info = (
+        min_fluxes,
+        max_fluxes,
+    )
+    metabol_reaction = (
+        metabolites,
+        reactions,
+    )
     steadystates = (steady_states,)
 
     polytope_info = polytope_info + (name,)
 
-    with open("dingo_rounded_polytope_" + name + "_human_" + str(human_coeff) + "_covid_" + str(covid_coeff), "wb") as dingo_polytope_file:
+    with open(
+        "dingo_rounded_polytope_"
+        + name
+        + "_human_"
+        + str(human_coeff)
+        + "_covid_"
+        + str(covid_coeff),
+        "wb",
+    ) as dingo_polytope_file:
         pickle.dump(polytope_info, dingo_polytope_file)
 
-    with open("dingo_minmax_fluxes_" + name + "_human_" + str(human_coeff) + "_covid_" + str(covid_coeff), "wb") as dingo_network_file:
+    with open(
+        "dingo_minmax_fluxes_"
+        + name
+        + "_human_"
+        + str(human_coeff)
+        + "_covid_"
+        + str(covid_coeff),
+        "wb",
+    ) as dingo_network_file:
         pickle.dump(network_info, dingo_network_file)
 
-    with open("dingo_metabolites_reactions_" + name + "_human_" + str(human_coeff) + "_covid_" + str(covid_coeff), "wb") as dingo_metabolreactions_file:
+    with open(
+        "dingo_metabolites_reactions_"
+        + name
+        + "_human_"
+        + str(human_coeff)
+        + "_covid_"
+        + str(covid_coeff),
+        "wb",
+    ) as dingo_metabolreactions_file:
         pickle.dump(metabol_reaction, dingo_metabolreactions_file)
 
-    with open("dingo_steady_states_" + name + "_human_" + str(human_coeff) + "_covid_" + str(covid_coeff), "wb") as dingo_steadystates_file:
+    with open(
+        "dingo_steady_states_"
+        + name
+        + "_human_"
+        + str(human_coeff)
+        + "_covid_"
+        + str(covid_coeff),
+        "wb",
+    ) as dingo_steadystates_file:
         pickle.dump(steadystates, dingo_steadystates_file)
 
     human_coeff = human_coeff - step
