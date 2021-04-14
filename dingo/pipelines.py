@@ -12,11 +12,13 @@ from dingo.fva import slow_fva
 from dingo.loading_models import read_json_file, read_mat_file
 from dingo.inner_ball import slow_inner_ball
 from dingo.nullspace import nullspace_dense, nullspace_sparse
-from dingo.scaling import (
-    gmscale,
+from dingo.scaling import gmscale
+from dingo.utils import (
     apply_scaling,
     remove_almost_redundant_facets,
     map_samples_to_steady_states,
+    get_matrices_of_low_dim_polytope,
+    get_matrices_of_full_dim_polytope,
 )
 from dingo.parser import dingo_args
 
