@@ -13,6 +13,8 @@ class metabolic_network:
 
     def __init__(self, arg):
 
+        self.opt_percentage = 100
+
         if isinstance(arg, str):
 
             if arg[-3:] != "mat" and arg[-4:] != "json":
@@ -49,6 +51,20 @@ class metabolic_network:
         else:
             raise Exception("An unknown input format given to initialize a metabolic network object.")
     
+    def apply_fva(self):
+
+        fva_res = fast_fva(self.lb, self.ub, self.S, self.biomass_function, self.opt_percentage)
+
+        AA = fva_res[0] # for testing
+        bb = fva_res[1] # for testing
+        Aeqq = fva_res[2] # for testing
+        beqq = fva_res[3] # for testing
+        min_fluxes = fva_res[4]
+        max_fluxes = fva_res[5]
+        max_biomass_flux_vector = fva_res[6]
+        max_biomass_objective = fva_res[7]
+
+        return min_fluxes, max_fluxes, max_biomass_flux_vector, max_biomass_objective
 
     @property
     def lb(self):

@@ -96,12 +96,6 @@ def get_matrices_of_low_dim_polytope(S, min_fluxes, max_fluxes, opt_percentage =
     b = np.asarray(b, dtype="float")
     b = np.ascontiguousarray(b, dtype="float")
 
-    A = np.vstack((A, -c))
-
-    b = np.append(
-        b, -(opt_percentage / 100) * tol * math.floor(max_biomass_objective / tol)
-    )
-
     for i in range(n):
 
         width = abs(max_fluxes[i] - min_fluxes[i])
