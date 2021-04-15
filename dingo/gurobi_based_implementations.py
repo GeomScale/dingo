@@ -157,9 +157,6 @@ def fast_fva(lb, ub, S, c, opt_percentage=100):
     b = np.asarray(b, dtype="float")
     b = np.ascontiguousarray(b, dtype="float")
 
-    Aeq_new = S
-    beq_new = beq
-
     # call fba to obtain an optimal solution
     max_biomass_flux_vector, max_biomass_objective = fast_fba(lb, ub, S, c)
 
@@ -254,36 +251,11 @@ def fast_fva(lb, ub, S, c, opt_percentage=100):
                         max_objective = -model.getObjective().getValue()
                         max_fluxes.append(max_objective)
 
-                    # Calculate the width
-                    width = abs(max_objective - min_objective)
-
-                    # Check whether we keep or not the equality
-                    if width < 1e-07:
-                        Aeq_new = np.vstack(
-                            (
-                                Aeq_new,
-                                A[
-                                    i,
-                                ],
-                            )
-                        )
-                        beq_new = np.append(beq_new, min(max_objective, min_objective))
-
-                # The np.vstack() creates issues on changing contiguous c orded of np arrays; here we fix this
-                Aeq_new = np.ascontiguousarray(Aeq_new, dtype=np.dtype)
-
-                # Furthremore, we need to have float64 in all numpy arrays
-                Aeq_new = Aeq_new.astype("float64")
-
                 # Make lists of fluxes numpy arrays
                 min_fluxes = np.asarray(min_fluxes)
                 max_fluxes = np.asarray(max_fluxes)
 
                 return (
-                    A,
-                    b,
-                    Aeq_new,
-                    beq_new,
                     min_fluxes,
                     max_fluxes,
                     max_biomass_flux_vector,

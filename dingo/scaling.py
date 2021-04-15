@@ -112,5 +112,3 @@ def gmscale(A, scltol):
     cscale[cscale == 0] = 1
 
     return cscale, rscale
-
-

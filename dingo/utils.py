@@ -8,9 +8,11 @@
 import numpy as np
 import math
 import scipy.sparse as sp
+import matplotlib.pyplot as plt
 from scipy.sparse import diags
 from dingo.scaling import gmscale
 from dingo.nullspace import nullspace_dense, nullspace_sparse
+
 
 def apply_scaling(A, b, cs, rs):
     """A Python function to apply the scaling computed by the function `gmscale` to a convex polytope
@@ -83,7 +85,9 @@ def map_samples_to_steady_states(samples, N, N_shift, T=None, T_shift=None):
     return steady_states
 
 
-def get_matrices_of_low_dim_polytope(S, lb, ub, min_fluxes, max_fluxes, opt_percentage = 100, tol = 1e-06):
+def get_matrices_of_low_dim_polytope(
+    S, lb, ub, min_fluxes, max_fluxes, opt_percentage=100, tol=1e-06
+):
 
     n = S.shape[1]
     m = S.shape[0]
@@ -112,9 +116,10 @@ def get_matrices_of_low_dim_polytope(S, lb, ub, min_fluxes, max_fluxes, opt_perc
                     ],
                 )
             )
-            beq= np.append(beq, min(max_fluxes[i], min_fluxes[i]))
-    
+            beq = np.append(beq, min(max_fluxes[i], min_fluxes[i]))
+
     return A, b, Aeq, beq
+
 
 def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
 
@@ -147,9 +152,22 @@ def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
         b = res[1]
     except:
         print("gmscale failed to compute a good scaling.")
-    print(A.shape)
-    print(b.size)
-    print(N.shape)
-    print(N_shift.size)
-    print(" ")
+
     return A, b, N, N_shift
+
+
+def plot_histogram(reaction_fluxes, reaction, n_bins):
+
+    plt.figure(figsize=(7, 7))
+
+    n, bins, patches = plt.hist(
+        reaction_fluxes, bins=n_bins, density=False, facecolor="red", ec="black"
+    )
+
+    plt.xlabel("Flux (mmol/gDW/h)", fontsize=16)
+    plt.ylabel("Frequency (#samples: " + str(reaction_fluxes.size) + ")", fontsize=14)
+    plt.grid(True)
+    plt.title("Reaction: " + reaction, fontweight="bold", fontsize=18)
+    plt.axis([np.amin(reaction_fluxes), np.amax(reaction_fluxes), 0, np.amax(n) * 1.2])
+
+    plt.show()
