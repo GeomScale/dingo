@@ -85,9 +85,18 @@ def map_samples_to_steady_states(samples, N, N_shift, T=None, T_shift=None):
     return steady_states
 
 
-def get_matrices_of_low_dim_polytope(
-    S, lb, ub, min_fluxes, max_fluxes, opt_percentage=100, tol=1e-06
-):
+def get_matrices_of_low_dim_polytope(S, lb, ub, min_fluxes, max_fluxes):
+    """A Python function to derive the matrices A, Aeq and the vectors b, beq of the low dimensional polytope,
+    such that A*x <= b and Aeq*x = beq.
+
+    Keyword arguments:
+    samples -- an nxN matrix that contains sample points column-wise
+    S -- the stoichiometric matrix
+    lb -- lower bounds for the fluxes, i.e., a n-dimensional vector
+    ub -- upper bounds for the fluxes, i.e., a n-dimensional vector
+    min_fluxes -- minimum values of the fluxes, i.e., a n-dimensional vector
+    max_fluxes -- maximum values for the fluxes, i.e., a n-dimensional vector
+    """
 
     n = S.shape[1]
     m = S.shape[0]
@@ -122,6 +131,15 @@ def get_matrices_of_low_dim_polytope(
 
 
 def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
+    """A Python function to derive the matrix A and the vector b of the full dimensional polytope,
+    such that Ax <= b given a low dimensional polytope.
+
+    Keyword arguments:
+    A -- an mxn matrix that contains the normal vectors of the facets of the polytope row-wise
+    b -- a m-dimensional vector, s.t. A*x <= b
+    Aeq -- an kxn matrix that contains the normal vectors of hyperplanes row-wise
+    beq -- a k-dimensional vector, s.t. Aeq*x = beq
+    """
 
     nullspace_res = nullspace_sparse(Aeq, beq)
     N = nullspace_res[0]
@@ -156,7 +174,14 @@ def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
     return A, b, N, N_shift
 
 
-def plot_histogram(reaction_fluxes, reaction, n_bins):
+def plot_histogram(reaction_fluxes, reaction, n_bins=40):
+    """A Python function to plot the histogram of a certain reaction flux.
+
+    Keyword arguments:
+    reaction_fluxes -- a vector that contains sampled fluxes of a reaction
+    reaction -- a string with the name of the reacion
+    n_bins -- the number of bins for the histogram
+    """
 
     plt.figure(figsize=(7, 7))
 

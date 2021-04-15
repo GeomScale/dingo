@@ -57,6 +57,9 @@ class polytope_sampler:
             raise Exception("An unknown input object given for initialization.")
 
     def get_polytope(self):
+        """A member function to derive the corresponding full dimensional polytope
+        and a isometric linear transformation.
+        """
 
         if (
             self.A == []
@@ -80,8 +83,6 @@ class polytope_sampler:
                 self.metabolic_network.ub,
                 min_fluxes,
                 max_fluxes,
-                self.parameters["opt_percentage"],
-                self.parameters["tol"],
             )
 
             if (
@@ -113,6 +114,14 @@ class polytope_sampler:
     def generate_steady_states(
         self, ess=1000, psrf=False, parallel_mmcs=False, num_threads=1
     ):
+        """A member function to sample steady states.
+
+        Keyword arguments:
+        ess -- the target effective sample size
+        psrf -- a boolean flag to request PSRF smaller than 1.1 for all marginal fluxes
+        parallel_mmcs -- a boolean flag to request the parallel mmcs
+        num_threads -- the number of threads to use for parallel mmcs
+        """
 
         self.get_polytope()
 
@@ -144,6 +153,16 @@ class polytope_sampler:
     def sample_from_polytope(
         A, b, ess=1000, psrf=False, parallel_mmcs=False, num_threads=1
     ):
+        """A static function to sample from a full dimensional polytope.
+
+        Keyword arguments:
+        A -- an mxn matrix that contains the normal vectors of the facets of the polytope row-wise
+        b -- a m-dimensional vector, s.t. A*x <= b
+        ess -- the target effective sample size
+        psrf -- a boolean flag to request PSRF smaller than 1.1 for all marginal fluxes
+        parallel_mmcs -- a boolean flag to request the parallel mmcs
+        num_threads -- the number of threads to use for parallel mmcs
+        """
 
         P = HPolytope(A, b)
 
@@ -171,6 +190,22 @@ class polytope_sampler:
         parallel_mmcs=False,
         num_threads=1,
     ):
+        """A static function to sample steady states when the output of FVA is given.
+
+        Keyword arguments:
+        min_fluxes -- minimum values of the fluxes, i.e., a n-dimensional vector
+        max_fluxes -- maximum values for the fluxes, i.e., a n-dimensional vector
+        biomass_function -- the biomass objective function
+        max_biomass_objective -- the maximum value of the biomass objective function
+        S -- stoichiometric matrix
+        opt_percentage -- consider solutions that give you at least a certain
+                      percentage of the optimal solution (default is to consider
+                      optimal solutions only)
+        ess -- the target effective sample size
+        psrf -- a boolean flag to request PSRF smaller than 1.1 for all marginal fluxes
+        parallel_mmcs -- a boolean flag to request the parallel mmcs
+        num_threads -- the number of threads to use for parallel mmcs
+        """
 
         A, b, Aeq, beq = get_matrices_of_low_dim_polytope(
             S, min_fluxes, max_fluxes, opt_percentage, tol

@@ -62,7 +62,7 @@ class metabolic_network:
                 print("An unexpected error occured when reading the input file.")
                 sys.exit(1)
 
-        elif isinstance(args[0], tuple):
+        elif isinstance(args, tuple):
 
             if len(arg) != 7:
                 raise Exception(
@@ -102,6 +102,7 @@ class metabolic_network:
             )
 
     def fva(self):
+        """A member function to apply the FVA method on the metabolic network."""
 
         if self.parameters["fast_computations"]:
             (
@@ -133,6 +134,7 @@ class metabolic_network:
         return min_fluxes, max_fluxes, max_biomass_flux_vector, max_biomass_objective
 
     def fba(self):
+        """A member function to apply the FBA method on the metabolic network."""
 
         if self.parameters["fast_computations"]:
             fba_res = fast_fba(lb, ub, S, biomass_function)
@@ -211,20 +213,21 @@ class metabolic_network:
 
     def set_fast_mode(self):
 
-        self.parameters["fast_computations"] = True
+        try:
+            import gurobipy
+
+            self.parameters["fast_computations"] = True
+        except ImportError as e:
+            print("You have to install gurobi to use the fast computations.")
+            self.parameters["fast_computations"] = False
 
     def set_slow_mode(self):
 
         self.parameters["fast_computations"] = False
-        self.parameters["tol"] = 1e-03
 
     def set_nullspace_method(self, value):
 
         self.parameters["nullspace_method"] = value
-
-    def set_tol(self, value):
-
-        self.parameters["tol"] = value
 
     def set_opt_percentage(self, value):
 
