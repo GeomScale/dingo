@@ -7,11 +7,10 @@
 
 
 import numpy as np
+import math
 from dingo.metabolic_network import metabolic_network
 from dingo.fva import slow_fva
 from dingo.utils import (
-    apply_scaling,
-    remove_almost_redundant_facets,
     map_samples_to_steady_states,
     get_matrices_of_low_dim_polytope,
     get_matrices_of_full_dim_polytope,
@@ -25,13 +24,13 @@ except ImportError as e:
 
 from volestipy import HPolytope
 
-class network_sampler:
+class polytope_sampler:
 
     def __init__(self, metabol_net):
 
         if isinstance(metabol_net, metabolic_network):
 
-            self.metabolic_network = metabolic_network
+            self.metabolic_network = metabol_net
             self.A = []
             self.b = []
             self.N = []
@@ -42,8 +41,16 @@ class network_sampler:
             self.parameters['nullspace_method'] = 'sparseQR'
             self.parameters['opt_percentage'] = 100
             self.parameters['distribution'] = 'uniform'
-            self.parameters['fast_computations'] = False
-            self.parameters['tol'] = 1e-03
+            #self.parameters['fast_computations'] = False
+            #self.parameters['tol'] = 1e-03
+
+            try:
+                import gurobipy
+                self.parameters['fast_computations'] = True
+                self.parameters['tol'] = 1e-06
+            except ImportError as e:
+                self.parameters['fast_computations'] = False
+                self.parameters['tol'] = 1e-03
 
         else:
 
@@ -52,18 +59,15 @@ class network_sampler:
     
     def get_polytope(self):
 
-        if (self.A == [] or self.b == [] or self.N == [] or self.N_shift = [] or self.T = [] or self.T_shift = []):
+        if (self.A == [] or self.b == [] or self.N == [] or self.N_shift == [] or self.T == [] or self.T_shift == []):
             
-            m = S.shape[0]
-            n = S.shape[1]
+            #m = self.metabolic_network.S.shape[0]
+            #n = self.metabolic_network.S.shape[1]
 
-            self.T =np.zeros((2 * n, n), dtype="float")
-            self.T[0:n] = np.eye(n)
-            self.T[n:] -= np.eye(n, n, dtype="float")
+            
 
-            self.T_shift = np.zeros(n)
-
-            fva_res = fast_fva(self.metabolic_network.lb, self.metabolic_network.ub, self.metabolic_network.S, self.metabolic_network.biomass_function)
+            #fva_res = fast_fva(self.metabolic_network.lb, self.metabolic_network.ub, self.metabolic_network.S, self.metabolic_network.biomass_function)
+            fva_res = self.metabolic_network.fva()
 
             AA = fva_res[0] # for testing
             bb = fva_res[1] # for testing
@@ -74,9 +78,18 @@ class network_sampler:
             max_biomass_flux_vector = fva_res[6]
             max_biomass_objective = fva_res[7]
             del fva_res
+            print(AA.shape)
+            print(bb.size)
+            print(Aeqq.shape)
+            print(beqq.size)
+            print(" ")
 
-            A, b, Aeq, beq = get_matrices_of_low_dim_polytope(self.metabolic_network.S, self.metabolic_network.min_fluxes, self.metabolic_network.max_fluxes, self.parameters['opt_percentage'], self.parameters['tol'])
-
+            A, b, Aeq, beq = get_matrices_of_low_dim_polytope(self.metabolic_network.S, self.metabolic_network.lb, self.metabolic_network.ub, min_fluxes, max_fluxes, self.parameters['opt_percentage'], self.parameters['tol'])
+            print(A.shape)
+            print(b.size)
+            print(Aeq.shape)
+            print(beq.size)
+            print(" ")
             if A.shape[0] != b.size or A.shape[1] != Aeq.shape[1] or Aeq.shape[0] != beq.size:
                 raise Exception("FVA failed.")
 
@@ -87,17 +100,36 @@ class network_sampler:
             )
 
             self.A, self.b, self.N, self.N_shift = get_matrices_of_full_dim_polytope(A, b, Aeq, beq)
+            print(self.A.shape)
+            print(self.b.size)
+            print(self.N.shape)
+            print(self.N_shift.size)
+            print(" ")
+
+            n = self.A.shape[1]
+            #self.T =np.zeros((2 * n, n), dtype="float")
+            self.T = np.eye(n)
+            #self.T[n:] -= np.eye(n, n, dtype="float")
+
+            self.T_shift = np.zeros(n)
+
+            print(self.T.shape)
+            print(self.T_shift.size)
 
         return self.A, self.b, self.N, self.N_shift
 
 
-    def generate_steady_states(self, ess = 1000, psrf = False, parallel_mmcs = False, num_threads = 1):
+    def generate_steady_states(self, ess = 1000, psrf = True, parallel_mmcs = False, num_threads = 1):
 
-        get_polytope(self)
+        self.get_polytope()
 
         P = HPolytope(self.A, self.b)
 
-        self.A, self.b, Tr, Tr_shift, samples = P.fast_mmcs(ess, psrf, parallel_mmcs, num_threads)
+        if self.parameters['fast_computations']:
+            self.A, self.b, Tr, Tr_shift, samples = P.fast_mmcs(ess, psrf, parallel_mmcs, num_threads)
+        else:
+            self.A, self.b, Tr, Tr_shift, samples = P.fast_mmcs(ess, psrf, parallel_mmcs, num_threads)
+        
         steady_states = map_samples_to_steady_states(samples, self.N, self.N_shift, self.T, self.T_shift)
 
         self.T = np.dot(self.T, Tr)
@@ -110,7 +142,10 @@ class network_sampler:
 
         P = HPolytope(A, b)
 
-        A, b, Tr, Tr_shift, samples = P.fast_mmcs(ess, psrf, parallel_mmcs, num_threads)
+        if self.parameters['fast_computations']:
+            A, b, Tr, Tr_shift, samples = P.fast_mmcs(ess, psrf, parallel_mmcs, num_threads)
+        else:
+            A, b, Tr, Tr_shift, samples = P.slow_mmcs(ess, psrf, parallel_mmcs, num_threads)
 
         return samples
 
@@ -128,7 +163,11 @@ class network_sampler:
 
         P = HPolytope(A, b)
 
-        A, b, Tr, Tr_shift, samples = P.fast_mmcs(ess, psrf, parallel_mmcs, num_threads)
+        if self.parameters['fast_computations']:
+            A, b, Tr, Tr_shift, samples = P.fast_mmcs(ess, psrf, parallel_mmcs, num_threads)
+        else:
+            A, b, Tr, Tr_shift, samples = P.slow_mmcs(ess, psrf, parallel_mmcs, num_threads)
+        
         steady_states = map_samples_to_steady_states(samples, N, N_shift)
 
         return steady_states
@@ -137,6 +176,11 @@ class network_sampler:
 
         self.parameters['fast_computations'] = True
         self.parameters['tol'] = 1e-06
+    
+    def set_slow_mode(self):
+
+        self.parameters['fast_computations'] = False
+        self.parameters['tol'] = 1e-03
 
     def set_distribution(self, value):
 

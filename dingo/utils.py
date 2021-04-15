@@ -6,9 +6,10 @@
 # Licensed under GNU LGPL.3, see LICENCE file
 
 import numpy as np
+import math
 import scipy.sparse as sp
 from scipy.sparse import diags
-
+from dingo.scaling import gmscale
 from dingo.nullspace import nullspace_dense, nullspace_sparse
 
 def apply_scaling(A, b, cs, rs):
@@ -82,9 +83,10 @@ def map_samples_to_steady_states(samples, N, N_shift, T=None, T_shift=None):
     return steady_states
 
 
-def get_matrices_of_low_dim_polytope(S, min_fluxes, max_fluxes, opt_percentage = 100, tol = 1e-06):
+def get_matrices_of_low_dim_polytope(S, lb, ub, min_fluxes, max_fluxes, opt_percentage = 100, tol = 1e-06):
 
     n = S.shape[1]
+    m = S.shape[0]
     beq = np.zeros(m)
     Aeq = S
 
@@ -125,25 +127,29 @@ def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
             "The computation of the matrix of the right nullspace of the stoichiometric matrix failed."
         )
 
-        product = np.dot(A, N_shift)
-        b = np.subtract(b, product)
-        A = np.dot(A, N)
+    product = np.dot(A, N_shift)
+    b = np.subtract(b, product)
+    A = np.dot(A, N)
+
+    res = remove_almost_redundant_facets(A, b)
+    A = res[0]
+    b = res[1]
+
+    try:
+        res = gmscale(A, 0.99)
+        res = apply_scaling(A, b, res[0], res[1])
+        A = res[0]
+        b = res[1]
+        N = np.dot(N, res[2])
 
         res = remove_almost_redundant_facets(A, b)
         A = res[0]
         b = res[1]
-
-        try:
-            res = gmscale(A, 0.99)
-            res = apply_scaling(A, b, res[0], res[1])
-            A = res[0]
-            b = res[1]
-            N = np.dot(N, res[2])
-
-            res = remove_almost_redundant_facets(A, b)
-            A = res[0]
-            b = res[1]
-        except:
-            print("gmscale failed to compute a good scaling.")
-
+    except:
+        print("gmscale failed to compute a good scaling.")
+    print(A.shape)
+    print(b.size)
+    print(N.shape)
+    print(N_shift.size)
+    print(" ")
     return A, b, N, N_shift
