@@ -39,7 +39,7 @@ class polytope_sampler:
             self.T_shift = []
             self.parameters = {}
             self.parameters["nullspace_method"] = "sparseQR"
-            self.parameters["opt_percentage"] = 100
+            self.parameters["opt_percentage"] = self.metabolic_network.parameters["opt_percentage"]
             self.parameters["distribution"] = "uniform"
             self.parameters["first_run_of_mmcs"] = True
 

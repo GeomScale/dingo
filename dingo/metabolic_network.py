@@ -182,6 +182,9 @@ class metabolic_network:
             self.__biomass_index,
             self.__biomass_function,
         )
+    
+    def num_of_reactions(self):
+        return len(self.reactions)
 
     @lb.setter
     def lb(self, value):
