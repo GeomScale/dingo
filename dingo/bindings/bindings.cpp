@@ -375,7 +375,7 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
       NT max_psrf = univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff();
 
       if (max_psrf < 1.1 && mmcs_set_of_parameters.total_neff >= mmcs_set_of_parameters.fixed_Neff) {
-         std::cout << "[4]total ess " << mmcs_set_of_parameters.total_neff << ": number of correlated samples = " << mmcs_set_of_parameters.samples.cols()<<std::endl;
+         std::cout << "\n[4]total ess " << mmcs_set_of_parameters.total_neff << ": number of correlated samples = " << mmcs_set_of_parameters.samples.cols()<<std::endl;
          //std::cerr << "multivariate PSRF: " <<  multivariate_psrf<NT, VT>(mmcs_set_of_parameters.samples) << std::endl;
          std::cerr << "[4]maximum marginal PSRF: " <<  univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff() << std::endl;
          std::cout<<"\n\n";

@@ -50,7 +50,7 @@ def get_name(args_network):
             name = args_network[0:-4]
         else:
             name = args_network[(position[-1] + 1) : -4]
-    print(name)
+
     return name
 
 
@@ -112,9 +112,11 @@ def dingo_main():
         reactions = model.reactions
 
         if int(args.reaction_index) > len(reactions):
-            raise Exception("The index of the reaction has not to be exceed the number of reactions.")
+            raise Exception(
+                "The index of the reaction has not to be exceed the number of reactions."
+            )
 
-        if int(args.n_bins) <=0:
+        if int(args.n_bins) <= 0:
             raise Exception("The number of bins has to be a positive integer.")
 
         plot_histogram(
@@ -190,7 +192,9 @@ def dingo_main():
             with open("dingo_model_" + name + ".pckl", "wb") as dingo_model_file:
                 pickle.dump(model, dingo_model_file)
 
-            with open("dingo_polytope_sampler_" + name + ".pckl", "wb") as dingo_polytope_file:
+            with open(
+                "dingo_polytope_sampler_" + name + ".pckl", "wb"
+            ) as dingo_polytope_file:
                 pickle.dump(polytope_info, dingo_polytope_file)
 
         else:
@@ -210,10 +214,14 @@ def dingo_main():
             with open("dingo_model_" + name + ".pckl", "wb") as dingo_model_file:
                 pickle.dump(model, dingo_model_file)
 
-            with open("dingo_polytope_sampler_" + name + ".pckl", "wb") as dingo_polytope_file:
+            with open(
+                "dingo_polytope_sampler_" + name + ".pckl", "wb"
+            ) as dingo_polytope_file:
                 pickle.dump(polytope_info, dingo_polytope_file)
 
-            with open("dingo_steady_states_" + name + ".pckl", "wb") as dingo_steadystates_file:
+            with open(
+                "dingo_steady_states_" + name + ".pckl", "wb"
+            ) as dingo_steadystates_file:
                 pickle.dump(steady_states, dingo_steadystates_file)
 
     else:

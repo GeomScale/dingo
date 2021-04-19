@@ -137,9 +137,9 @@ class metabolic_network:
         """A member function to apply the FBA method on the metabolic network."""
 
         if self.parameters["fast_computations"]:
-            fba_res = fast_fba(lb, ub, S, biomass_function)
+            fba_res = fast_fba(self.lb, self.ub, self.S, self.biomass_function)
         else:
-            fba_res = slow_fba(lb, ub, S, biomass_function)
+            fba_res = slow_fba(self.lb, self.ub, self.S, self.biomass_function)
 
         return fba_res
 
@@ -182,7 +182,7 @@ class metabolic_network:
             self.__biomass_index,
             self.__biomass_function,
         )
-    
+
     def num_of_reactions(self):
         return len(self.reactions)
 
