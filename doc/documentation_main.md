@@ -138,16 +138,6 @@ When the choice is the exponential distribution, dingo ignores the objective fun
 
 
 
-### Nullspace computation
-
-During the preprocessing, dingo computes the matrix of the right nullspace of the augmented stoichiometric matrix. The default method is based on the QR decomposition of the matrix with  library [SuitSparse](https://people.engr.tamu.edu/davis/suitesparse.html). In particular, dingo uses the python wrapper [PySPQR](https://github.com/yig/PySPQR) of `SuiteSparse` which exploits the sparsity of the stoichiometric matrix. An alternative option is to ask for the function `nullspace()` in `scipy` library by using the flag `-null`,
-
-```
-python -m dingo -i model.json -null scipy
-```
-
-
-
 ### Parallel computations
 
 dingo provides also a parallel implementation of MMCS algorithm. This implementation leads to faster computations. To sample steady state with parallel MMCS,
@@ -170,7 +160,7 @@ python3 -m dingo -hist True -st dingo_steady_states_model -mr dingo_metabolites_
 
 For example the following plot corresponds to the reaction `Acetate_kinase`of the `e_coli_core` model.
 
-![histogram](../doc/e_coli_flux_histogram.png)
+![histogram](../doc/e_coli_aconta.png)
 
 ### FVA method
 

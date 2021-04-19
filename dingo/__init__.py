@@ -111,6 +111,12 @@ def dingo_main():
 
         reactions = model.reactions
 
+        if int(args.reaction_index) > len(reactions):
+            raise Exception("The index of the reaction has not to be exceed the number of reactions.")
+
+        if int(args.n_bins) <=0:
+            raise Exception("The number of bins has to be a positive integer.")
+
         plot_histogram(
             steady_states[int(args.reaction_index) - 1],
             reactions[int(args.reaction_index) - 1],
@@ -138,9 +144,8 @@ def dingo_main():
         model = metabolic_network(args.metabolic_network)
 
         result_obj = model.fva()
-        result_obj = result_obj[4:]
 
-        with open("dingo_fva_" + name, "wb") as dingo_fva_file:
+        with open("dingo_fva_" + name + ".pckl", "wb") as dingo_fva_file:
             pickle.dump(result_obj, dingo_fva_file)
 
     elif args.fba:
@@ -161,11 +166,10 @@ def dingo_main():
         ):
             raise Exception("An unknown format file given.")
 
-        model = model.fba()
+        model = metabolic_network(args.metabolic_network)
+        result_obj = model.fba()
 
-        result_obj = fba_pipeline(args)
-
-        with open("dingo_fba_" + name, "wb") as dingo_fba_file:
+        with open("dingo_fba_" + name + ".pckl", "wb") as dingo_fba_file:
             pickle.dump(result_obj, dingo_fba_file)
 
     elif args.metabolic_network is not None:
@@ -183,10 +187,10 @@ def dingo_main():
                 name,
             )
 
-            with open("dingo_model_" + name, "wb") as dingo_model_file:
+            with open("dingo_model_" + name + ".pckl", "wb") as dingo_model_file:
                 pickle.dump(model, dingo_model_file)
 
-            with open("dingo_polytope_sampler_" + name, "wb") as dingo_polytope_file:
+            with open("dingo_polytope_sampler_" + name + ".pckl", "wb") as dingo_polytope_file:
                 pickle.dump(polytope_info, dingo_polytope_file)
 
         else:
@@ -203,13 +207,13 @@ def dingo_main():
                 name,
             )
 
-            with open("dingo_model_" + name, "wb") as dingo_model_file:
+            with open("dingo_model_" + name + ".pckl", "wb") as dingo_model_file:
                 pickle.dump(model, dingo_model_file)
 
-            with open("dingo_polytope_sampler_" + name, "wb") as dingo_polytope_file:
+            with open("dingo_polytope_sampler_" + name + ".pckl", "wb") as dingo_polytope_file:
                 pickle.dump(polytope_info, dingo_polytope_file)
 
-            with open("dingo_steady_states_" + name, "wb") as dingo_steadystates_file:
+            with open("dingo_steady_states_" + name + ".pckl", "wb") as dingo_steadystates_file:
                 pickle.dump(steady_states, dingo_steadystates_file)
 
     else:
@@ -240,11 +244,11 @@ def dingo_main():
         )
 
         with open(
-            "dingo_polytope_sampler" + name + "_improved", "wb"
+            "dingo_polytope_sampler" + name + "_improved.pckl", "wb"
         ) as dingo_polytope_file:
             pickle.dump(polytope_info, dingo_polytope_file)
 
-        with open("dingo_steady_states_" + name, "wb") as dingo_network_file:
+        with open("dingo_steady_states_" + name + ".pckl", "wb") as dingo_network_file:
             pickle.dump(steady_states, dingo_network_file)
 
 

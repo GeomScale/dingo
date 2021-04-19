@@ -169,15 +169,7 @@ def dingo_args():
         "-o",
         help="the output directory for the dingo output",
         required=False,
-        metavar="",
-    )
-
-    optional.add_argument(
-        "--nullspace",
-        "-null",
-        help="the method to compute the right nullspace of the stoichiometric matrix. Choose between `sparseQR` and `scipy`. The default method is `sparseQR`.",
-        required=False,
-        default="sparseQR",
+        default=None,
         metavar="",
     )
 
