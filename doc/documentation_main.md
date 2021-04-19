@@ -64,6 +64,8 @@ python -m dingo -poly dingo_rounded_polytope_model
 
 Moreover, the sampling from a rounded polytope is more efficient. You should use that polytope to sample additional steady states.
 
+
+
 ### Statistical guarantees
 
 dingo provides two statistical guarantees for the quality of the generated sample based on two MCMC diagnostics, (a) the *effective sample size* (ESS)  and (b) the *potential scale reduction factor* (PSRF).  
@@ -81,6 +83,8 @@ python -m dingo -i model.json -psrf True
 ```
 
 Then, dingo samples until it achieves the target values of ESS and PSRF for each flux marginal.  
+
+
 
 ### Fast and robust computations with gurobi library
 
@@ -132,13 +136,7 @@ python -m dingo -i model -d gaussian
 
 When the choice is the exponential distribution, dingo ignores the objective function and does not impose a certain objective value to the flux vectors. When the choice is the gaussian distribution, dingo sets the mode to be the center of the maximum inscribed ball of the full dimensional polytope.  
 
-### Nullspace computation
 
-During the preprocessing, dingo computes the matrix of the right nullspace of the augmented stoichiometric matrix. The default method is based on the QR decomposition of the matrix with  library [SuitSparse](https://people.engr.tamu.edu/davis/suitesparse.html). In particular, dingo uses the python wrapper [PySPQR](https://github.com/yig/PySPQR) of `SuiteSparse` which exploits the sparsity of the stoichiometric matrix. An alternative option is to ask for the function `nullspace()` in `scipy` library by using the flag `-null`,
-
-```
-python -m dingo -i model.json -null scipy
-```
 
 ### Parallel computations
 
@@ -162,7 +160,7 @@ python3 -m dingo -hist True -st dingo_steady_states_model -mr dingo_metabolites_
 
 For example the following plot corresponds to the reaction `Acetate_kinase`of the `e_coli_core` model.
 
-![histogram](../doc/e_coli_flux_histogram.png)
+![histogram](../doc/e_coli_aconta.png)
 
 ### FVA method
 

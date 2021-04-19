@@ -364,7 +364,7 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
    else if (mmcs_set_of_parameters.psrf_check == 0) 
    {
       NT max_psrf = univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff();
-      std::cout << "[5]total ess " << mmcs_set_of_parameters.total_neff << ": number of correlated samples = " << mmcs_set_of_parameters.samples.cols()<<std::endl;
+      std::cout << "\n[5]total ess " << mmcs_set_of_parameters.total_neff << ": number of correlated samples = " << mmcs_set_of_parameters.samples.cols()<<std::endl;
       std::cerr << "[5]maximum marginal PSRF: " <<  univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff() << std::endl;
       std::cout<<"\n\n";
       return 1.5;
@@ -375,8 +375,7 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
       NT max_psrf = univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff();
 
       if (max_psrf < 1.1 && mmcs_set_of_parameters.total_neff >= mmcs_set_of_parameters.fixed_Neff) {
-         std::cout << "[4]total ess " << mmcs_set_of_parameters.total_neff << ": number of correlated samples = " << mmcs_set_of_parameters.samples.cols()<<std::endl;
-         //std::cerr << "multivariate PSRF: " <<  multivariate_psrf<NT, VT>(mmcs_set_of_parameters.samples) << std::endl;
+         std::cout << "\n[4]total ess " << mmcs_set_of_parameters.total_neff << ": number of correlated samples = " << mmcs_set_of_parameters.samples.cols()<<std::endl;
          std::cerr << "[4]maximum marginal PSRF: " <<  univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff() << std::endl;
          std::cout<<"\n\n";
          return 1.5;
@@ -401,18 +400,13 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
          max_psrf = univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff();
 
          std::cerr << "[2]maximum marginal PSRF: " <<  max_psrf << std::endl;
-         std::cerr << "[2]total_Neff: " <<  mmcs_set_of_parameters.total_neff << std::endl;
-         std::cerr << "[2]Neff: " <<  mmcs_set_of_parameters.Neff << std::endl;
+         std::cerr << "[2]total ess: " <<  mmcs_set_of_parameters.total_neff << std::endl;
 
          if (max_psrf < 1.1 && mmcs_set_of_parameters.total_neff >= mmcs_set_of_parameters.fixed_Neff) {
             return 1.5;
          }
-         //if (mmcs_set_of_parameters.total_neff < mmcs_set_of_parameters.fixed_Neff) {
-         //   return 0.0;
-        // }
       }
       std::cout << "[3]total ess " << mmcs_set_of_parameters.total_neff << ": number of correlated samples = " << mmcs_set_of_parameters.samples.cols()<<std::endl;
-      //std::cerr << "multivariate PSRF: " <<  multivariate_psrf<NT, VT>(mmcs_set_of_parameters.samples) << std::endl;
       std::cerr << "[3]maximum marginal PSRF: " <<  univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff() << std::endl;
       std::cout<<"\n\n";
       return 0.0;
@@ -441,7 +435,6 @@ void HPolytopeCPP::get_mmcs_samples(double* T_matrix, double* T_shift, double* s
    int N = mmcs_set_of_parameters.samples.cols();
 
    int t_si = 0;
-   std::cerr << "N =  " <<  N << std::endl;
    for (int i = 0; i < n_variables; i++){
       for (int j = 0; j < N; j++){
          samples[t_si++] = mmcs_set_of_parameters.samples(i, j);
