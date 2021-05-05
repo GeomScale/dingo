@@ -8,7 +8,7 @@
 
 import numpy as np
 import math
-from dingo.metabolic_network import metabolic_network
+from dingo.MetabolicNetwork import MetabolicNetwork
 from dingo.fva import slow_fva
 from dingo.utils import (
     map_samples_to_steady_states,
@@ -25,38 +25,35 @@ except ImportError as e:
 from volestipy import HPolytope
 
 
-class polytope_sampler:
+class PolytopeSampler:
     def __init__(self, metabol_net):
 
-        if isinstance(metabol_net, metabolic_network):
-
-            self.metabolic_network = metabol_net
-            self.A = []
-            self.b = []
-            self.N = []
-            self.N_shift = []
-            self.T = []
-            self.T_shift = []
-            self.parameters = {}
-            self.parameters["nullspace_method"] = "sparseQR"
-            self.parameters["opt_percentage"] = self.metabolic_network.parameters[
-                "opt_percentage"
-            ]
-            self.parameters["distribution"] = "uniform"
-            self.parameters["first_run_of_mmcs"] = True
-
-            try:
-                import gurobipy
-
-                self.parameters["fast_computations"] = True
-                self.parameters["tol"] = 1e-06
-            except ImportError as e:
-                self.parameters["fast_computations"] = False
-                self.parameters["tol"] = 1e-03
-
-        else:
-
+        if not isinstance(metabol_net, MetabolicNetwork):
             raise Exception("An unknown input object given for initialization.")
+
+        self.metabolic_network = metabol_net
+        self.A = []
+        self.b = []
+        self.N = []
+        self.N_shift = []
+        self.T = []
+        self.T_shift = []
+        self.parameters = {}
+        self.parameters["nullspace_method"] = "sparseQR"
+        self.parameters["opt_percentage"] = self.metabolic_network.parameters[
+            "opt_percentage"
+        ]
+        self.parameters["distribution"] = "uniform"
+        self.parameters["first_run_of_mmcs"] = True
+
+        try:
+            import gurobipy
+
+            self.parameters["fast_computations"] = True
+            self.parameters["tol"] = 1e-06
+        except ImportError as e:
+            self.parameters["fast_computations"] = False
+            self.parameters["tol"] = 1e-03
 
     def get_polytope(self):
         """A member function to derive the corresponding full dimensional polytope
@@ -134,7 +131,7 @@ class polytope_sampler:
                 ess, psrf, parallel_mmcs, num_threads
             )
         else:
-            self.A, self.b, Tr, Tr_shift, samples = P.fast_mmcs(
+            self.A, self.b, Tr, Tr_shift, samples = P.slow_mmcs(
                 ess, psrf, parallel_mmcs, num_threads
             )
 

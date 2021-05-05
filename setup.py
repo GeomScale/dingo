@@ -36,8 +36,8 @@ extra_volesti_include_dirs = [
     # the volesti code uses some external classes.
     # external directories we need to add
     join("eigen"),
-    join("boost_1_75_0"),
-    join("boost_1_75_0", "boost"),
+    join("boost_1_76_0"),
+    join("boost_1_76_0", "boost"),
     join("volume_approximation", "external"),
     join("volume_approximation", "external", "minimum_ellipsoid"),
     # include and add the directories on the "include" directory
