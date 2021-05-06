@@ -8,7 +8,7 @@ To load the submodules that dingo uses run: `git submodule update --init`.
 
 You will need to download and unzip the boost library:
 ```
-wget -O boost_1_75_0.tar.bz2 https://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.bz2
+wget -O boost_1_75_0.tar.bz2 https://boostorg.jfrog.io/artifactory/main/release/1.75.0/source/boost_1_75_0.tar.bz2
 tar xjf boost_1_75_0.tar.bz2
 rm boost_1_75_0.tar.bz2
 ```
