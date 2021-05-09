@@ -8,10 +8,10 @@ It quite simple to use dingo in your code.  In general, dingo provides two class
  The following script shows how you could sample steady states of a metabolic network with dingo. To initialize a metabolic network object you have to provide the path to the `json` file as those in [BiGG](http://bigg.ucsd.edu/models) dataset or the `mat` file (using the `matlab` wrapper in folder `/ext_data` to modify a standard `mat` file of a model as those in BiGG dataset):
 
 ```python
-from dingo import metabolic_network, polytope_sampler
+from dingo import MetabolicNetwork, PolytopeSampler
 
-model = metabolic_network('path/to/model_file')
-sampler = polytope_sampler(model)
+model = MetabolicNetwork.from_json('path/to/model_file.json')
+sampler = PolytopeSampler(model)
 steady_states = sampler.generate_steady_states()
 ```
 
@@ -54,9 +54,9 @@ sampler.set_slow_mode()
 To apply FVA and FBA methods you have to use the class `metabolic_network`,
 
 ```python
-from dingo import metabolic_network
+from dingo import MetabolicNetwork
 
-model = metabolic_network('path/to/model_file')
+model = MetabolicNetwork('path/to/model_file')
 fva_output = model.fva()
 
 min_fluxes = fva_output[0]
@@ -124,8 +124,8 @@ The generated steady states can be used to estimate the marginal density functio
 ```python
 from dingo import plot_histogram
 
-model = metabolic_network('path/to/e_coli_core.json')
-sampler = polytope_sampler(model)
+model = MetabolicNetwork('path/to/e_coli_core.json')
+sampler = PolytopeSampler(model)
 steady_states = sampler.generate_steady_states(ess = 3000)
 
 # plot the histogram for the 14th reaction in e-coli (ACONTa)

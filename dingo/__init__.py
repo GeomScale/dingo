@@ -24,8 +24,8 @@ from dingo.utils import (
     plot_histogram,
 )
 from dingo.parser import dingo_args
-from dingo.metabolic_network import metabolic_network
-from dingo.sampler import polytope_sampler
+from dingo.MetabolicNetwork import MetabolicNetwork
+from dingo.PolytopeSampler import PolytopeSampler
 
 try:
     import gurobipy
@@ -130,20 +130,18 @@ def dingo_main():
         if args.solver == "gurobi":
             try:
                 import gurobipy
-            except ImportError:
-                print("Library gurobi is not available.")
-                sys.exit(1)
+            except ImportError as error:
+                raise error.with_traceback(sys.exc_info()[2])
 
         if args.solver != "gurobi" and args.solver != "scipy":
             raise Exception("An unknown solver requested.")
 
-        if (
-            args.metabolic_network[-3:] != "mat"
-            and args.metabolic_network[-4:] != "json"
-        ):
+        if (args.metabolic_network[-4:] == "json"):
+            model = MetabolicNetwork.fom_json(args.metabolic_network)
+        elif (args.metabolic_network[-3:] == "mat"):
+            model = MetabolicNetwork.fom_mat(args.metabolic_network)
+        else:
             raise Exception("An unknown format file given.")
-
-        model = metabolic_network(args.metabolic_network)
 
         result_obj = model.fva()
 
@@ -155,20 +153,19 @@ def dingo_main():
         if args.solver == "gurobi":
             try:
                 import gurobipy
-            except ImportError:
-                print("Library gurobi is not available.")
-                sys.exit(1)
+            except ImportError as error:
+                raise error.with_traceback(sys.exc_info()[2])
 
         if args.solver != "gurobi" and args.solver != "scipy":
             raise Exception("An unknown solver requested.")
 
-        if (
-            args.metabolic_network[-3:] != "mat"
-            and args.metabolic_network[-4:] != "json"
-        ):
+        if (args.metabolic_network[-4:] == "json"):
+            model = MetabolicNetwork.fom_json(args.metabolic_network)
+        elif (args.metabolic_network[-3:] == "mat"):
+            model = MetabolicNetwork.fom_mat(args.metabolic_network)
+        else:
             raise Exception("An unknown format file given.")
-
-        model = metabolic_network(args.metabolic_network)
+        
         result_obj = model.fba()
 
         with open("dingo_fba_" + name + ".pckl", "wb") as dingo_fba_file:
@@ -176,9 +173,14 @@ def dingo_main():
 
     elif args.metabolic_network is not None:
 
-        model = metabolic_network(args.metabolic_network)
+        if (args.metabolic_network[-4:] == "json"):
+            model = MetabolicNetwork.fom_json(args.metabolic_network)
+        elif (args.metabolic_network[-3:] == "mat"):
+            model = MetabolicNetwork.fom_mat(args.metabolic_network)
+        else:
+            raise Exception("An unknown format file given.")
 
-        sampler = polytope_sampler(model)
+        sampler = PolytopeSampler(model)
 
         if args.preprocess_only:
 
@@ -231,7 +233,7 @@ def dingo_main():
         file.close()
         sampler = input_obj[0]
 
-        if isinstance(sampler, polytope_sampler):
+        if isinstance(sampler, PolytopeSampler):
 
             steady_states = sampler.generate_steady_states(
                 int(args.effective_sample_size),
