@@ -21,40 +21,40 @@ except ImportError as e:
 class MetabolicNetwork:
     def __init__(self, tuple_args):
 
-        self.parameters = {}
-        self.parameters["opt_percentage"] = 100
-        self.parameters["distribution"] = "uniform"
-        self.parameters["nullspace_method"] = "sparseQR"
+        self._parameters = {}
+        self._parameters["opt_percentage"] = 100
+        self._parameters["distribution"] = "uniform"
+        self._parameters["nullspace_method"] = "sparseQR"
 
         try:
             import gurobipy
 
-            self.parameters["fast_computations"] = True
+            self._parameters["fast_computations"] = True
         except ImportError as e:
-            self.parameters["fast_computations"] = False
+            self._parameters["fast_computations"] = False
 
         if len(tuple_args) != 7:
             raise Exception(
                 "An unknown input format given to initialize a metabolic network object."
             )
 
-        self.lb = tuple_args[0]
-        self.ub = tuple_args[1]
-        self.S = tuple_args[2]
-        self.metabolites = tuple_args[3]
-        self.reactions = tuple_args[4]
-        self.biomass_index = tuple_args[5]
-        self.biomass_function = tuple_args[6]
+        self._lb = tuple_args[0]
+        self._ub = tuple_args[1]
+        self._S = tuple_args[2]
+        self._metabolites = tuple_args[3]
+        self._reactions = tuple_args[4]
+        self._biomass_index = tuple_args[5]
+        self._biomass_function = tuple_args[6]
 
         try:
             if (
-                self.lb.size != self.ub.size
-                or self.lb.size != self.S.shape[1]
-                or len(self.metabolites) != self.S.shape[0]
-                or len(self.reactions) != self.S.shape[1]
-                or self.biomass_function.size != self.S.shape[1]
-                or (self.biomass_index < 0)
-                or (self.biomass_index > self.biomass_function.size)
+                self._lb.size != self._ub.size
+                or self._lb.size != self._S.shape[1]
+                or len(self._metabolites) != self._S.shape[0]
+                or len(self._reactions) != self._S.shape[1]
+                or self._biomass_function.size != self._S.shape[1]
+                or (self._biomass_index < 0)
+                or (self._biomass_index > self._biomass_function.size)
             ):
                 raise Exception(
                     "Wrong tuple format given to initialize a metabolic network object."
@@ -87,18 +87,18 @@ class MetabolicNetwork:
     def fva(self):
         """A member function to apply the FVA method on the metabolic network."""
 
-        if self.parameters["fast_computations"]:
-            return fast_fva(self.lb, self.ub, self.S, self.biomass_function, self.parameters["opt_percentage"])
+        if self._parameters["fast_computations"]:
+            return fast_fva(self._lb, self._ub, self._S, self._biomass_function, self._parameters["opt_percentage"])
         else:
-            return slow_fva(self.lb, self.ub, self.S, self.biomass_function, self.parameters["opt_percentage"])
+            return slow_fva(self._lb, self._ub, self._S, self._biomass_function, self._parameters["opt_percentage"])
 
     def fba(self):
         """A member function to apply the FBA method on the metabolic network."""
 
-        if self.parameters["fast_computations"]:
-            return fast_fba(self.lb, self.ub, self.S, self.biomass_function)
+        if self._parameters["fast_computations"]:
+            return fast_fba(self._lb, self._ub, self._S, self._biomass_function)
         else:
-            return slow_fba(self.lb, self.ub, self.S, self.biomass_function)
+            return slow_fba(self._lb, self._ub, self._S, self._biomass_function)
 
     @property
     def lb(self):
@@ -129,6 +129,10 @@ class MetabolicNetwork:
         return self._biomass_function
 
     @property
+    def parameters(self):
+        return self._parameters
+
+    @property
     def get_as_tuple(self):
         return (
             self._lb,
@@ -141,10 +145,10 @@ class MetabolicNetwork:
         )
 
     def num_of_reactions(self):
-        return len(self.reactions)
+        return len(self._reactions)
     
     def num_of_metabolites(self):
-        return len(self.metabolites)
+        return len(self._metabolites)
 
     @lb.setter
     def lb(self, value):

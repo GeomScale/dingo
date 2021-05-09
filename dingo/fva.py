@@ -61,7 +61,7 @@ def slow_fva(lb, ub, S, c, opt_percentage=100):
     max_fluxes = []
 
     try:
-
+        
         for i in range(n):
 
             # Set the ith row of the A matrix as the objective function
