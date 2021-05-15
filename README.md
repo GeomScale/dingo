@@ -4,7 +4,7 @@ dingo is a python package that analyzes metabolic networks. It relies on high di
 
 dingo also performs two standard methods to analyze the flux space of a metabolic network, namely Flux Balance Analysis and Flux Variability Analysis.
 
-
+[![unit-tests](https://github.com/GeomScale/dingo/workflows/dingo-ubuntu/badge.svg)](https://github.com/GeomScale/dingo/actions?query=workflow%3Adingo-ubuntu)
 
 ## Installation
 
