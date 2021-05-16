@@ -36,6 +36,8 @@ class TestStringMethods(unittest.TestCase):
         input_file_json = current_directory + "/ext_data/e_coli_core.json"
 
         model = MetabolicNetwork.from_json(input_file_json)
+        model.set_slow_mode()
+        
         sampler = PolytopeSampler(model)
         sampler.set_slow_mode()
         sampler.get_polytope()

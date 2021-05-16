@@ -81,6 +81,8 @@ def slow_fva(lb, ub, S, c, opt_percentage=100):
             if res.success:
                 min_objective = res.fun
                 min_fluxes.append(min_objective)
+            else:
+                min_fluxes.append(lb[i])
 
             # Set the minus of the ith row of the A matrix as the objective function
             objective_function = np.asarray([-x for x in objective_function])
@@ -97,6 +99,8 @@ def slow_fva(lb, ub, S, c, opt_percentage=100):
             if res.success:
                 max_objective = -res.fun
                 max_fluxes.append(max_objective)
+            else:
+                max_fluxes.append(ub[i])
 
         # Make lists of fluxes numpy arrays
         min_fluxes = np.asarray(min_fluxes)
