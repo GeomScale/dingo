@@ -211,3 +211,11 @@ class MetabolicNetwork:
     def set_opt_percentage(self, value):
 
         self._parameters["opt_percentage"] = value
+
+    def shut_down_reaction(self, index_val):
+
+        if index_val < 0 or index_val >= self._S.shape[1]:
+            raise Exception("The input does not correspond to a proper reaction index.")
+
+        self._lb[index_val] = 0
+        self._ub[index_val] = 0
