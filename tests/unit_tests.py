@@ -15,7 +15,6 @@ from dingo.scaling import gmscale
 
 
 class TestStringMethods(unittest.TestCase):
-    
     def test_max_bal_computation(self):
 
         m = 2
@@ -37,7 +36,7 @@ class TestStringMethods(unittest.TestCase):
 
         model = MetabolicNetwork.from_json(input_file_json)
         model.set_slow_mode()
-        
+
         sampler = PolytopeSampler(model)
         sampler.set_slow_mode()
         sampler.get_polytope()

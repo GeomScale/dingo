@@ -68,7 +68,7 @@ class MetabolicNetwork:
             raise Exception(
                 "An unknown input format given to initialize a metabolic network object."
             )
-        
+
         tuple_args = read_json_file(arg)
 
         return cls(tuple_args)
@@ -79,7 +79,7 @@ class MetabolicNetwork:
             raise Exception(
                 "An unknown input format given to initialize a metabolic network object."
             )
-        
+
         tuple_args = read_mat_file(arg)
 
         return cls(tuple_args)
@@ -88,9 +88,21 @@ class MetabolicNetwork:
         """A member function to apply the FVA method on the metabolic network."""
 
         if self._parameters["fast_computations"]:
-            return fast_fva(self._lb, self._ub, self._S, self._biomass_function, self._parameters["opt_percentage"])
+            return fast_fva(
+                self._lb,
+                self._ub,
+                self._S,
+                self._biomass_function,
+                self._parameters["opt_percentage"],
+            )
         else:
-            return slow_fva(self._lb, self._ub, self._S, self._biomass_function, self._parameters["opt_percentage"])
+            return slow_fva(
+                self._lb,
+                self._ub,
+                self._S,
+                self._biomass_function,
+                self._parameters["opt_percentage"],
+            )
 
     def fba(self):
         """A member function to apply the FBA method on the metabolic network."""
@@ -146,7 +158,7 @@ class MetabolicNetwork:
 
     def num_of_reactions(self):
         return len(self._reactions)
-    
+
     def num_of_metabolites(self):
         return len(self._metabolites)
 

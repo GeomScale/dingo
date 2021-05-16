@@ -136,9 +136,9 @@ def dingo_main():
         if args.solver != "gurobi" and args.solver != "scipy":
             raise Exception("An unknown solver requested.")
 
-        if (args.metabolic_network[-4:] == "json"):
+        if args.metabolic_network[-4:] == "json":
             model = MetabolicNetwork.fom_json(args.metabolic_network)
-        elif (args.metabolic_network[-3:] == "mat"):
+        elif args.metabolic_network[-3:] == "mat":
             model = MetabolicNetwork.fom_mat(args.metabolic_network)
         else:
             raise Exception("An unknown format file given.")
@@ -159,13 +159,13 @@ def dingo_main():
         if args.solver != "gurobi" and args.solver != "scipy":
             raise Exception("An unknown solver requested.")
 
-        if (args.metabolic_network[-4:] == "json"):
+        if args.metabolic_network[-4:] == "json":
             model = MetabolicNetwork.fom_json(args.metabolic_network)
-        elif (args.metabolic_network[-3:] == "mat"):
+        elif args.metabolic_network[-3:] == "mat":
             model = MetabolicNetwork.fom_mat(args.metabolic_network)
         else:
             raise Exception("An unknown format file given.")
-        
+
         result_obj = model.fba()
 
         with open("dingo_fba_" + name + ".pckl", "wb") as dingo_fba_file:
@@ -173,9 +173,9 @@ def dingo_main():
 
     elif args.metabolic_network is not None:
 
-        if (args.metabolic_network[-4:] == "json"):
+        if args.metabolic_network[-4:] == "json":
             model = MetabolicNetwork.fom_json(args.metabolic_network)
-        elif (args.metabolic_network[-3:] == "mat"):
+        elif args.metabolic_network[-3:] == "mat":
             model = MetabolicNetwork.fom_mat(args.metabolic_network)
         else:
             raise Exception("An unknown format file given.")
