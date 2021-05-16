@@ -214,7 +214,11 @@ class MetabolicNetwork:
 
     def shut_down_reaction(self, index_val):
 
-        if index_val < 0 or index_val >= self._S.shape[1]:
+        if (
+            (not isinstance(index_val, int))
+            or index_val < 0
+            or index_val >= self._S.shape[1]
+        ):
             raise Exception("The input does not correspond to a proper reaction index.")
 
         self._lb[index_val] = 0
