@@ -28,9 +28,9 @@ from volestipy import HPolytope
 class PolytopeSampler:
     def __init__(self, metabol_net):
 
-        #print(isinstance(metabol_net, MetabolicNetwork))
-        #print(not isinstance(metabol_net, MetabolicNetwork))
-        #x= not isinstance(metabol_net, MetabolicNetwork)
+        # print(isinstance(metabol_net, MetabolicNetwork))
+        # print(not isinstance(metabol_net, MetabolicNetwork))
+        # x= not isinstance(metabol_net, MetabolicNetwork)
         if not isinstance(metabol_net, MetabolicNetwork):
             raise Exception("An unknown input object given for initialization.")
 
@@ -103,9 +103,12 @@ class PolytopeSampler:
                 * math.floor(max_biomass_objective / self._parameters["tol"]),
             )
 
-            self._A, self._b, self._N, self._N_shift = get_matrices_of_full_dim_polytope(
-                A, b, Aeq, beq
-            )
+            (
+                self._A,
+                self._b,
+                self._N,
+                self._N_shift,
+            ) = get_matrices_of_full_dim_polytope(A, b, Aeq, beq)
 
             n = self._A.shape[1]
             self._T = np.eye(n)
@@ -139,7 +142,9 @@ class PolytopeSampler:
             )
 
         if self._parameters["first_run_of_mmcs"]:
-            steady_states = map_samples_to_steady_states(samples, self._N, self._N_shift)
+            steady_states = map_samples_to_steady_states(
+                samples, self._N, self._N_shift
+            )
             self._parameters["first_run_of_mmcs"] = False
         else:
             steady_states = map_samples_to_steady_states(
@@ -237,7 +242,7 @@ class PolytopeSampler:
         steady_states = map_samples_to_steady_states(samples, N, N_shift)
 
         return steady_states
-    
+
     @property
     def A(self):
         return self._A
