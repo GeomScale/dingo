@@ -14,7 +14,6 @@ from dingo.gurobi_based_implementations import fast_inner_ball
 
 
 class TestStringMethods(unittest.TestCase):
-    
     def test_fast_max_bal_computation(self):
 
         m = 2
@@ -42,7 +41,7 @@ class TestStringMethods(unittest.TestCase):
         self.assertTrue(abs(res[3] - 0.8739215069684305) < 1e-08)
         self.assertEqual(res[0].size, 95)
         self.assertEqual(res[1].size, 95)
-    
+
     def test_ecoli_to_full_dimensional_polytope(self):
 
         current_directory = os.getcwd()
@@ -50,7 +49,7 @@ class TestStringMethods(unittest.TestCase):
 
         model = MetabolicNetwork.from_json(input_file_json)
         model.set_fast_mode()
-        
+
         sampler = PolytopeSampler(model)
         sampler.set_fast_mode()
 
