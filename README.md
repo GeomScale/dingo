@@ -1,10 +1,18 @@
 # dingo
 
-dingo is a python package that analyzes metabolic networks. It relies on high dimensional sampling with Markov Chain Monte Carlo (MCMC) methods and fast optimization methods to analyze the possible states of a metabolic network. To perform MCMC sampling, dingo relies on the C++ package [volesti](https://github.com/GeomScale/volume_approximation), which provides several algorithms for sampling convex polytopes. dingo is part of [GeomScale](https://geomscale.github.io/) project.   
+`dingo` is a python package that analyzes metabolic networks.
+It relies on high dimensional sampling with Markov Chain Monte Carlo (MCMC)
+methods and fast optimization methods to analyze the possible states of a
+metabolic network. To perform MCMC sampling, `dingo` relies on the `C++` package
+[volesti](https://github.com/GeomScale/volume_approximation), which provides
+several algorithms for sampling convex polytopes.
+`dingo` also performs two standard methods to analyze the flux space of a
+metabolic network, namely Flux Balance Analysis and Flux Variability Analysis.
 
-dingo also performs two standard methods to analyze the flux space of a metabolic network, namely Flux Balance Analysis and Flux Variability Analysis.
+`dingo` is part of [GeomScale](https://geomscale.github.io/) project.
 
-
+[![unit-tests](https://github.com/GeomScale/dingo/workflows/dingo-ubuntu/badge.svg)](https://github.com/GeomScale/dingo/actions?query=workflow%3Adingo-ubuntu)
+[![Chat](https://badges.gitter.im/boostorg/geometry.png)](https://gitter.im/GeomScale/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link)
 
 ## Installation
 

@@ -1,0 +1,53 @@
+# dingo : a python library for metabolic networks sampling and analysis
+# dingo is part of GeomScale project
+
+# Copyright (c) 2021 Vissarion Fisikopoulos
+
+# Licensed under GNU LGPL.3, see LICENCE file
+
+name: dingo-ubuntu
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        #python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
+        python-version: [3.8]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Load submodules
+      run: |
+        git submodule update --init;
+    - name: Download and unzip the boost library
+      run: |
+        wget -O boost_1_76_0.tar.bz2 https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2;
+        tar xjf boost_1_76_0.tar.bz2;
+        rm boost_1_76_0.tar.bz2;
+    - name: Install dependencies
+      run: |
+        sudo apt-get install libsuitesparse-dev;
+        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -;
+        source $HOME/.poetry/env;
+        export POETRY_VIRTUALENVS_PATH=/home/runner/.cache/pypoetry/virtualenvs
+        poetry config virtualenvs.create false --local
+        #source $(dirname $(poetry run which python))/activate
+        poetry install;	
+        #pip3 install numpy scipy;
+    - name: Run tests 
+      run: |
+        #python3 tests/fba.py;
+        #python3 tests/full_dimensional.py;
+        python3 tests/max_ball.py;
+        #python3 tests/scaling.py;
+        #run all tests
+        #python -m unittest discover test
+        #TODO: use pytest
