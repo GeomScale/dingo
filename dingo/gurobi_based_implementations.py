@@ -234,6 +234,8 @@ def fast_fva(lb, ub, S, c, opt_percentage=100):
                         # Get the min objective value
                         min_objective = model.getObjective().getValue()
                         min_fluxes.append(min_objective)
+                    else:
+                        min_fluxes.append(lb[i])
 
                     # Likewise, for the maximum
                     objective_function = np.asarray([-x for x in objective_function])
@@ -250,6 +252,8 @@ def fast_fva(lb, ub, S, c, opt_percentage=100):
                         # Get the max objective value
                         max_objective = -model.getObjective().getValue()
                         max_fluxes.append(max_objective)
+                    else:
+                        max_fluxes.append(ub[i])
 
                 # Make lists of fluxes numpy arrays
                 min_fluxes = np.asarray(min_fluxes)
