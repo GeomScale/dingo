@@ -22,8 +22,8 @@ class MetabolicNetwork:
     def __init__(self, tuple_args):
 
         self._parameters = {}
-        self._parameters["opt_percentage"] = 100
-        self._parameters["distribution"] = "uniform"
+        self._parameters["opt_percentage"]   = 100
+        self._parameters["distribution"]     = "uniform"
         self._parameters["nullspace_method"] = "sparseQR"
 
         try:
@@ -38,20 +38,20 @@ class MetabolicNetwork:
                 "An unknown input format given to initialize a metabolic network object."
             )
 
-        self._lb = tuple_args[0]
-        self._ub = tuple_args[1]
-        self._S = tuple_args[2]
-        self._metabolites = tuple_args[3]
-        self._reactions = tuple_args[4]
-        self._biomass_index = tuple_args[5]
+        self._lb               = tuple_args[0]
+        self._ub               = tuple_args[1]
+        self._S                = tuple_args[2]
+        self._metabolites      = tuple_args[3]
+        self._reactions        = tuple_args[4]
+        self._biomass_index    = tuple_args[5]
         self._biomass_function = tuple_args[6]
 
         try:
             if (
-                self._lb.size != self._ub.size
-                or self._lb.size != self._S.shape[1]
-                or len(self._metabolites) != self._S.shape[0]
-                or len(self._reactions) != self._S.shape[1]
+                self._lb.size                  != self._ub.size
+                or self._lb.size               != self._S.shape[1]
+                or len(self._metabolites)      != self._S.shape[0]
+                or len(self._reactions)        != self._S.shape[1]
                 or self._biomass_function.size != self._S.shape[1]
                 or (self._biomass_index < 0)
                 or (self._biomass_index > self._biomass_function.size)
@@ -223,3 +223,97 @@ class MetabolicNetwork:
 
         self._lb[index_val] = 0
         self._ub[index_val] = 0
+
+
+
+class MetabolicNetworkPairs():
+
+   def __init__(self, model_a, model_b):
+
+      # The read file functions, return the following: 
+      #      lb, ub, S, metabolites, reactions, biomass_index, biomass_function
+      # Parse the 2 models already built and return the corresponding elemets
+
+      self.model_A = model_a
+      self.model_B = model_b
+      
+      
+      # Build concatenated stoichiometric matrix
+      compl_1      = np.zeros((self.model_A.S.shape[0],self.model_B.S.shape[1]))
+      compl_2      = np.zeros((self.model_B.S.shape[0], self.model_A.S.shape[1]))
+      part_a       = np.concatenate((self.model_A.S, compl_1), axis=1)
+      part_b       = np.concatenate((self.model_B.S, compl_2), axis=1)
+
+      # Build concatenated biomass function 
+      pair_biomass_function         = np.concatenate((self.model_A.S[:,self.model_A.biomass_index], self.model_B.S[:,self.model_B.biomass_index]), axis=0)
+      self.pair_biomass_function    = pair_biomass_function.reshape((pair_biomass_function.shape[0], 1))
+      self.conc_S  = np.concatenate((part_a, part_b), axis=0)
+      self.conc_S  = np.concatenate((self.conc_S, self.pair_biomass_function), axis=1)
+               
+      # Get concatenated bounds
+      self.conc_lb = np.concatenate((self.model_A.lb, self.model_B.lb), axis=0)
+      self.conc_lb = np.append(self.conc_lb, 0.0)
+      self.conc_ub = np.concatenate((self.model_A.ub, self.model_B.ub), axis=0)
+      self.conc_ub = np.append(self.conc_lb, 1000.0)
+
+      
+      # Get concatenated reactions.. (including biomass overall)
+      conc_reactions = self.model_A.reactions + self.model_B.reactions 
+      conc_reactions.append("biomass_overall")
+      self.conc_reactions = conc_reactions
+
+      # .. and metabolites
+      self.conc_metabolites = self.model_A.metabolites + self.model_B.metabolites
+
+      # Overall biomass function info
+      conc_biomass_function      = np.zeros((1,self.conc_S.shape[1] -1))
+      self.conc_biomass_function = np.append(conc_biomass_function, 1.0)
+      self.conc_biomass_index    = self.conc_S.shape[1] -1 
+
+
+
+
+
+
+
+
+
+
+
+
+   # def __init__(self, model_a, model_b):
+
+   #    self.model_A = model_a
+   #    self.model_B = model_b
+
+   #    # Build concatenated stoichiometric matrix
+   #    compl_1      = np.zeros((self.model_A.S.shape[0],self.model_B.S.shape[1]))
+   #    compl_2      = np.zeros((self.model_B.S.shape[0], self.model_A.S.shape[1]))
+   #    part_a       = np.concatenate((self.model_A.S, compl_1), axis=1)
+   #    part_b       = np.concatenate((self.model_B.S, compl_2), axis=1)
+   #    # A concatenated biomass function is also added in the concatenated S matrix
+   #    self.pair_biomass_function    = np.concatenate((self.biomass_function_A, self.biomass_function_B), axis=0)
+   #    self.conc_S  = np.concatenate((part_a, part_b), axis=0)
+   #    self.conc_S  = np.stack((self.conc_S, self.pair_biomass_function), axis=-1)
+
+   #    # Get concatenated bounds
+   #    self.conc_lb = np.concatenate((self.model_A.lb, self.model_B.lb), axis=0)
+   #    self.conc_ub = np.concatenate((self.model_A.ub, self.model_B.ub), axis=0)
+
+   #    # Get concatenated metabolites and reactions
+   #    self.conc_metabolites = self.model_A.metabolites + self.model_B.metabolites
+   #    self.conc_metabolites = self.model_A.metabolites + self.model_B.metabolites
+
+
+   #    # How to deal with biomass functions..? Keep indexes from both and work with them one at a time 
+   #    self.biomass_function_A       = self.model_A.biomass_function
+   #    self.biomass_index_function_A = self.model_A.biomass_index
+   #    self.biomass_function_B       = self.model_B.biomass_function
+   #    self.biomass_index_function_B = self.model_B.biomass_index
+
+   #    self.pair_biomass_function    = np.concatenate((self.biomass_function_A, self.biomass_function_B), axis=0)
+
+
+
+   #    self.pair_biomas_index        =
+   #    self.pair_biomass_function    = pair_biomass_function
