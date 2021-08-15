@@ -6,7 +6,7 @@
 # Licensed under GNU LGPL.3, see LICENCE file
 
 import numpy as np
-import sys
+import sys, os
 from dingo.loading_models import read_json_file, read_mat_file
 from dingo.fva import slow_fva
 from dingo.fba import slow_fba
@@ -226,94 +226,100 @@ class MetabolicNetwork:
 
 
 
-class MetabolicNetworkPairs():
 
-   def __init__(self, model_a, model_b):
+class communityMetabolicNetwork():
 
-      # The read file functions, return the following: 
-      #      lb, ub, S, metabolites, reactions, biomass_index, biomass_function
-      # Parse the 2 models already built and return the corresponding elemets
+# This implementation works only for communities of 2 models 
+# Once our method is validated, we will move on to implement it for more 
 
-      self.model_A = model_a
-      self.model_B = model_b
-      
-      
-      # Build concatenated stoichiometric matrix
-      compl_1      = np.zeros((self.model_A.S.shape[0],self.model_B.S.shape[1]))
-      compl_2      = np.zeros((self.model_B.S.shape[0], self.model_A.S.shape[1]))
-      part_a       = np.concatenate((self.model_A.S, compl_1), axis=1)
-      part_b       = np.concatenate((self.model_B.S, compl_2), axis=1)
+    def __init__(self, directory):
 
-      # Build concatenated biomass function 
-      pair_biomass_function         = np.concatenate((self.model_A.S[:,self.model_A.biomass_index], self.model_B.S[:,self.model_B.biomass_index]), axis=0)
-      self.pair_biomass_function    = pair_biomass_function.reshape((pair_biomass_function.shape[0], 1))
-      self.conc_S  = np.concatenate((part_a, part_b), axis=0)
-      self.conc_S  = np.concatenate((self.conc_S, self.pair_biomass_function), axis=1)
-               
-      # Get concatenated bounds
-      self.conc_lb = np.concatenate((self.model_A.lb, self.model_B.lb), axis=0)
-      self.conc_lb = np.append(self.conc_lb, 0.0)
-      self.conc_ub = np.concatenate((self.model_A.ub, self.model_B.ub), axis=0)
-      self.conc_ub = np.append(self.conc_lb, 1000.0)
-
-      
-      # Get concatenated reactions.. (including biomass overall)
-      conc_reactions = self.model_A.reactions + self.model_B.reactions 
-      conc_reactions.append("biomass_overall")
-      self.conc_reactions = conc_reactions
-
-      # .. and metabolites
-      self.conc_metabolites = self.model_A.metabolites + self.model_B.metabolites
-
-      # Overall biomass function info
-      conc_biomass_function      = np.zeros((1,self.conc_S.shape[1] -1))
-      self.conc_biomass_function = np.append(conc_biomass_function, 1.0)
-      self.conc_biomass_index    = self.conc_S.shape[1] -1 
+        self._modelList = []
+        for filename in os.listdir(directory):
+            f = os.path.join(directory, filename)
+            if os.path.isfile(f):
+                model = MetabolicNetwork.from_mat(f)
+                self._modelList.append(model)
 
 
+        self._model_A = self._modelList[0]
+        self._model_B = self._modelList[1]
+        
+        
+        # Build concatenated stoichiometric matrix
+        compl_1      = np.zeros((self._model_A.S.shape[0], self._model_B.S.shape[1]))
+        compl_2      = np.zeros((self._model_B.S.shape[0], self._model_A.S.shape[1]))
+        part_a       = np.concatenate((self._model_A.S, compl_1), axis=1)
+        part_b       = np.concatenate((self._model_B.S, compl_2), axis=1)
+
+        # Build concatenated biomass function 
+        pair_biomass_function         = np.concatenate((self._model_A.S[:,self._model_A.biomass_index], self._model_B.S[:,self._model_B.biomass_index]), axis=0)
+        self._pair_biomass_function    = pair_biomass_function.reshape((pair_biomass_function.shape[0], 1))
+        self._conc_S  = np.concatenate((part_a, part_b), axis=0)
+        self._conc_S  = np.concatenate((self._conc_S, self._pair_biomass_function), axis=1)
+                
+        # Get concatenated bounds
+        self._conc_lb = np.concatenate((self._model_A.lb, self._model_B.lb), axis=0)
+        self._conc_lb = np.append(self._conc_lb, 0.0)
+        self._conc_ub = np.concatenate((self._model_A.ub, self._model_B.ub), axis=0)
+        self._conc_ub = np.append(self._conc_ub, 1000.0)
+        
+        # Get concatenated reactions.. (including biomass overall)
+        conc_reactions = self._model_A.reactions + self._model_B.reactions 
+        conc_reactions.append("biomass_overall")
+        self._conc_reactions = conc_reactions
+
+        # .. and metabolites
+        self._conc_metabolites = self._model_A.metabolites + self._model_B.metabolites
+
+        # Overall biomass function info
+        conc_biomass_function      = np.zeros((1,self._conc_S.shape[1] -1))
+        self._conc_biomass_function = np.append(conc_biomass_function, 1.0)
+        self._conc_biomass_index    = self._conc_S.shape[1] -1 
 
 
+        # Build the parameters dictionary
+        self._parameters = {}
+        self._parameters["opt_percentage"]   = 100
+        self._parameters["distribution"]     = "uniform"
+        self._parameters["nullspace_method"] = "sparseQR"
+
+        try:
+            import gurobipy
+
+            self._parameters["fast_computations"] = True
+        except ImportError as e:
+            self._parameters["fast_computations"] = False
+
+    return modelList
 
 
+    def fva(self):
+        """A member function to apply the FVA method on the metabolic network."""
+
+        if self._parameters["fast_computations"]:
+            return fast_fva(
+                self._conc_lb,
+                self._conc_ub,
+                self._conc_S,
+                self._conc_biomass_function,
+                self._parameters["opt_percentage"],
+            )
+        else:
+            return slow_fva(
+                self._conc_lb,
+                self._conc_ub,
+                self._conc_S,
+                self._conc_biomass_function,
+                self._parameters["opt_percentage"],
+            )
+
+    def fba(self):
+        """A member function to apply the FBA method on the metabolic network."""
+
+        if self._parameters["fast_computations"]:
+            return fast_fba(self._conc_lb, self._conc_ub, self._S, self._conc_biomass_function)
+        else:
+            return slow_fba(self._conc_lb, self._conc_ub, self._S, self._conc_biomass_function)
 
 
-
-
-
-
-   # def __init__(self, model_a, model_b):
-
-   #    self.model_A = model_a
-   #    self.model_B = model_b
-
-   #    # Build concatenated stoichiometric matrix
-   #    compl_1      = np.zeros((self.model_A.S.shape[0],self.model_B.S.shape[1]))
-   #    compl_2      = np.zeros((self.model_B.S.shape[0], self.model_A.S.shape[1]))
-   #    part_a       = np.concatenate((self.model_A.S, compl_1), axis=1)
-   #    part_b       = np.concatenate((self.model_B.S, compl_2), axis=1)
-   #    # A concatenated biomass function is also added in the concatenated S matrix
-   #    self.pair_biomass_function    = np.concatenate((self.biomass_function_A, self.biomass_function_B), axis=0)
-   #    self.conc_S  = np.concatenate((part_a, part_b), axis=0)
-   #    self.conc_S  = np.stack((self.conc_S, self.pair_biomass_function), axis=-1)
-
-   #    # Get concatenated bounds
-   #    self.conc_lb = np.concatenate((self.model_A.lb, self.model_B.lb), axis=0)
-   #    self.conc_ub = np.concatenate((self.model_A.ub, self.model_B.ub), axis=0)
-
-   #    # Get concatenated metabolites and reactions
-   #    self.conc_metabolites = self.model_A.metabolites + self.model_B.metabolites
-   #    self.conc_metabolites = self.model_A.metabolites + self.model_B.metabolites
-
-
-   #    # How to deal with biomass functions..? Keep indexes from both and work with them one at a time 
-   #    self.biomass_function_A       = self.model_A.biomass_function
-   #    self.biomass_index_function_A = self.model_A.biomass_index
-   #    self.biomass_function_B       = self.model_B.biomass_function
-   #    self.biomass_index_function_B = self.model_B.biomass_index
-
-   #    self.pair_biomass_function    = np.concatenate((self.biomass_function_A, self.biomass_function_B), axis=0)
-
-
-
-   #    self.pair_biomas_index        =
-   #    self.pair_biomass_function    = pair_biomass_function
