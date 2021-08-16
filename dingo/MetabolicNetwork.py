@@ -276,7 +276,7 @@ class communityMetabolicNetwork():
 
 
     @classmethod
-    def buildMoelList(cls, directory, format_type):
+    def buildModelList(cls, directory, format_type):
         comm_tuple_args = getModelList(directory, format_type)
         return cls(comm_tuple_args)
 
@@ -311,7 +311,7 @@ class communityMetabolicNetwork():
     @property
     def modelList(self):
         return self._modelList
-        
+
     @property
     def lb(self):
         return self._lb
