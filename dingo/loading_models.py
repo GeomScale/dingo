@@ -180,3 +180,79 @@ def read_mat_file(input_file):
     biomass_index = biomass_index[0][0]
 
     return lb, ub, S, metabolites, reactions, biomass_index, biomass_function
+
+
+
+def getModelList(directory, format_type):
+
+# This implementation works only for communities of 2 models 
+# Once our method is validated, we will move on to implement it for more 
+
+    """
+    A Python function to get all the metabolic network files under a directory 
+    and build a concatenated model and return:
+    (a) lower/upper flux bounds
+    (b) the stoichiometric matrix S (dense format)
+    (c) the list of the metabolites
+    (d) the list of reactions
+    (e) the index of the biomass pseudoreaction
+    (f) the objective function to maximize the biomass pseudoreaction
+
+    Keyword arguments:
+    directory -- directory where the metabolic network files of interest are located 
+    """
+
+    modelList = []
+    for filename in os.listdir(directory):
+        f = os.path.join(directory, filename)
+        if os.path.isfile(f):
+            if format_type == "mat":
+                model = MetabolicNetwork.from_mat(f)
+            if format_type == "json":
+                model = MetabolicNetwork.from_json(f)
+            modelList.append(model)
+
+    # At a a later point
+    # Come back and replace the following section with a loop 
+    # where conc_S will be like: 
+    # S1   0   0   0 
+    # 0    S2  0   0 
+    # 0    0   S3  0 
+    # 0    0   0   S4 ....   
+
+    model_A = modelList[0]
+    model_B = modelList[1]
+    
+    
+    # Build concatenated stoichiometric matrix
+    compl_1 = np.zeros((model_A.S.shape[0], model_B.S.shape[1]))
+    compl_2 = np.zeros((model_B.S.shape[0], model_A.S.shape[1]))
+    part_a  = np.concatenate((model_A.S, compl_1), axis=1)
+    part_b  = np.concatenate((model_B.S, compl_2), axis=1)
+
+    # Build concatenated biomass function 
+    pair_biomass_function    = np.concatenate((model_A.S[:,model_A.biomass_index], model_B.S[:,model_B.biomass_index]), axis=0)
+    pair_biomass_function    = pair_biomass_function.reshape((pair_biomass_function.shape[0], 1))
+    conc_S  = np.concatenate((part_a, part_b), axis=0)
+    conc_S  = np.concatenate((conc_S, pair_biomass_function), axis=1)
+            
+    # Get concatenated bounds
+    conc_lb = np.concatenate((model_A.lb, model_B.lb), axis=0)
+    conc_lb = np.append(conc_lb, 0.0)
+    conc_ub = np.concatenate((model_A.ub, model_B.ub), axis=0)
+    conc_ub = np.append(conc_ub, 1000.0)
+    
+    # Get concatenated reactions.. (including biomass overall)
+    conc_reactions = model_A.reactions + model_B.reactions 
+    conc_reactions.append("biomass_overall")
+    conc_reactions = conc_reactions
+
+    # .. and metabolites
+    conc_metabolites = model_A.metabolites + model_B.metabolites
+
+    # Overall biomass function info
+    conc_biomass_function      = np.zeros((1,conc_S.shape[1] -1))
+    conc_biomass_function = np.append(conc_biomass_function, 1.0)
+    conc_biomass_index    = conc_S.shape[1] -1 
+
+    return lb, ub, S, metabolites, reactions, biomass_index, biomass_function, modelList
