@@ -283,7 +283,7 @@ class CommunityMetabolicNetwork():
     def fva(self):
         """A member function to apply the FVA method on the community metabolic network."""
 
-        if self._parameters["fast_computations"]:
+        if self._comm_parameters["fast_computations"]:
             return fast_fva(
                 self._comm_lb,
                 self._comm_ub,

@@ -418,7 +418,7 @@ class CommunityPolytopeSampler:
         self._T = np.eye(n)
         self._T_shift = np.zeros(n)
 
-        return self._A, self._b, self._N, self._N_shift
+        return self._comm_A, self._comm_b, self._comm_N, self._comm_N_shift
 
 
     def generate_steady_states(
@@ -449,12 +449,12 @@ class CommunityPolytopeSampler:
 
         if self._parameters["first_run_of_mmcs"]:
             steady_states = map_samples_to_steady_states(
-                samples, self._N, self._N_shift
+                samples, self._comm_N, self._comm_N_shift
             )
             self._parameters["first_run_of_mmcs"] = False
         else:
             steady_states = map_samples_to_steady_states(
-                samples, self._N, self._N_shift, self._T, self._T_shift
+                samples, self._comm_N, self._comm_N_shift, self._T, self._T_shift
             )
 
         self._T = np.dot(self._T, Tr)
