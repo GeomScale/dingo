@@ -196,3 +196,18 @@ def plot_histogram(reaction_fluxes, reaction, n_bins=40):
     plt.axis([np.amin(reaction_fluxes), np.amax(reaction_fluxes), 0, np.amax(n) * 1.2])
 
     plt.show()
+
+
+def matrices_for_community_level(Aeq_list, beq_list, ):
+#     """A Python function to derive the matrices A, Aeq and the vectors b, beq of the low dimensional polytope at the community level,
+#     such that A*x <= b and Aeq*x = beq.
+
+#     Keyword arguments:
+#     S -- the stoichiometric matrix
+#     lb -- lower bounds for the fluxes, i.e., a n-dimensional vector
+#     ub -- upper bounds for the fluxes, i.e., a n-dimensional vector
+#     min_fluxes -- minimum values of the fluxes, i.e., a n-dimensional vector
+#     max_fluxes -- maximum values for the fluxes, i.e., a n-dimensional vector
+#     """
+
+    return 'ok'

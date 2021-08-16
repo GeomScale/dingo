@@ -298,65 +298,76 @@ class PolytopeSampler:
 
 
 
-class CommunityPolytopeSampler:
+# class CommunityPolytopeSampler:
 
-        self._metabolic_network = metabol_net
-        self._comm_A = []
-        self._comm_b = []
-        self._comm_N = []
-        self._comm_N_shift = []
-        self._comm_T = []
-        self._comm_T_shift = []
-        self._parameters = {}
-        self._parameters["nullspace_method"] = "sparseQR"
-        self._parameters["opt_percentage"] = self.metabolic_network.parameters[
-            "opt_percentage"
-        ]
-        self._parameters["distribution"] = "uniform"
-        self._parameters["first_run_of_mmcs"] = True
+#     def __init__(self, metabol_net):
 
-        try:
-            import gurobipy
+#         self._metabolic_network = metabol_net
+#         self._comm_A = []
+#         self._comm_b = []
+#         self._comm_N = []
+#         self._comm_N_shift = []
+#         self._comm_T = []
+#         self._comm_T_shift = []
+#         self._parameters = {}
+#         self._parameters["nullspace_method"] = "sparseQR"
+#         self._parameters["opt_percentage"] = self.metabolic_network.parameters[
+#             "opt_percentage"
+#         ]
+#         self._parameters["distribution"] = "uniform"
+#         self._parameters["first_run_of_mmcs"] = True
 
-            self._parameters["fast_computations"] = True
-            self._parameters["tol"] = 1e-06
-        except ImportError as e:
-            self._parameters["fast_computations"] = False
-            self._parameters["tol"] = 1e-03
+#         try:
+#             import gurobipy
 
-
-
-# Aeq = |Aeq1  0|    A = |A1 0|       b = [b1 b2]    beq = [beq1 beq2]
-#       |0  Aeq2|        |0 A2|
+#             self._parameters["fast_computations"] = True
+#             self._parameters["tol"] = 1e-06
+#         except ImportError as e:
+#             self._parameters["fast_computations"] = False
+#             self._parameters["tol"] = 1e-03
 
 
-    # def get_matrices_of_community_low_dim_polytope(S, lb, ub, min_fluxes, max_fluxes):
-    def get_matrices_of_community_low_dim_polytope(self.modelList):
-        
 
-        for model in self._modelList:
+#     def getIndividualMatrices(modelList):
 
-            model_A = []
-            model_b = []
-            model_N = []
-            model_N_shift = []
-            model_T = []
-            model_T_shift = []
+#         matrices = []
+#         for model in modelList:
+#             sampler = PolytopeSampler(model)
 
-            (
-                min_fluxes,
-                max_fluxes,
-                max_biomass_flux_vector,
-                max_biomass_objective,
-            ) = model.fva()
 
-            model_A, model_b, model_Aeq, model_beq = get_matrices_of_low_dim_polytope(
-                                                        model.S,
-                                                        model.lb,
-                                                        model.ub,
-                                                        min_fluxes,
-                                                        max_fluxes,
-                                                    )
+
+
+
+
+# # Aeq = |Aeq1  0|    A = |A1 0|       b = [b1 b2]    beq = [beq1 beq2]
+# #       |0  Aeq2|        |0 A2|
+
+#     # def get_matrices_of_community_low_dim_polytope(S, lb, ub, min_fluxes, max_fluxes):
+#     def get_matrices_of_community_low_dim_polytope(self.modelList):
+
+#         for model in self._modelList:
+
+#             model_A = []
+#             model_b = []
+#             model_N = []
+#             model_N_shift = []
+#             model_T = []
+#             model_T_shift = []
+
+#             (
+#                 min_fluxes,
+#                 max_fluxes,
+#                 max_biomass_flux_vector,
+#                 max_biomass_objective,
+#             ) = model.fva()
+
+#             model_A, model_b, model_Aeq, model_beq = get_matrices_of_low_dim_polytope(
+#                                                         model.S,
+#                                                         model.lb,
+#                                                         model.ub,
+#                                                         min_fluxes,
+#                                                         max_fluxes,
+#                                                     )
                                                 
 
-        return A, b, Aeq, beq
+#         return A, b, Aeq, beq

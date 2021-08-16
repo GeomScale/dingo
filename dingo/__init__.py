@@ -25,7 +25,9 @@ from dingo.utils import (
 )
 from dingo.parser import dingo_args
 from dingo.MetabolicNetwork import MetabolicNetwork
+from dingo.MetabolicNetwork import communityMetabolicNetwork
 from dingo.PolytopeSampler import PolytopeSampler
+# from dingo.PolytopeSampler import CommunityPolytopeSampler
 
 try:
     import gurobipy

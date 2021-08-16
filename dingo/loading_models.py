@@ -6,7 +6,7 @@
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
-import json
+import json, os
 import scipy.io
 import numpy as np
 
@@ -201,6 +201,7 @@ def getModelList(directory, format_type):
     Keyword arguments:
     directory -- directory where the metabolic network files of interest are located 
     """
+    from dingo.MetabolicNetwork import MetabolicNetwork
 
     modelList = []
     for filename in os.listdir(directory):
@@ -222,7 +223,6 @@ def getModelList(directory, format_type):
 
     model_A = modelList[0]
     model_B = modelList[1]
-    
     
     # Build concatenated stoichiometric matrix
     compl_1 = np.zeros((model_A.S.shape[0], model_B.S.shape[1]))
@@ -255,4 +255,4 @@ def getModelList(directory, format_type):
     conc_biomass_function = np.append(conc_biomass_function, 1.0)
     conc_biomass_index    = conc_S.shape[1] -1 
 
-    return lb, ub, S, metabolites, reactions, biomass_index, biomass_function, modelList
+    return conc_lb, conc_ub, conc_S, conc_metabolites, conc_reactions, conc_biomass_index, conc_biomass_function, modelList

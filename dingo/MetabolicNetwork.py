@@ -225,14 +225,12 @@ class MetabolicNetwork:
         self._ub[index_val] = 0
 
 
-
-
 class communityMetabolicNetwork():
 
-# This implementation works only for communities of 2 models 
-# Once our method is validated, we will move on to implement it for more 
+    # This implementation works only for communities of 2 models 
+    # Once our method is validated, we will move on to implement it for more 
 
-    def __init__(self, directory):
+    def __init__(self, comm_tuple_args):
 
         self._parameters = {}
         self._parameters["opt_percentage"]   = 100
@@ -246,19 +244,19 @@ class communityMetabolicNetwork():
         except ImportError as e:
             self._parameters["fast_computations"] = False
 
-        if len(tuple_args) != 7:
+        if len(comm_tuple_args) != 8:
             raise Exception(
                 "An unknown input format given to initialize a metabolic network object."
             )
 
-        self._lb               = tuple_args[0]
-        self._ub               = tuple_args[1]
-        self._S                = tuple_args[2]
-        self._metabolites      = tuple_args[3]
-        self._reactions        = tuple_args[4]
-        self._biomass_index    = tuple_args[5]
-        self._biomass_function = tuple_args[6]
-        self._modelList        = tuple_args[7]
+        self._lb               = comm_tuple_args[0]
+        self._ub               = comm_tuple_args[1]
+        self._S                = comm_tuple_args[2]
+        self._metabolites      = comm_tuple_args[3]
+        self._reactions        = comm_tuple_args[4]
+        self._biomass_index    = comm_tuple_args[5]
+        self._biomass_function = comm_tuple_args[6]
+        self._modelList        = comm_tuple_args[7]
 
         try:
             if (
@@ -276,6 +274,11 @@ class communityMetabolicNetwork():
         except LookupError as error:
             raise error.with_traceback(sys.exc_info()[2])
 
+
+    @classmethod
+    def buildMoelList(cls, directory, format_type):
+        comm_tuple_args = getModelList(directory, format_type)
+        return cls(comm_tuple_args)
 
     def fva(self):
         """A member function to apply the FVA method on the community metabolic network."""
@@ -305,13 +308,10 @@ class communityMetabolicNetwork():
         else:
             return slow_fba(self._conc_lb, self._conc_ub, self._S, self._conc_biomass_function)
 
-
-    @classmethod
-    def buildMoelList(cls, directory, format_type):
-        tuple_args = getModelList(directory, format_type)
-        return cls(tuple_args)
-
-
+    @property
+    def modelList(self):
+        return self._modelList
+        
     @property
     def lb(self):
         return self._lb
