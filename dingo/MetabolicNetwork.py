@@ -309,7 +309,7 @@ class communityMetabolicNetwork():
     @classmethod
     def buildMoelList(cls, directory, format_type):
         tuple_args = getModelList(directory, format_type)
-                return cls(tuple_args)
+        return cls(tuple_args)
 
 
     @property
