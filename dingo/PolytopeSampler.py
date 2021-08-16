@@ -399,11 +399,12 @@ class CommunityPolytopeSampler:
             list_of_Aeq.append(model[2])
             list_of_beq.append (model[3])
 
-        tmp_Aeq = buildConqMatrix(list_of_Aeq)
         tmp_A   = buildConqMatrix(list_of_A)
+        tmp_b   = np.concatenate(list_of_b, axis=0)
 
-        tmp_beq = [x for x in list_of_beq]
-        tmp_b   = [x for x in list_of_b]
+        tmp_Aeq = buildConqMatrix(list_of_Aeq)
+        tmp_beq = np.concatenate(list_of_beq, axis=0)
+
 
         # By making use of the matrices just built, get full polytope  
         (
@@ -413,15 +414,11 @@ class CommunityPolytopeSampler:
             self._comm_N_shift, 
         ) = get_matrices_of_full_dim_polytope(tmp_A, tmp_b, tmp_Aeq, tmp_beq)
 
-
-        n = self._A.shape[1]
+        n = self._comm_A.shape[1]
         self._T = np.eye(n)
         self._T_shift = np.zeros(n)
 
         return self._A, self._b, self._N, self._N_shift
-        
-
-
 
 
     def generate_steady_states(
