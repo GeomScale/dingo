@@ -39,29 +39,36 @@ Other helpful links:
 
 Clone the repository, 
 
-    git clone git@github.com:hariszaf/dingo.git dingo
+    git clone git@github.com:geomscale/dingo.git dingo
     cd dingo
     git branch -vv
 
 the last command should tell you that you are in `develop` branch.
 
-To compile the `C++` code you have to specify the path to external library `liblpsolve55.so/dll/dylib` (see [here](doc/cpp_interface.md) more detail), by running, in folder test:
+Now you need to get the `volesti` sumbodule that `dingo` makes use of. 
 
-    mkdir -p test/build && cd test/build
-    cmake -DLP_SOLVE=_PATH_TO_LIB_FILE_ ..
-    # e.g. on linux: cmake -DLP_SOLVE=/usr/lib/lp_solve/liblpsolve55.so ..
-    make
+To do so, you need to run 
 
-Run the tests, 
+    git submodule update --init
 
-    ctest -jK 
+Now get the `boost` library:
 
-where `K`  is the number of CPU threads. By adding the option `--verbose` to `ctest` you get more information about the tests, 
-*e.g.* time per test, volume computed and the name of the polytope or convex body.
+    wget -O boost_1_76_0.tar.bz2 https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2 
+    tar xjf boost_1_76_0.tar.bz2
+    rm boost_1_76_0.tar.bz2
 
-![test_cube](https://user-images.githubusercontent.com/3660366/72348403-0524df00-36e3-11ea-9b6d-288a2bddc22c.png)
+And now you are ready to compile `dingo`
 
-If everything works for you, you may move forward.
+    python setup.py install --user 
+
+Once the last command is completed, you may check if everythings is fine by running some `dingo` tests
+
+    python tests/unit_tests.py
+
+
+If everything is ok, you will see something like this:
+
+[![asciicast](https://asciinema.org/a/3IwNykajlDGEndX2rUtc0D2Ag.svg)](https://asciinema.org/a/3IwNykajlDGEndX2rUtc0D2Ag)
 
 ## Fork `dingo` repository (this is your repo now!)
 
@@ -69,10 +76,10 @@ You can't work directly in the original `dingo` repository, therefore you should
 This way you can modify the code and when the job is done send a pull request to merge your changes with the original 
 repository.
 
-![fork](https://user-images.githubusercontent.com/3660366/72348562-57fe9680-36e3-11ea-9746-385ff61c752a.png)
+![fork](https://raw.githubusercontent.com/hariszaf/dingo/dingo_tutorial/tutorials/figs/fork.png)
 
 1. login on `GitHub`
-2. go to [dingo repository](https://github.com/GeomScale/volume_approximation)
+2. go to [dingo repository](https://github.com/GeomScale/dingo)
 3. click the 'Fork' button
 4. choose your profile
 5. wait
@@ -88,13 +95,15 @@ Go out of `dingo` directory
 
 clone your repository and checkout develop branch
 
-    git clone git@github.com:vissarion/volume_approximation.git dingo_fork
+    git clone git@github.com:hariszaf/dingo.git dingo_fork
     cd dingo_fork
     git checkout develop
     git branch -vv
     git pull
 
-see commits
+In this case `hariszaf` was the user's name who had forked `dingo`. Make sure you replace this with your own. 
+
+To see the so far commits, simply run:
 
     git log
     gitk
@@ -124,47 +133,52 @@ Make sure you're in develop branch running
 
     git branch -vv
 
-you should see
+you should see something like this: 
 
-![branch -vv](https://user-images.githubusercontent.com/3660366/72348696-a1e77c80-36e3-11ea-93ec-70f5622c0675.png)
+    * develop a76b4be [origin/develop] Update issue templates
 
-Now you should pick a name for your new branch that doesn't already exist. 
-The following checks for existing remote branches
+Now you should pick **a name for your new branch that doesn't already exist**. 
+The following returns a list of all the existing remote branches
 
     git branch -a
 
-![List of branches](https://user-images.githubusercontent.com/3660366/72348763-c5aac280-36e3-11ea-8f2c-c66e2c107929.png)
 Alternatively, you can check them on `GitHub`.
 
-Assume you want to add some new functionality (i.e. a new feature) for example a new sampling algorithm. Then you have 
-to create a new branch e.g. `feature/the_fastest_sampling_algo_ever`
+Assume you want to add some new functionality. 
+Then you have to create a new branch e.g. `feature/my_cool_new_feature`
 
 Create new local branch
 
-    git branch feature/the_fastest_sampling_algo_ever
-    git checkout feature/the_fastest_sampling_algo_ever
+    git branch feature/my_cool_new_feature
+    git checkout feature/my_cool_new_feature
 
 push it to your fork
 
-    git push -u my_fork feature/the_fastest_sampling_algo_ever
+    git push -u my_fork feature/my_cool_new_feature
 
-Note that the `-u` switch also sets up the tracking of the remote branch. Your new branch now is created!
+Note that the `-u` switch also sets up the tracking of the remote branch. 
+Your new branch now is created!
 
 ### Verify your new branch (optional)
 
-Now with the command
+Now if you check the branches present on your repository
+you'll see the `develop` and `master` branches as well as the one you just created
 
-    git branch -vv
-
-you see
-
-![branch-picked](https://user-images.githubusercontent.com/3660366/72348881-09053100-36e4-11ea-8187-c5a2fc7004b2.png)
+```bash
+        user@mypc:~/dingo$git branch -vv
+        develop        f82fcce [origin/develop] Revert "Revert "Update issue templates""
+        * dingo_tutorial 1806b75 [origin/dingo_tutorial] notebook moved under /tutorials
+        pairs          17d6d0b [origin/pairs] ignore notebook checkpoints
+```
 
 Note that without the `-u` switch you wouldn't see the tracking information for your new branch.
 
-Alternatively, your newly created remote branch is also available on GitHub
+Your newly created remote branch is also available on GitHub
+on your fork repository!
 
-![new-feature-branch-github](https://user-images.githubusercontent.com/3660366/72349060-76b15d00-36e4-11ea-8065-e2367d5a2696.png)
+![branch_on_github](https://raw.githubusercontent.com/hariszaf/dingo/dingo_tutorial/tutorials/figs/branches_github.png)
+
+Notice, we are **not** on the `dingo` repository under the `GeomScale` organization, but on the user's personal account. 
 
 ## Modify the branch (implement, implement, implement)
 
@@ -182,7 +196,7 @@ Also if your contribution is a bugfix then consider adding this case to the test
 
 At the end, push your changes to the remote branch
 
-    git push my_fork feature/the_fastest_sampling_algo_ever
+    git push my_fork feature/my_cool_new_feature
 
 or if your local branch is tracking the remote one, just
 
@@ -196,7 +210,7 @@ Click "Compare and pull request" button or the "New pull request" button.
 
 Add title and description
 
-![RP](https://user-images.githubusercontent.com/3660366/72349397-21298000-36e5-11ea-9932-c8759c34ab2f.png)
+![RP](https://raw.githubusercontent.com/hariszaf/dingo/dingo_tutorial/tutorials/figs/pr.png)
 
 and click the "Create pull request" button.
 
