@@ -6,8 +6,7 @@ from all of them.
 
 In our example case, we use two BIGG models `e_coli_core` and `` as they are among those with the lowest number of reactions, 
 so not to have long computation time for it. 
-Even in that case, the computational time needed is not negligible, especially if `gurobi` is not available. 
-(more than 10 minutes)
+Even in that case, the computational time needed is not negligible, especially if `gurobi` is not available.
 
 Here is how to use `dingo` for a community. 
 
