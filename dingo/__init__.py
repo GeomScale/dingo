@@ -22,10 +22,13 @@ from dingo.utils import (
     get_matrices_of_low_dim_polytope,
     get_matrices_of_full_dim_polytope,
     plot_histogram,
+    buildConqMatrix,
 )
 from dingo.parser import dingo_args
 from dingo.MetabolicNetwork import MetabolicNetwork
+from dingo.MetabolicNetwork import CommunityMetabolicNetwork
 from dingo.PolytopeSampler import PolytopeSampler
+from dingo.PolytopeSampler import CommunityPolytopeSampler
 
 try:
     import gurobipy

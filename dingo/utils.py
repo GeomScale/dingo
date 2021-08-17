@@ -196,3 +196,48 @@ def plot_histogram(reaction_fluxes, reaction, n_bins=40):
     plt.axis([np.amin(reaction_fluxes), np.amax(reaction_fluxes), 0, np.amax(n) * 1.2])
 
     plt.show()
+
+
+def buildConqMatrix(list_of_matrices):
+
+    m      = 0
+    n      = 0
+    frames = [] 
+    for matrix in list_of_matrices: 
+        m += matrix.shape[0]
+        n += matrix.shape[1]
+        frames.append(matrix.shape[1])
+
+    counter = 0
+    parts   = []
+    for matrix in list_of_matrices:
+        if counter == 0: 
+            compl = np.zeros((matrix.shape[0], n - matrix.shape[1]))
+            part  = np.concatenate((matrix, compl), axis=1)
+
+        elif counter == len(list_of_matrices) - 1: 
+            compl = np.zeros((matrix.shape[0], n - matrix.shape[1]))
+            part  = np.concatenate((compl, matrix), axis=1)
+
+        else:
+            prev        = sum(frames[:counter])
+            after       = sum(frames[counter+1:])
+            compl_prev  = np.zeros((matrix.shape[0], prev))
+            compl_after = np.zeros((matrix.shape[0], after))
+            part_a      = np.concatenate((compl_prev, matrix), axis=1)
+            part        = np.concatenate((part_a, compl_after), axis=1)
+                        
+        parts.append(part)
+        counter += 1
+
+    part_counter = 0 
+    for part in parts: 
+        if part_counter == 0: 
+            concMatrix = part                
+        else: 
+            concMatrix = np.concatenate((concMatrix, part), axis=0)
+        part_counter += 1
+
+    return concMatrix
+
+ 
