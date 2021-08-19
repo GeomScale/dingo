@@ -64,7 +64,7 @@ def dingo_main():
 
     args = dingo_args()
 
-    if args.metabolic_network is None and args.polytope is None and not args.histogram:
+    if args.metabolic_network is None and args.polytope is None and args.community is None and not args.histogram:
         raise Exception(
             "You have to give as input either a model or a polytope derived from a model."
         )
@@ -228,6 +228,68 @@ def dingo_main():
                 "dingo_steady_states_" + name + ".pckl", "wb"
             ) as dingo_steadystates_file:
                 pickle.dump(steady_states, dingo_steadystates_file)
+
+# Community oriented case
+    elif args.community is not None:
+
+        if arg.community_models is None: 
+            raise Exception("You need to provide the path to the directory with the metabolic networks.")
+
+        if arg.format is None:
+            raise Exception("Provide the format of the metabolic networks, i.e. json, mat etc.")
+
+        if arg.format == "mat" and arg.format != "mat":
+            raise Exception("dingo supports only .mat and .json models for the time being.")
+
+        model = CommunityMetabolicNetwork.buildModelList(arg.community_models, arg.format)
+
+        sampler = CommunityPolytopeSampler(model)
+
+        if args.preprocess_only:
+
+            sampler.getIndividualMatrices()
+            sampler.matrices_for_community_level()
+
+            polytope_info = (
+                sampler,
+                name,
+            )
+
+            with open("dingo_community_model_" + name + ".pckl", "wb") as dingo_model_file:
+                pickle.dump(model, dingo_model_file)
+
+            with open(
+                "dingo_community_polytope_sampler_" + name + ".pckl", "wb"
+            ) as dingo_polytope_file:
+                pickle.dump(polytope_info, dingo_polytope_file)
+
+        else:
+
+            steady_states = sampler.generate_steady_states(
+                int(args.effective_sample_size),
+                args.psrf_check,
+                args.parallel_mmcs,
+                int(args.num_threads),
+            )
+
+            polytope_info = (
+                sampler,
+                name,
+            )
+
+            with open("dingo_comunity_model_" + name + ".pckl", "wb") as dingo_model_file:
+                pickle.dump(model, dingo_model_file)
+
+            with open(
+                "dingo_community_polytope_sampler_" + name + ".pckl", "wb"
+            ) as dingo_polytope_file:
+                pickle.dump(polytope_info, dingo_polytope_file)
+
+            with open(
+                "dingo_steady_states_" + name + ".pckl", "wb"
+            ) as dingo_steadystates_file:
+                pickle.dump(steady_states, dingo_steadystates_file)
+
 
     else:
 
