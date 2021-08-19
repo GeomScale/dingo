@@ -232,16 +232,16 @@ def dingo_main():
 # Community oriented case
     elif args.community is not None:
 
-        if arg.community_models is None: 
+        if args.community_models is None: 
             raise Exception("You need to provide the path to the directory with the metabolic networks.")
 
-        if arg.format is None:
+        if args.format is None:
             raise Exception("Provide the format of the metabolic networks, i.e. json, mat etc.")
 
-        if arg.format == "mat" and arg.format != "mat":
+        if args.format == "mat" and args.format != "mat":
             raise Exception("dingo supports only .mat and .json models for the time being.")
 
-        model = CommunityMetabolicNetwork.buildModelList(arg.community_models, arg.format)
+        model = CommunityMetabolicNetwork.buildModelList(args.community_models, args.format)
 
         sampler = CommunityPolytopeSampler(model)
 
