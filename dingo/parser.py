@@ -223,7 +223,7 @@ def dingo_args():
         "-cm",
         help="enables modeling of multiple metabolic networks as a community. Flux sampling can then be performed on the polytope derived by the model.",
         required=False,
-        default=False,
+        default=None,
         metavar="",
     )
 
@@ -232,7 +232,7 @@ def dingo_args():
         "-cmd",
         help="Path for the directory with the metabolic networks of the community under study. On this directory, you need to make sure that only the metabolic network files are present.",
         required=False,
-        default=False,
+        default=None,
         metavar="",
     )
 

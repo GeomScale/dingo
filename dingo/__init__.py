@@ -39,6 +39,7 @@ except ImportError as e:
 from volestipy import HPolytope
 
 
+
 def get_name(args_network):
 
     position = [pos for pos, char in enumerate(args_network) if char == "/"]
@@ -64,9 +65,9 @@ def dingo_main():
 
     args = dingo_args()
 
-    if args.metabolic_network is None and args.polytope is None and args.community is None and not args.histogram:
+    if args.metabolic_network is None and args.community is None and args.polytope is None and not args.histogram:
         raise Exception(
-            "You have to give as input either a model or a polytope derived from a model."
+            "You have to give as input either a model or a polytope derived from a model, or a set of models from a community."
         )
 
     if args.metabolic_network is None and ((args.fva) or (args.fba)):
