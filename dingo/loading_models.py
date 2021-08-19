@@ -182,11 +182,10 @@ def read_mat_file(input_file):
     return lb, ub, S, metabolites, reactions, biomass_index, biomass_function
 
 
-
-def getModelList(directory, format_type):
-
 # This implementation works only for communities of 2 models 
 # Once our method is validated, we will move on to implement it for more 
+# by using the buildConqMatrix function
+def getModelList(directory, format_type):
 
     """
     A Python function to get all the metabolic network files under a directory 
@@ -201,6 +200,7 @@ def getModelList(directory, format_type):
     Keyword arguments:
     directory -- directory where the metabolic network files of interest are located 
     """
+
     from dingo.MetabolicNetwork import MetabolicNetwork
 
     modelList = []
