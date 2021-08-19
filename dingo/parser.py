@@ -219,15 +219,6 @@ def dingo_args():
     )
 
     optional.add_argument(
-        "--community",
-        "-cm",
-        help="enables modeling of multiple metabolic networks as a community. Flux sampling can then be performed on the polytope derived by the model.",
-        required=False,
-        default=None,
-        metavar="",
-    )
-
-    optional.add_argument(
         "--community_models",
         "-cmd",
         help="Path for the directory with the metabolic networks of the community under study. On this directory, you need to make sure that only the metabolic network files are present.",
@@ -241,7 +232,7 @@ def dingo_args():
         "-f",
         help="Format of the metabolic network files. Set as 'json' or 'mat' according to your input models.",
         required=False,
-        default=False,
+        default=None,
         metavar="",
     )
 

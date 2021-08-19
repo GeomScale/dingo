@@ -65,7 +65,7 @@ def dingo_main():
 
     args = dingo_args()
 
-    if args.metabolic_network is None and args.community is None and args.polytope is None and not args.histogram:
+    if args.metabolic_network is None and args.community_models is None and args.polytope is None and not args.histogram:
         raise Exception(
             "You have to give as input either a model or a polytope derived from a model, or a set of models from a community."
         )
@@ -231,20 +231,20 @@ def dingo_main():
                 pickle.dump(steady_states, dingo_steadystates_file)
 
 # Community oriented case
-    elif args.community is not None:
+    elif args.community_models is not None:
 
-        if args.community_models is None: 
+        if args.community_models == None: 
             raise Exception("You need to provide the path to the directory with the metabolic networks.")
 
-        if args.format is None:
+        if args.format == None:
             raise Exception("Provide the format of the metabolic networks, i.e. json, mat etc.")
 
-        if args.format == "mat" and args.format != "mat":
+        if args.format != "json" and args.format != "mat":
             raise Exception("dingo supports only .mat and .json models for the time being.")
 
-        model = CommunityMetabolicNetwork.buildModelList(args.community_models, args.format)
+        com_model = CommunityMetabolicNetwork.buildModelList(args.community_models, args.format)
 
-        sampler = CommunityPolytopeSampler(model)
+        sampler = CommunityPolytopeSampler(com_model)
 
         if args.preprocess_only:
 
@@ -257,7 +257,7 @@ def dingo_main():
             )
 
             with open("dingo_community_model_" + name + ".pckl", "wb") as dingo_model_file:
-                pickle.dump(model, dingo_model_file)
+                pickle.dump(com_model, dingo_model_file)
 
             with open(
                 "dingo_community_polytope_sampler_" + name + ".pckl", "wb"
@@ -279,7 +279,7 @@ def dingo_main():
             )
 
             with open("dingo_comunity_model_" + name + ".pckl", "wb") as dingo_model_file:
-                pickle.dump(model, dingo_model_file)
+                pickle.dump(com_model, dingo_model_file)
 
             with open(
                 "dingo_community_polytope_sampler_" + name + ".pckl", "wb"

@@ -204,14 +204,15 @@ def getModelList(directory, format_type):
     from dingo.MetabolicNetwork import MetabolicNetwork
 
     modelList = []
+    amodel = "ERROR"
     for filename in os.listdir(directory):
         f = os.path.join(directory, filename)
         if os.path.isfile(f):
             if format_type == "mat":
-                model = MetabolicNetwork.from_mat(f)
-            if format_type == "json":
-                model = MetabolicNetwork.from_json(f)
-            modelList.append(model)
+                amodel = MetabolicNetwork.from_mat(f)
+            elif format_type == "json":
+                amodel = MetabolicNetwork.from_json(f)
+            modelList.append(amodel)
 
     # At a a later point
     # Come back and replace the following section with a loop 
@@ -223,9 +224,14 @@ def getModelList(directory, format_type):
 
     model_A = modelList[0]
     model_B = modelList[1]
-    
+    print(model_A)
+    print(type(model_A))    
+    print(format_type)
+    print("***************************")
+
     # Build concatenated stoichiometric matrix
     compl_1 = np.zeros((model_A.S.shape[0], model_B.S.shape[1]))
+
     compl_2 = np.zeros((model_B.S.shape[0], model_A.S.shape[1]))
     part_a  = np.concatenate((model_A.S, compl_1), axis=1)
     part_b  = np.concatenate((model_B.S, compl_2), axis=1)
