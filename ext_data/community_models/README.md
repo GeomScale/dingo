@@ -8,4 +8,11 @@ and then run `dingo`.
 
 Remember to remove this `README.md` file if you will decide to use this directory. 
 
+Here is an example of how to run `dingo` from your terminal for the case of a community analysis:
+
+```bash=
+python -m dingo -cmd  </path_to_community_models_dir/>  --format json
+```
+
+
 
