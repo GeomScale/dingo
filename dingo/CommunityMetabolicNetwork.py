@@ -2,12 +2,13 @@
 # dingo is part of GeomScale project
 
 # Copyright (c) 2021 Apostolos Chalkis
+# Copyright (c) 2021 Haris Zafeiropoulos
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
 import numpy as np
 import sys, os
-from dingo.loading_models import read_json_file, read_mat_file, getModelList
+from dingo.loading_models import read_json_file, read_mat_file, get_model_list
 from dingo.fva import slow_fva
 from dingo.fba import slow_fba
 
@@ -69,7 +70,7 @@ class CommunityMetabolicNetwork():
 
     @classmethod
     def buildModelList(cls, directory, format_type):
-        comm_tuple_args = getModelList(directory, format_type)
+        comm_tuple_args = get_model_list(directory, format_type)
         return cls(comm_tuple_args)
 
     def fva(self):
@@ -92,8 +93,9 @@ class CommunityMetabolicNetwork():
                 self._comm_parameters["opt_percentage"],
             )
 
-    def fba(self):
-        """A member function to apply the FBA method on the community metabolic network."""
+    def max_community_growth_rate(self):
+        """A member function to apply the FBA method on the growth rate of the community metabolic network.
+        Based on the micom concept for modeling a microbial community."""
 
         if self._comm_parameters["fast_computations"]:
             return fast_fba(self._comm_lb, self._comm_ub, self._S, self._comm_biomass_function)

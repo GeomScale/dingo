@@ -185,7 +185,7 @@ def read_mat_file(input_file):
 # This implementation works only for communities of 2 models 
 # Once our method is validated, we will move on to implement it for more 
 # by using the buildConqMatrix function
-def getModelList(directory, format_type):
+def get_model_list(directory, format_type):
 
     """
     A Python function to get all the metabolic network files under a directory 
@@ -202,8 +202,9 @@ def getModelList(directory, format_type):
     """
 
     from dingo.MetabolicNetwork import MetabolicNetwork
+    from dingo.untils import build_conq_matrix
 
-    modelList = []
+    list_of_models = []
     amodel = "ERROR"
     for filename in os.listdir(directory):
         f = os.path.join(directory, filename)
@@ -212,53 +213,61 @@ def getModelList(directory, format_type):
                 amodel = MetabolicNetwork.from_mat(f)
             elif format_type == "json":
                 amodel = MetabolicNetwork.from_json(f)
-            modelList.append(amodel)
+            list_of_models.append(amodel)
 
-    # At a a later point
-    # Come back and replace the following section with a loop 
-    # where conc_S will be like: 
-    # S1   0   0   0 
-    # 0    S2  0   0 
-    # 0    0   S3  0 
-    # 0    0   0   S4 ....   
 
-    model_A = modelList[0]
-    model_B = modelList[1]
-    print(model_A)
-    print(type(model_A))    
-    print(format_type)
-    print("***************************")
+    
+    model_A = list_of_models[0]
+    model_B = list_of_models[1]
 
-    # Build concatenated stoichiometric matrix
-    compl_1 = np.zeros((model_A.S.shape[0], model_B.S.shape[1]))
+    list_of_stoichiometric_matrices = []
+    for model in list_of_models:
+        list_of_stoichiometric_matrices.append(model.S)
 
-    compl_2 = np.zeros((model_B.S.shape[0], model_A.S.shape[1]))
-    part_a  = np.concatenate((model_A.S, compl_1), axis=1)
-    part_b  = np.concatenate((model_B.S, compl_2), axis=1)
+
+
+    # # Build concatenated stoichiometric matrix
+    # compl_1 = np.zeros((model_A.S.shape[0], model_B.S.shape[1]))
+    # compl_2 = np.zeros((model_B.S.shape[0], model_A.S.shape[1]))
+    # part_a  = np.concatenate((model_A.S, compl_1), axis=1)
+    # part_b  = np.concatenate((model_B.S, compl_2), axis=1)
+
+
+    # Get concatenated bounds
+    conc_lb = np.concatenate(([model.lb for model in list_of_models]), axis=0)
+    conc_lb = np.append(conc_lb, 0.0)
+
+    conc_ub = np.concatenate(([model.ub for model in list_of_models]), axis=0)
+    conc_ub = np.append(conc_ub, 1000.0)
+    
+    # Get concatenated reactions.. (including biomass overall ?) and metabolites
+    conc_reactions   = []
+    conc_metabolites = []
+
+    for model in list_of_models: 
+        conc_reactions   = conc_reactions + model.reactions
+        conc_metabolites = conc_metabolites + model.metabolites
+    conc_reactions.append("biomass_overall")
+
 
     # Build concatenated biomass function 
+    """
+    
+    μ_c = Σ_i ( b_i / B * μ_i)
+    where μ_i is each specific model's biomass function 
+    and b_i is the abundance of each model.. we do not have this info for the time being... 
+
+    """
+
     pair_biomass_function    = np.concatenate((model_A.S[:,model_A.biomass_index], model_B.S[:,model_B.biomass_index]), axis=0)
     pair_biomass_function    = pair_biomass_function.reshape((pair_biomass_function.shape[0], 1))
     conc_S  = np.concatenate((part_a, part_b), axis=0)
     conc_S  = np.concatenate((conc_S, pair_biomass_function), axis=1)
-            
-    # Get concatenated bounds
-    conc_lb = np.concatenate((model_A.lb, model_B.lb), axis=0)
-    conc_lb = np.append(conc_lb, 0.0)
-    conc_ub = np.concatenate((model_A.ub, model_B.ub), axis=0)
-    conc_ub = np.append(conc_ub, 1000.0)
-    
-    # Get concatenated reactions.. (including biomass overall)
-    conc_reactions = model_A.reactions + model_B.reactions 
-    conc_reactions.append("biomass_overall")
-    conc_reactions = conc_reactions
 
-    # .. and metabolites
-    conc_metabolites = model_A.metabolites + model_B.metabolites
 
     # Overall biomass function info
     conc_biomass_function      = np.zeros((1,conc_S.shape[1] -1))
     conc_biomass_function = np.append(conc_biomass_function, 1.0)
     conc_biomass_index    = conc_S.shape[1] -1 
 
-    return conc_lb, conc_ub, conc_S, conc_metabolites, conc_reactions, conc_biomass_index, conc_biomass_function, modelList
+    return conc_lb, conc_ub, conc_S, conc_metabolites, conc_reactions, conc_biomass_index, conc_biomass_function, list_of_models

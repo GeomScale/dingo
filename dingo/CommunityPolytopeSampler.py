@@ -2,6 +2,7 @@
 # dingo is part of GeomScale project
 
 # Copyright (c) 2021 Apostolos Chalkis
+# Copyright (c) 2021 Haris Zafeiropoulos
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
@@ -13,7 +14,7 @@ from dingo.utils import (
     map_samples_to_steady_states,
     get_matrices_of_low_dim_polytope,
     get_matrices_of_full_dim_polytope,
-    buildConqMatrix
+    build_conq_matrix
 )
 
 try:
@@ -126,10 +127,10 @@ class CommunityPolytopeSampler:
             list_of_Aeq.append(model[2])
             list_of_beq.append (model[3])
 
-        tmp_A   = buildConqMatrix(list_of_A)
+        tmp_A   = build_conq_matrix(list_of_A)
         tmp_b   = np.concatenate(list_of_b, axis=0)
 
-        tmp_Aeq = buildConqMatrix(list_of_Aeq)
+        tmp_Aeq = build_conq_matrix(list_of_Aeq)
         tmp_beq = np.concatenate(list_of_beq, axis=0)
 
 
