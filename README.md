@@ -70,3 +70,5 @@ python3 tests/fast_implementation_test.py
 
 Read [dingo documentation](https://github.com/GeomScale/dingo/tree/develop/doc)
 
+You can also have a look at our [Google Collab notebook](https://colab.research.google.com/drive/1AdXCo6tMBV4lPDYWWOXhzcM0wg30OOIx?usp=sharing) 
+on how to use `dingo`.
