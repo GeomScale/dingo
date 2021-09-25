@@ -2,6 +2,7 @@
 # dingo is part of GeomScale project
 
 # Copyright (c) 2021 Apostolos Chalkis
+# Copyright (c) 2021 Haris Zafeiropoulos
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
@@ -198,7 +199,7 @@ def plot_histogram(reaction_fluxes, reaction, n_bins=40):
     plt.show()
 
 
-def buildConqMatrix(list_of_matrices):
+def build_conq_matrix(list_of_matrices):
 
     m      = 0
     n      = 0
