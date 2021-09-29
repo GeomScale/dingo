@@ -18,7 +18,7 @@ from dingo.utils import (
 
 try:
     import gurobipy
-    from dingo.gurobi_based_implementations import fast_fba, fast_fva, fast_inner_ball
+    from dingo.gurobi_based_implementations import fast_fba, fast_fva, fast_inner_ball, fast_find_redundant_facets
 except ImportError as e:
     pass
 
@@ -72,19 +72,26 @@ class PolytopeSampler:
             or self._T_shift == []
         ):
 
-            (
-                min_fluxes,
-                max_fluxes,
-                max_biomass_flux_vector,
-                max_biomass_objective,
-            ) = self._metabolic_network.fva()
+            #(
+            #    min_fluxes,
+            #    max_fluxes,
+            #    max_biomass_flux_vector,
+            #    max_biomass_objective,
+            #) = self._metabolic_network.fva()
 
-            A, b, Aeq, beq = get_matrices_of_low_dim_polytope(
-                self._metabolic_network.S,
+            #A, b, Aeq, beq = get_matrices_of_low_dim_polytope(
+            #    self._metabolic_network.S,
+            #    self._metabolic_network.lb,
+            #    self._metabolic_network.ub,
+            #    min_fluxes,
+            #    max_fluxes,
+            #)
+
+            A, b, Aeq, beq = fast_find_redundant_facets(
                 self._metabolic_network.lb,
                 self._metabolic_network.ub,
-                min_fluxes,
-                max_fluxes,
+                self._metabolic_network.S,
+                self._metabolic_network.biomass_function,
             )
 
             if (
@@ -113,6 +120,8 @@ class PolytopeSampler:
             n = self._A.shape[1]
             self._T = np.eye(n)
             self._T_shift = np.zeros(n)
+
+            print(self._A.shape)
 
         return self._A, self._b, self._N, self._N_shift
 
