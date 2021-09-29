@@ -2,6 +2,7 @@
 # dingo is part of GeomScale project
 
 # Copyright (c) 2021 Apostolos Chalkis
+# Copyright (c) 2021 Vissarion Fisikopoulos
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
@@ -48,13 +49,16 @@ class MetabolicNetwork:
 
         try:
             if (
-                self._lb.size != self._ub.size
-                or self._lb.size != self._S.shape[1]
-                or len(self._metabolites) != self._S.shape[0]
-                or len(self._reactions) != self._S.shape[1]
-                or self._biomass_function.size != self._S.shape[1]
-                or (self._biomass_index < 0)
-                or (self._biomass_index > self._biomass_function.size)
+                self._biomass_index is not None 
+                and ( 
+                    self._lb.size != self._ub.size
+                    or self._lb.size != self._S.shape[1]
+                    or len(self._metabolites) != self._S.shape[0]
+                    or len(self._reactions) != self._S.shape[1]
+                    or self._biomass_function.size != self._S.shape[1]
+                    or (self._biomass_index < 0)
+                    or (self._biomass_index > self._biomass_function.size)
+                )
             ):
                 raise Exception(
                     "Wrong tuple format given to initialize a metabolic network object."
@@ -69,9 +73,7 @@ class MetabolicNetwork:
                 "An unknown input format given to initialize a metabolic network object."
             )
 
-        tuple_args = read_json_file(arg)
-
-        return cls(tuple_args)
+        return cls(read_json_file(arg))
 
     @classmethod
     def from_mat(cls, arg):
@@ -80,9 +82,7 @@ class MetabolicNetwork:
                 "An unknown input format given to initialize a metabolic network object."
             )
 
-        tuple_args = read_mat_file(arg)
-
-        return cls(tuple_args)
+        return cls(read_mat_file(arg))
 
     def fva(self):
         """A member function to apply the FVA method on the metabolic network."""
