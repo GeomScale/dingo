@@ -86,13 +86,8 @@ class PolytopeSampler:
             #    min_fluxes,
             #    max_fluxes,
             #)
-
-            A, b, Aeq, beq = fast_find_redundant_facets(
-                self._metabolic_network.lb,
-                self._metabolic_network.ub,
-                self._metabolic_network.S,
-                self._metabolic_network.biomass_function,
-            )
+            print('hi')
+            A, b, Aeq, beq = fast_find_redundant_facets(self._metabolic_network.lb, self._metabolic_network.ub, self._metabolic_network.S, self._metabolic_network.biomass_function, self._parameters["opt_percentage"])
 
             if (
                 A.shape[0] != b.size
