@@ -3,4 +3,5 @@
 	url = https://gitlab.com/libeigen/eigen.git
 [submodule "volume_approximation"]
 	path = volume_approximation
-	url = https://github.com/TolisChal/volume_approximation.git
+	url = https://github.com/GeomScale/volume_approximation.git
+	branch = volesti4dingo
