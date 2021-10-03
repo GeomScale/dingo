@@ -46,6 +46,7 @@ class PolytopeSampler:
         self._parameters["opt_percentage"] = self.metabolic_network.parameters[
             "opt_percentage"
         ]
+        #self._parameters["opt_percentage"] = 90
         self._parameters["distribution"] = "uniform"
         self._parameters["first_run_of_mmcs"] = True
 
@@ -86,6 +87,7 @@ class PolytopeSampler:
             #    min_fluxes,
             #    max_fluxes,
             #)
+            max_biomass_flux_vector, max_biomass_objective = self._metabolic_network.fba()
             print('hi')
             A, b, Aeq, beq = fast_find_redundant_facets(self._metabolic_network.lb, self._metabolic_network.ub, self._metabolic_network.S, self._metabolic_network.biomass_function, self._parameters["opt_percentage"])
 
@@ -95,15 +97,17 @@ class PolytopeSampler:
                 or Aeq.shape[0] != beq.size
             ):
                 raise Exception("FVA failed.")
+            
+            
 
             A = np.vstack((A, -self._metabolic_network.biomass_function))
 
             b = np.append(
-                b,
-                -(self._parameters["opt_percentage"] / 100)
-                * self._parameters["tol"]
-                * math.floor(max_biomass_objective / self._parameters["tol"]),
-            )
+                b, -np.floor(max_biomass_objective/self._parameters["tol"])*self._parameters["tol"]*self._parameters["opt_percentage"]/100)
+                #-(self._parameters["opt_percentage"] / 100)
+                #* self._parameters["tol"]
+                #* math.floor(max_biomass_objective / self._parameters["tol"]),
+            #)
 
             (
                 self._A,

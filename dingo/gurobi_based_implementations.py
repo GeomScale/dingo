@@ -273,6 +273,30 @@ def fast_fva(lb, ub, S, c, opt_percentage=100):
         print("Gurobi solver failed.")
 
 
+def update_model(model, n, Aeq_spr, beq, lb, ub, objective_function):
+
+    model.remove(model.getVars())
+    model.update()
+    model.remove(model.getConstrs())
+    model.update()
+    x = model.addMVar(
+        shape=n,
+        vtype=GRB.CONTINUOUS,
+        name="x",
+        lb=lb,
+        ub=ub,
+    )
+    model.update()
+    model.addMConstr(Aeq_spr, x, "=", beq, name="c")
+    model.update()
+    model.setMObjective(
+        None, objective_function, 0.0, None, None, x, GRB.MINIMIZE
+    )
+    model.update()
+
+    return model
+
+
 def fast_find_redundant_facets(lb, ub, S, c, opt_percentage=100):
     """A Python function to perform fva using gurobi LP solver
     Returns the value of the optimal solution for all the following linear programs:
@@ -318,9 +342,11 @@ def fast_find_redundant_facets(lb, ub, S, c, opt_percentage=100):
     # add an additional constraint to impose solutions with at least `opt_percentage` of the optimal solution
     A = np.vstack((A, -c))
 
+    #b = np.append(
+    #    b, -(opt_percentage / 100) * tol * math.floor(max_biomass_objective / tol)
+    #)
     b = np.append(
-        b, -(opt_percentage / 100) * tol * math.floor(max_biomass_objective / tol)
-    )
+                b, -np.floor(max_biomass_objective/tol)*tol*opt_percentage/100)
 
     b_res = []
     A_res = np.empty((0, n), float)
@@ -371,6 +397,7 @@ def fast_find_redundant_facets(lb, ub, S, c, opt_percentage=100):
                 # Update the model with the extra constraints and then print it
                 #model.update()
 
+                model_iter=model.copy()
                 # Loop through the lines of the A matrix, set objective function for each and run the model
                 for i in range(n):
 
@@ -383,147 +410,55 @@ def fast_find_redundant_facets(lb, ub, S, c, opt_percentage=100):
                     redundant_facet_left = True
 
                     # for the maximum
+                    print(' ')
                     objective_function_max = np.asarray([-x for x in objective_function])
-                    model.setMObjective(
-                        None, objective_function_max, 0.0, None, None, x, GRB.MINIMIZE
-                    )
-                    model.update()
-                    model.optimize()
+                    model_iter = update_model(model_iter, n, Aeq_sparse, beq, lb, ub, objective_function_max)
+                    model_iter.optimize()
 
                     # Again if optimized
-                    status = model.status
+                    status = model_iter.status
                     if status == GRB.OPTIMAL:
                         # Get the max objective value
-                        max_objective = -model.getObjective().getValue()
-                        #max_fluxes.append(max_objective)
+                        max_objective = -model_iter.getObjective().getValue()
                     else:
                         max_objective = ub[i]
 
-                    #print('hi_update')
                     ub_iter = ub
                     ub_iter[i] = ub[i] + 1
-                    #model.problem.l = ub_iter
-                    model.remove(model.getVars())
-                    model.update()
-                    model.remove(model.getConstrs())
-                    model.update()
-                    x = model.addMVar(
-                    shape=n,
-                    vtype=GRB.CONTINUOUS,
-                    name="x",
-                    lb=lb,
-                    ub=ub_iter,
-                    )
-                    model.update()
-                    model.addMConstr(Aeq_sparse, x, "=", beq, name="c")
-                    model.update()
-                    model.setMObjective(
-                        None, objective_function_max, 0.0, None, None, x, GRB.MINIMIZE
-                    )
-                    #print('hi2_update')
-                    model.update()
-                    model.optimize()
+                    model_iter = update_model(model_iter, n, Aeq_sparse, beq, lb, ub_iter, objective_function_max)
+                    model_iter.optimize()
 
-                    status = model.status
+                    status = model_iter.status
                     if status == GRB.OPTIMAL:
                         # Get the max objective value
-                        max_objective2 = -model.getObjective().getValue()
+                        max_objective2 = -model_iter.getObjective().getValue()
                         print(np.abs(max_objective2 - max_objective))
                         if np.abs(max_objective2 - max_objective) > red_facet_tol:
-                            #A_res = np.append(A_res, np.array([A[i,]]), axis=0)
-                            #b_res.append(b[i])
-                            #print("appended1")
                             redundant_facet_right = False
 
-
-
-
-                    #model.variables[i].ub = ub[i]
-                    model.remove(model.getVars())
-                    model.update()
-                    model.remove(model.getConstrs())
-                    model.update()
-                    x = model.addMVar(
-                    shape=n,
-                    vtype=GRB.CONTINUOUS,
-                    name="x",
-                    lb=lb,
-                    ub=ub_iter,
-                    )
-                    model.update()
-                    model.addMConstr(Aeq_sparse, x, "=", beq, name="c")
-                    model.update()
-                    # for the minimum
-                    #objective_function = np.asarray([-x for x in objective_function])
-                    # Set the objective function in the model
-                    model.setMObjective(
-                        None, objective_function, 0.0, None, None, x, GRB.MINIMIZE
-                    )
-                    model.update()
-                    # Optimize model
-                    model.optimize()
+                    model_iter = update_model(model_iter, n, Aeq_sparse, beq, lb, ub, objective_function)
+                    model_iter.optimize()
 
                     # If optimized
-                    status = model.status
+                    status = model_iter.status
                     if status == GRB.OPTIMAL:
                         # Get the min objective value
-                        min_objective = model.getObjective().getValue()
-                        #min_fluxes.append(min_objective)
+                        min_objective = model_iter.getObjective().getValue()
                     else:
                         min_objective = lb[i]
                     
                     lb_iter = lb
                     lb_iter[i] = lb[i] - 1
-                    
-                    model.remove(model.getVars())
-                    model.update()
-                    model.remove(model.getConstrs())
-                    model.update()
-                    x = model.addMVar(
-                    shape=n,
-                    vtype=GRB.CONTINUOUS,
-                    name="x",
-                    lb=lb,
-                    ub=ub_iter,
-                    )
-                    model.update()
-                    model.addMConstr(Aeq_sparse, x, "=", beq, name="c")
-                    model.update()
-                    model.setMObjective(
-                        None, objective_function, 0.0, None, None, x, GRB.MINIMIZE
-                    )
-                    #model.variables[i].lb = lb[i]-10
-                    model.update()
-                    model.optimize()
+                    model_iter = update_model(model_iter, n, Aeq_sparse, beq, lb_iter, ub, objective_function)
+                    model_iter.optimize()
 
-                    status = model.status
+                    status = model_iter.status
                     if status == GRB.OPTIMAL:
                         # Get the max objective value
-                        min_objective2 = model.getObjective().getValue()
+                        min_objective2 = model_iter.getObjective().getValue()
                         print(np.abs(min_objective2 - min_objective))
                         if np.abs(min_objective2 - min_objective) > red_facet_tol:
-                            #print(A_res)
-                            #print(A[n+i,])
-                            #A_res = np.append(A_res, np.array([A[n+i,]]), axis=0)
-                            #print("appended2")
-                            #b_res.append(b[n + i])
                             redundant_facet_left = False
-
-                    #model.variables[i].lb = lb[i]
-                    model.remove(model.getVars())
-                    model.update()
-                    model.remove(model.getConstrs())
-                    model.update()
-                    x = model.addMVar(
-                    shape=n,
-                    vtype=GRB.CONTINUOUS,
-                    name="x",
-                    lb=lb,
-                    ub=ub_iter,
-                    )
-                    model.update()
-                    model.addMConstr(Aeq_sparse, x, "=", beq, name="c")
-                    model.update()
 
                     if ((not redundant_facet_left) or (not redundant_facet_right)):
                         width = abs(max_objective - min_objective)
@@ -543,23 +478,12 @@ def fast_find_redundant_facets(lb, ub, S, c, opt_percentage=100):
                         else: #fix this
                             if (not redundant_facet_left):
                                 A_res = np.append(A_res, np.array([A[n+i,]]), axis=0)
-                                #print("appended2")
                                 b_res.append(b[n + i])
                         
                             if (not redundant_facet_right):
                                 A_res = np.append(A_res, np.array([A[i,]]), axis=0)
-                                #print("appended2")
                                 b_res.append(b[i])
-                    #else:
-                    #    if (not redundant_facet_left):
-                    #        A_res = np.append(A_res, np.array([A[n+i,]]), axis=0)
-                    #        #print("appended2")
-                    #        b_res.append(b[n + i])
-                        
-                    #    if (not redundant_facet_right):
-                    #        A_res = np.append(A_res, np.array([A[i,]]), axis=0)
-                            #print("appended2")
-                    #        b_res.append(b[i])
+                    
 
                 # Make lists of fluxes numpy arrays
                 #min_fluxes = np.asarray(min_fluxes)
