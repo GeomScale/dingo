@@ -100,10 +100,10 @@ class PolytopeSampler:
             
             
 
-            A = np.vstack((A, -self._metabolic_network.biomass_function))
+            Aeq = np.vstack((Aeq, -self._metabolic_network.biomass_function))
 
-            b = np.append(
-                b, -np.floor(max_biomass_objective/self._parameters["tol"])*self._parameters["tol"]*self._parameters["opt_percentage"]/100)
+            beq = np.append(
+                beq, -np.floor(max_biomass_objective/self._parameters["tol"])*self._parameters["tol"]*self._parameters["opt_percentage"]/100)
                 #-(self._parameters["opt_percentage"] / 100)
                 #* self._parameters["tol"]
                 #* math.floor(max_biomass_objective / self._parameters["tol"]),

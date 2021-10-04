@@ -12,6 +12,7 @@ input_file_json = current_directory + "/ext_data/iSB619.json"
 
 model = MetabolicNetwork.from_json(input_file_json)
 model.set_fast_mode()
+#model.biomass_function = np.zeros(model.S.shape[1])
 
 sampler = PolytopeSampler(model)
 sampler.set_fast_mode()
