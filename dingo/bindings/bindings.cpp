@@ -234,6 +234,7 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
    
    HP.normalize();
    int d = HP.dimension();
+   bool completed = false;
 
    //mmcs_set_of_parameters = mmcs_params(d, 1000, 1);
 
@@ -273,19 +274,21 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
    MT TotalRandPoints;
    if (mmcs_set_of_parameters.parallelism == 1)
    {
-      perform_parallel_mmcs_step<AcceleratedBilliardWalkParallel>(HP, rng, mmcs_set_of_parameters.walk_length, mmcs_set_of_parameters.Neff, 
-                                                                  mmcs_set_of_parameters.max_num_samples, mmcs_set_of_parameters.window, 
-                                                                  Neff_sampled, mmcs_set_of_parameters.total_samples, mmcs_set_of_parameters.num_rounding_steps, 
-                                                                  TotalRandPoints, mmcs_set_of_parameters.complete, CheBall.first, mmcs_set_of_parameters.nburns, 
-                                                                  mmcs_set_of_parameters.num_threads, mmcs_set_of_parameters.req_round_temp, L);
+      completed = perform_parallel_mmcs_step<AcceleratedBilliardWalkParallel>(HP, rng, mmcs_set_of_parameters.walk_length, mmcs_set_of_parameters.Neff, 
+                                                                              mmcs_set_of_parameters.max_num_samples, mmcs_set_of_parameters.window, 
+                                                                              Neff_sampled, mmcs_set_of_parameters.total_samples, mmcs_set_of_parameters.num_rounding_steps, 
+                                                                              TotalRandPoints, CheBall.first, mmcs_set_of_parameters.nburns, 
+                                                                              mmcs_set_of_parameters.num_threads, mmcs_set_of_parameters.req_round_temp, L);
    }
    else
    {
-      perform_mmcs_step(HP, rng, mmcs_set_of_parameters.walk_length, mmcs_set_of_parameters.Neff, mmcs_set_of_parameters.max_num_samples,
-                        mmcs_set_of_parameters.window, Neff_sampled, mmcs_set_of_parameters.total_samples, mmcs_set_of_parameters.num_rounding_steps, 
-                        TotalRandPoints, mmcs_set_of_parameters.complete, CheBall.first, mmcs_set_of_parameters.nburns, mmcs_set_of_parameters.req_round_temp,
-                        WalkType);
+       completed = perform_mmcs_step(HP, rng, mmcs_set_of_parameters.walk_length, mmcs_set_of_parameters.Neff, mmcs_set_of_parameters.max_num_samples,
+                                     mmcs_set_of_parameters.window, Neff_sampled, mmcs_set_of_parameters.total_samples, mmcs_set_of_parameters.num_rounding_steps, 
+                                     TotalRandPoints, CheBall.first, mmcs_set_of_parameters.nburns, mmcs_set_of_parameters.req_round_temp,
+                                     WalkType);
    }
+
+   mmcs_set_of_parameters.complete = completed;
 
    mmcs_set_of_parameters.store_ess(mmcs_set_of_parameters.phase) = Neff_sampled;
    mmcs_set_of_parameters.store_nsamples(mmcs_set_of_parameters.phase) = mmcs_set_of_parameters.total_samples;
