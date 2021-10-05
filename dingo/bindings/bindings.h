@@ -13,7 +13,8 @@
 #ifndef VOLESTIBINDINGS_H
 #define VOLESTIBINDINGS_H
 
-#define VOLESTIPY
+#define DISABLE_LPSOLVE
+#define DISABLE_NLP_ORACLES
 #include <cmath>
 // from SOB volume - exactly the same for CG and CB methods
 #include <fstream>
