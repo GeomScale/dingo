@@ -29,6 +29,7 @@ except ImportError as e:
 
 from volestipy import HPolytope
 
+
 class PolytopeSampler:
     def __init__(self, metabol_net):
 
@@ -190,11 +191,13 @@ class PolytopeSampler:
 
         P = HPolytope(A, b)
 
-        if self._parameters["fast_computations"]:
+        try:
+            import gurobipy
+
             A, b, Tr, Tr_shift, samples = P.fast_mmcs(
                 ess, psrf, parallel_mmcs, num_threads
             )
-        else:
+        except ImportError as e:
             A, b, Tr, Tr_shift, samples = P.slow_mmcs(
                 ess, psrf, parallel_mmcs, num_threads
             )
@@ -247,11 +250,13 @@ class PolytopeSampler:
 
         P = HPolytope(A, b)
 
-        if self._parameters["fast_computations"]:
+        try:
+            import gurobipy
+
             A, b, Tr, Tr_shift, samples = P.fast_mmcs(
                 ess, psrf, parallel_mmcs, num_threads
             )
-        else:
+        except ImportError as e:
             A, b, Tr, Tr_shift, samples = P.slow_mmcs(
                 ess, psrf, parallel_mmcs, num_threads
             )

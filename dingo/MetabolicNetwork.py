@@ -48,17 +48,14 @@ class MetabolicNetwork:
         self._biomass_function = tuple_args[6]
 
         try:
-            if (
-                self._biomass_index is not None 
-                and ( 
-                    self._lb.size != self._ub.size
-                    or self._lb.size != self._S.shape[1]
-                    or len(self._metabolites) != self._S.shape[0]
-                    or len(self._reactions) != self._S.shape[1]
-                    or self._biomass_function.size != self._S.shape[1]
-                    or (self._biomass_index < 0)
-                    or (self._biomass_index > self._biomass_function.size)
-                )
+            if self._biomass_index is not None and (
+                self._lb.size != self._ub.size
+                or self._lb.size != self._S.shape[1]
+                or len(self._metabolites) != self._S.shape[0]
+                or len(self._reactions) != self._S.shape[1]
+                or self._biomass_function.size != self._S.shape[1]
+                or (self._biomass_index < 0)
+                or (self._biomass_index > self._biomass_function.size)
             ):
                 raise Exception(
                     "Wrong tuple format given to initialize a metabolic network object."
