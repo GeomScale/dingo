@@ -36,7 +36,6 @@ HPolytopeCPP::HPolytopeCPP(double *A_np, double *b_np, int n_hyperplanes, int n_
    }
 
    HP = Hpolytope(n_variables, A, b);
-   CheBall = HP.ComputeInnerBall();
 }
 // Use a destructor for the HPolytopeCPP object
 HPolytopeCPP::~HPolytopeCPP(){}
