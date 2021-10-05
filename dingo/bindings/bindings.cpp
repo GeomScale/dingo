@@ -66,13 +66,13 @@ double HPolytopeCPP::compute_volume(char* vol_method, char* walk_method,
       }
    } else if (strcmp(vol_method,"cooling_balls") == 0){
        if (strcmp(walk_method,"uniform_ball") == 0){
-         volume = volume_cooling_balls<BallWalk, RNGType>(HP, epsilon, walk_len);
+         volume = volume_cooling_balls<BallWalk, RNGType>(HP, epsilon, walk_len).second;
        } else if (strcmp(walk_method,"CDHR") == 0){
-         volume = volume_cooling_balls<CDHRWalk, RNGType>(HP, epsilon, walk_len);
+         volume = volume_cooling_balls<CDHRWalk, RNGType>(HP, epsilon, walk_len).second;
        } else if (strcmp(walk_method,"RDHR") == 0){
-         volume = volume_cooling_balls<RDHRWalk, RNGType>(HP, epsilon, walk_len);
+         volume = volume_cooling_balls<RDHRWalk, RNGType>(HP, epsilon, walk_len).second;
        } else if (strcmp(walk_method,"billiard") == 0){
-         volume = volume_cooling_balls<BilliardWalk, RNGType>(HP, epsilon, walk_len);
+         volume = volume_cooling_balls<BilliardWalk, RNGType>(HP, epsilon, walk_len).second;
        }
    }
    return volume;
