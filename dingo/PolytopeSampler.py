@@ -22,13 +22,12 @@ try:
         fast_fba,
         fast_fva,
         fast_inner_ball,
-        fast_find_redundant_facets,
+        fast_remove_redundant_facets,
     )
 except ImportError as e:
     pass
 
 from volestipy import HPolytope
-
 
 class PolytopeSampler:
     def __init__(self, metabol_net):
@@ -48,7 +47,6 @@ class PolytopeSampler:
         self._parameters["opt_percentage"] = self.metabolic_network.parameters[
             "opt_percentage"
         ]
-        # self._parameters["opt_percentage"] = 90
         self._parameters["distribution"] = "uniform"
         self._parameters["first_run_of_mmcs"] = True
 
@@ -82,7 +80,7 @@ class PolytopeSampler:
 
             if self._parameters["fast_computations"]:
 
-                A, b, Aeq, beq = fast_find_redundant_facets(
+                A, b, Aeq, beq = fast_remove_redundant_facets(
                     self._metabolic_network.lb,
                     self._metabolic_network.ub,
                     self._metabolic_network.S,
