@@ -55,7 +55,7 @@ class TestStringMethods(unittest.TestCase):
 
         steady_states = sampler.generate_steady_states()
 
-        self.assertEqual(sampler.A.shape[0], 175)
+        self.assertEqual(sampler.A.shape[0], 26)
         self.assertEqual(sampler.A.shape[1], 24)
 
         self.assertEqual(steady_states.shape[0], 95)
