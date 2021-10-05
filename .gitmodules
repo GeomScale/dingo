@@ -1,6 +1,7 @@
 [submodule "eigen"]
 	path = eigen
 	url = https://gitlab.com/libeigen/eigen.git
-[submodule "volume_approximation"]
-	path = volume_approximation
-	url = https://github.com/TolisChal/volume_approximation.git
+[submodule "volesti"]
+	path = volesti
+	url = https://github.com/GeomScale/volesti.git
+	branch = volesti4dingo
