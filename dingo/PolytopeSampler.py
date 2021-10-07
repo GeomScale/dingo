@@ -50,6 +50,7 @@ class PolytopeSampler:
         ]
         self._parameters["distribution"] = "uniform"
         self._parameters["first_run_of_mmcs"] = True
+        self._parameters["remove_redundant_facets"] = True
 
         try:
             import gurobipy
@@ -79,7 +80,7 @@ class PolytopeSampler:
                 max_biomass_objective,
             ) = self._metabolic_network.fba()
 
-            if self._parameters["fast_computations"]:
+            if (self._parameters["fast_computations"] and self._parameters["remove_redundant_facets"]):
 
                 A, b, Aeq, beq = fast_remove_redundant_facets(
                     self._metabolic_network.lb,
@@ -292,6 +293,9 @@ class PolytopeSampler:
     @property
     def metabolic_network(self):
         return self._metabolic_network
+    
+    def facet_redundancy_removal(self, value):
+        self._parameters["remove_redundant_facets"] = value
 
     def set_fast_mode(self):
 
