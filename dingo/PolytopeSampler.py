@@ -7,6 +7,7 @@
 
 
 import numpy as np
+import warnings
 import math
 from dingo.MetabolicNetwork import MetabolicNetwork
 from dingo.fva import slow_fva
@@ -90,6 +91,9 @@ class PolytopeSampler:
                     self._parameters["opt_percentage"],
                 )
             else:
+                if ((not self._parameters["fast_computations"]) and self._parameters["remove_redundant_facets"]):
+                    warnings.warn("We continue without redundancy removal (slow mode is ON)")
+                
                 (
                     min_fluxes,
                     max_fluxes,
@@ -296,6 +300,9 @@ class PolytopeSampler:
     
     def facet_redundancy_removal(self, value):
         self._parameters["remove_redundant_facets"] = value
+        
+        if ((not self._parameters["fast_computations"]) and value):
+            warnings.warn("We continue without redundancy removal (slow mode is ON)")
 
     def set_fast_mode(self):
 
