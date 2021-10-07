@@ -81,7 +81,10 @@ class PolytopeSampler:
                 max_biomass_objective,
             ) = self._metabolic_network.fba()
 
-            if (self._parameters["fast_computations"] and self._parameters["remove_redundant_facets"]):
+            if (
+                self._parameters["fast_computations"]
+                and self._parameters["remove_redundant_facets"]
+            ):
 
                 A, b, Aeq, beq = fast_remove_redundant_facets(
                     self._metabolic_network.lb,
@@ -91,9 +94,13 @@ class PolytopeSampler:
                     self._parameters["opt_percentage"],
                 )
             else:
-                if ((not self._parameters["fast_computations"]) and self._parameters["remove_redundant_facets"]):
-                    warnings.warn("We continue without redundancy removal (slow mode is ON)")
-                
+                if (not self._parameters["fast_computations"]) and self._parameters[
+                    "remove_redundant_facets"
+                ]:
+                    warnings.warn(
+                        "We continue without redundancy removal (slow mode is ON)"
+                    )
+
                 (
                     min_fluxes,
                     max_fluxes,
@@ -297,12 +304,14 @@ class PolytopeSampler:
     @property
     def metabolic_network(self):
         return self._metabolic_network
-    
+
     def facet_redundancy_removal(self, value):
         self._parameters["remove_redundant_facets"] = value
-        
-        if ((not self._parameters["fast_computations"]) and value):
-            warnings.warn("We continue without redundancy removal (slow mode is ON)")
+
+        if (not self._parameters["fast_computations"]) and value:
+            warnings.warn(
+                "Since you are in slow mode the redundancy removal step is skipped (dingo does not currently support this functionality in slow mode)"
+            )
 
     def set_fast_mode(self):
 
