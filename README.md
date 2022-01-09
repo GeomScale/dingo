@@ -1,9 +1,9 @@
-# dingo
+<p align="center"><img src="doc/logo/dingo.jpg" width="260" height="260"></p>
 
-`dingo` is a python package that analyzes metabolic networks.
+**dingo** is a python package that analyzes metabolic networks.
 It relies on high dimensional sampling with Markov Chain Monte Carlo (MCMC)
 methods and fast optimization methods to analyze the possible states of a
-metabolic network. To perform MCMC sampling, `dingo` relies on the `C++` package
+metabolic network. To perform MCMC sampling, `dingo` relies on the `C++` library
 [volesti](https://github.com/GeomScale/volume_approximation), which provides
 several algorithms for sampling convex polytopes.
 `dingo` also performs two standard methods to analyze the flux space of a
