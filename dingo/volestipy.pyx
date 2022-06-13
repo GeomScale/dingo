@@ -18,7 +18,6 @@ import os
 import sys
 import numpy as np
 cimport numpy as np
-from libcpp cimport bool
 from cpython cimport bool
 
 # For the read the json format BIGG files function
