@@ -133,15 +133,8 @@ cdef class HPolytope:
       cdef double[::1] inner_point_for_c = np.asarray(inner_point)
       
       # Check whether the user asks for a certai value of radius; this is of higher priority than having a radius from the corresponding function
-      if radius <= 0:        
-        max_ball = False
-      else:
-         max_ball = True
-            
-      if L <= 0:
-         set_L = False
-      else:
-         set_L = True
+      max_ball = radius > 0
+      set_L = L > 0
       
       self.polytope_cpp.generate_samples(walk_len, number_of_points, number_of_points_to_burn, boundary, cdhr, rdhr, gaussian, set_L, \
                                  accelerated_billiard, billiard, ball_walk, a, L, max_ball, &inner_point_for_c[0], radius, &samples[0,0])
@@ -168,10 +161,7 @@ cdef class HPolytope:
       rounding_method = rounding_method.encode("UTF-8")
 
       # Check whether a max ball has been given
-      if radius > 0:
-         max_ball = True
-      else:
-         max_ball = False
+      max_ball = radius > 0
       
       # Check whether the rounding method the user asked for, is actually among those volestipy supports
       if rounding_method in rounding_methods:
