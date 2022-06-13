@@ -222,7 +222,7 @@ void HPolytopeCPP::get_polytope_as_matrices(double* new_A, double* new_b) const 
 }
 
 
-void HPolytopeCPP::mmcs_initialize(int d, int ess, int psrf_check, int parallelism, int num_threads) {
+void HPolytopeCPP::mmcs_initialize(int d, int ess, bool psrf_check, bool parallelism, int num_threads) {
 
    mmcs_set_of_parameters = mmcs_params(d, ess, psrf_check, parallelism, num_threads);
 

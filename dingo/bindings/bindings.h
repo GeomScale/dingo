@@ -57,7 +57,7 @@ public:
 
    mmcs_parameters() {}
 
-   mmcs_parameters(int d, int ess, int _psrf_check, int _parallelism, int _num_threads)
+   mmcs_parameters(int d, int ess, bool _psrf_check, bool _parallelism, int _num_threads)
          :  T(MT::Identity(d,d))
          ,  T_shift(VT::Zero(d))
          ,  store_ess(VT::Zero(50))
@@ -105,8 +105,8 @@ public:
    unsigned int total_number_of_samples_in_P0;
    unsigned int total_neff;
    unsigned int num_threads;
-   int psrf_check;
-   int parallelism;
+   bool psrf_check;
+   bool parallelism;
    bool complete;
    bool request_rounding;
    bool rounding_completed;
@@ -145,7 +145,7 @@ class HPolytopeCPP{
        bool max_ball, double* inner_point, double radius,
        double* samples);
 
-      void mmcs_initialize(int d, int ess, int psrf_check, int parallelism, int num_threads);
+      void mmcs_initialize(int d, int ess, bool psrf_check, bool parallelism, int num_threads);
 
       double mmcs_step(double* inner_point_for_c, double radius, int &N);
 
