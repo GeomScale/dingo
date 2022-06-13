@@ -42,7 +42,7 @@ HPolytopeCPP::~HPolytopeCPP(){}
 
 //////////          Start of "compute_volume"          //////////
 double HPolytopeCPP::compute_volume(char* vol_method, char* walk_method, 
-                                    int walk_len, double epsilon, int seed){
+                                    int walk_len, double epsilon, int seed) const {
 
    double volume;
 
@@ -191,7 +191,7 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
 
 // The following block of code allows us to parse the matrix with the points we are making
    auto n_si=0;
-   for (auto it_s = rand_points.begin(); it_s != rand_points.end(); it_s++){
+   for (auto it_s = rand_points.cbegin(); it_s != rand_points.cend(); it_s++){
       for (auto i = 0; i != it_s->dimension(); i++){
          samples[n_si++] = (*it_s)[i];
       }
@@ -200,7 +200,7 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
 //////////         End of "generate_samples()"          //////////
 
 
-void HPolytopeCPP::get_polytope_as_matrices(double* new_A, double* new_b) {
+void HPolytopeCPP::get_polytope_as_matrices(double* new_A, double* new_b) const {
 
    int n_hyperplanes = HP.num_of_hyperplanes();
    int n_variables = HP.dimension();
