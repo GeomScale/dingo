@@ -189,18 +189,8 @@ cdef class HPolytope:
       cdef double[::1] T_shift = np.zeros((n_variables), dtype=np.float64, order="C")
       cdef int N_samples
       cdef int N_ess = ess
-      cdef int check_psrf
-      cdef int parallel
-
-      if (psrf_check):
-         check_psrf = 1
-      else:
-         check_psrf = 0
-      
-      if (parallelism):
-         parallel = 1
-      else:
-         parallel = 0
+      cdef bint check_psrf = bool(psrf_check) # restrict variables to {0,1} using Python's rules
+      cdef bint parallel = bool(parallelism)
       
       self.polytope_cpp.mmcs_initialize(n_variables, ess, check_psrf, parallel, num_threads)
 
@@ -237,18 +227,8 @@ cdef class HPolytope:
       cdef double[::1] T_shift = np.zeros((n_variables), dtype=np.float64, order="C")
       cdef int N_samples
       cdef int N_ess = ess
-      cdef int check_psrf
-      cdef int parallel
-
-      if (psrf_check):
-         check_psrf = 1
-      else:
-         check_psrf = 0
-      
-      if (parallelism):
-         parallel = 1
-      else:
-         parallel = 0
+      cdef bint check_psrf = bool(psrf_check)
+      cdef bint parallel = bool(parallelism)
       
       self.polytope_cpp.mmcs_initialize(n_variables, ess, check_psrf, parallel, num_threads)
 
