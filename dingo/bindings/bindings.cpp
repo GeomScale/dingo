@@ -94,7 +94,7 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
    Point starting_point; 
    
    // Check for max ball given
-   if (max_ball == true){
+   if (max_ball){
 
       VT inner_vec(d);
       for (int i = 0; i < d; i++){
@@ -114,8 +114,8 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
       
    std::list<Point> rand_points;
 
-   if (boundary == true) {
-      if (cdhr == true) {
+   if (boundary) {
+      if (cdhr) {
          uniform_sampling_boundary<BCDHRWalk>(rand_points, HP, rng, walk_len,
                                               number_of_points, starting_point,
                                               number_of_points_to_burn);
@@ -124,8 +124,8 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
                                                  number_of_points, starting_point, 
                                                  number_of_points_to_burn);
          }
-   } else if (cdhr == true) {
-      if (gaussian == true) {
+   } else if (cdhr) {
+      if (gaussian) {
          gaussian_sampling<GaussianCDHRWalk>(rand_points, HP, rng, walk_len, 
                                              number_of_points, a, starting_point,
                                              number_of_points_to_burn);
@@ -133,8 +133,8 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
          uniform_sampling<CDHRWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                     starting_point, number_of_points_to_burn);
       }
-   } else if (rdhr == true){
-      if (gaussian == true) {
+   } else if (rdhr){
+      if (gaussian) {
          gaussian_sampling<GaussianRDHRWalk>(rand_points, HP, rng, walk_len, 
                                              number_of_points, a, starting_point, 
                                              number_of_points_to_burn);
@@ -142,8 +142,8 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
          uniform_sampling<RDHRWalk>(rand_points, HP, rng, walk_len, number_of_points, 
                                     starting_point, number_of_points_to_burn);
       }
-   } else if (billiard == true) {
-      if (set_L == true) {
+   } else if (billiard) {
+      if (set_L) {
          BilliardWalk WalkType(L);
          uniform_sampling(rand_points, HP, rng, WalkType, walk_len, number_of_points,
                           starting_point, number_of_points_to_burn);
@@ -152,8 +152,8 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
                                         number_of_points, starting_point, 
                                         number_of_points_to_burn);
       }
-   } else if (accelerated_billiard == true) {
-      if (set_L == true) {
+   } else if (accelerated_billiard) {
+      if (set_L) {
          AcceleratedBilliardWalk WalkType(L);
          uniform_sampling(rand_points, HP, rng, WalkType, walk_len, number_of_points,
                           starting_point, number_of_points_to_burn);
@@ -163,8 +163,8 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
                                         number_of_points_to_burn);
       }
    } else {
-      if (set_L == true) {
-         if (gaussian == true) {
+      if (set_L) {
+         if (gaussian) {
             GaussianBallWalk WalkType(L);
             gaussian_sampling(rand_points, HP, rng, WalkType, walk_len,
                               number_of_points, a, starting_point, 
@@ -176,7 +176,7 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
                                 number_of_points_to_burn);
             }
         } else {
-            if (gaussian == true) {
+            if (gaussian) {
                gaussian_sampling<GaussianBallWalk>(rand_points, HP, rng, walk_len, 
                                                    number_of_points, a, starting_point, 
                                                    number_of_points_to_burn);
@@ -268,7 +268,7 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
 
    unsigned int Neff_sampled;
    MT TotalRandPoints;
-   if (mmcs_set_of_parameters.parallelism == 1)
+   if (mmcs_set_of_parameters.parallelism)
    {
       mmcs_set_of_parameters.complete = perform_parallel_mmcs_step<AcceleratedBilliardWalkParallel>(HP, rng, mmcs_set_of_parameters.walk_length, 
                                                                                                     mmcs_set_of_parameters.Neff, 
@@ -363,7 +363,7 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
          std::cout<<"\n";
       }
    } 
-   else if (mmcs_set_of_parameters.psrf_check == 0) 
+   else if (!mmcs_set_of_parameters.psrf_check)
    {
       NT max_psrf = univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff();
       std::cout << "\n[5]total ess " << mmcs_set_of_parameters.total_neff << ": number of correlated samples = " << mmcs_set_of_parameters.samples.cols()<<std::endl;
@@ -457,7 +457,7 @@ void HPolytopeCPP::rounding(char* rounding_method, double* new_A, double* new_b,
    P.normalize();
    
    // check for max ball given
-   if (max_ball == true ){
+   if (max_ball){
       
       // if yes, then read the inner point provided by the user and the radius
       int d = P.dimension();
@@ -470,7 +470,7 @@ void HPolytopeCPP::rounding(char* rounding_method, double* new_A, double* new_b,
       Point inner_point2(inner_vec);
       CheBall = std::pair<Point, NT>(inner_point2, radius);
       
-   } else if (max_ball == false ) {
+   } else if (!max_ball) {
       CheBall = P.ComputeInnerBall();
    }
    
