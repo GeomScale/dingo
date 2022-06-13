@@ -470,7 +470,7 @@ void HPolytopeCPP::rounding(char* rounding_method, double* new_A, double* new_b,
       Point inner_point2(inner_vec);
       CheBall = std::pair<Point, NT>(inner_point2, radius);
       
-   } else if (!max_ball) {
+   } else {
       CheBall = P.ComputeInnerBall();
    }
    
