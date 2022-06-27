@@ -13,7 +13,7 @@ from dingo import MetabolicNetwork, PolytopeSampler
 from dingo.gurobi_based_implementations import fast_inner_ball
 
 
-class TestStringMethods(unittest.TestCase):
+class TestFastMethods(unittest.TestCase):
     def test_fast_max_bal_computation(self):
 
         m = 2

@@ -14,7 +14,7 @@ from dingo.inner_ball import slow_inner_ball
 from dingo.scaling import gmscale
 
 
-class TestStringMethods(unittest.TestCase):
+class TestDingoMethods(unittest.TestCase):
     def test_max_bal_computation(self):
 
         m = 2
