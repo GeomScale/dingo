@@ -1,6 +1,6 @@
 <p align="center"><img src="doc/logo/dingo.jpg" width="260" height="260"></p>
 
-**dingo** is a python package that analyzes metabolic networks.
+**dingo** is a Python package that analyzes metabolic networks.
 It relies on high dimensional sampling with Markov Chain Monte Carlo (MCMC)
 methods and fast optimization methods to analyze the possible states of a
 metabolic network. To perform MCMC sampling, `dingo` relies on the `C++` library
@@ -16,38 +16,38 @@ metabolic network, namely Flux Balance Analysis and Flux Variability Analysis.
 
 ## Installation
 
-To load the submodules that dingo uses run,
+To load the submodules that dingo uses, run
 
 ````unix
 git submodule update --init
 ````
 
-You will need to download and unzip the boost library,
+You will need to download and unzip the Boost library:
 ```
 wget -O boost_1_76_0.tar.bz2 https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2
 tar xjf boost_1_76_0.tar.bz2
 rm boost_1_76_0.tar.bz2
 ```
 
-Then, you need to install the dependencies for PySPQR library; for debian/ubuntu linux run:
+Then, you need to install the dependencies for the PySPQR library; for Debian/Ubuntu Linux, run
 
 ```
 apt-get install libsuitesparse-dev
 ```
 
-To install the python dependencies install [poetry](https://python-poetry.org/). Then, run:  
+To install the Python dependencies, install [Poetry](https://python-poetry.org/). Then, run
 ```
 poetry shell
 poetry install
 ```
 
-To exploit the fast implementations of dingo you have to install the [Gurobi solver](https://www.gurobi.com/). Run:  
+To exploit the fast implementations of dingo, you have to install the [Gurobi solver](https://www.gurobi.com/). Run
 
 ```
 pip3 install -i https://pypi.gurobi.com gurobipy
 ```
 
-Then, you will need a [license](https://www.gurobi.com/downloads/end-user-license-agreement-academic/). For more information we refer to gurobi [download center](https://www.gurobi.com/downloads/).  
+Then, you will need a [license](https://www.gurobi.com/downloads/end-user-license-agreement-academic/). For more information, we refer to the Gurobi [download center](https://www.gurobi.com/downloads/).  
 
 
 
@@ -59,7 +59,7 @@ Now, you can run the unit tests by the following commands:
 python3 tests/unit_tests.py
 ```
 
-If you have installed gurobi sucesfully then run:  
+If you have installed Gurobi successfully, then run
 ```
 python3 tests/fast_implementation_test.py
 ```
@@ -68,7 +68,7 @@ python3 tests/fast_implementation_test.py
 
 ## Documentation
 
-Read [dingo documentation](https://github.com/GeomScale/dingo/tree/develop/doc)
+Read the [dingo documentation](https://github.com/GeomScale/dingo/tree/develop/doc)
 
-You can also have a look at our [Google Collab notebook](https://colab.research.google.com/drive/1AdXCo6tMBV4lPDYWWOXhzcM0wg30OOIx?usp=sharing) 
+You can also have a look at our [Google Colab notebook](https://colab.research.google.com/drive/1AdXCo6tMBV4lPDYWWOXhzcM0wg30OOIx?usp=sharing) 
 on how to use `dingo`.
