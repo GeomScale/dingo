@@ -16,13 +16,15 @@ from dingo.scaling import gmscale
 
 
 class TestFullDim(unittest.TestCase):
-    
+
     def test_ecoli(self):
 
         current_directory = os.getcwd()
         input_file_json = current_directory + "/ext_data/e_coli_core.json"
 
         model = MetabolicNetwork.from_json(input_file_json)
+        model.set_slow_mode()
+
         sampler = PolytopeSampler(model)
         sampler.set_slow_mode()
         sampler.get_polytope()
