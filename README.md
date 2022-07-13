@@ -56,7 +56,10 @@ Then, you will need a [license](https://www.gurobi.com/downloads/end-user-licens
 
 Now, you can run the unit tests by the following commands:  
 ```
-python3 tests/unit_tests.py
+python3 tests/fba.py
+python3 tests/full_dimensional.py
+python3 tests/max_ball.py
+python3 tests/scaling.py
 ```
 
 If you have installed Gurobi successfully, then run
