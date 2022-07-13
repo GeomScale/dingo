@@ -57,7 +57,7 @@ public:
 
    mmcs_parameters() {}
 
-   mmcs_parameters(int d, int ess, int _psrf_check, int _parallelism, int _num_threads)
+   mmcs_parameters(int d, int ess, bool _psrf_check, bool _parallelism, int _num_threads)
          :  T(MT::Identity(d,d))
          ,  T_shift(VT::Zero(d))
          ,  store_ess(VT::Zero(50))
@@ -105,8 +105,8 @@ public:
    unsigned int total_number_of_samples_in_P0;
    unsigned int total_neff;
    unsigned int num_threads;
-   int psrf_check;
-   int parallelism;
+   bool psrf_check;
+   bool parallelism;
    bool complete;
    bool request_rounding;
    bool rounding_completed;
@@ -137,7 +137,7 @@ class HPolytopeCPP{
       ~HPolytopeCPP();
 
       // the compute_volume() function
-      double compute_volume(char* vol_method, char* walk_method, int walk_len, double epsilon, int seed);
+      double compute_volume(char* vol_method, char* walk_method, int walk_len, double epsilon, int seed) const;
 
       // the generate_samples() function
       double generate_samples(int walk_len, int number_of_points, int number_of_points_to_burn, bool boundary, 
@@ -145,13 +145,13 @@ class HPolytopeCPP{
        bool max_ball, double* inner_point, double radius,
        double* samples);
 
-      void mmcs_initialize(int d, int ess, int psrf_check, int parallelism, int num_threads);
+      void mmcs_initialize(int d, int ess, bool psrf_check, bool parallelism, int num_threads);
 
       double mmcs_step(double* inner_point_for_c, double radius, int &N);
 
       void get_mmcs_samples(double* T_matrix, double* T_shift, double* samples);
 
-      void get_polytope_as_matrices(double* new_A, double* new_b);
+      void get_polytope_as_matrices(double* new_A, double* new_b) const;
 
       // the rounding() function
       void rounding(char* rounding_method, double* new_A, double* new_b, double* T_matrix, double* shift, double &round_value,
@@ -161,4 +161,3 @@ class HPolytopeCPP{
 
 
 #endif 
-
