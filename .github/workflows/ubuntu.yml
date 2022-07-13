@@ -1,13 +1,13 @@
 # dingo : a python library for metabolic networks sampling and analysis
 # dingo is part of GeomScale project
 
-# Copyright (c) 2021 Vissarion Fisikopoulos
+# Copyright (c) 2021-2022 Vissarion Fisikopoulos
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
 name: dingo-ubuntu
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
@@ -40,14 +40,17 @@ jobs:
         export POETRY_VIRTUALENVS_PATH=/home/runner/.cache/pypoetry/virtualenvs
         poetry config virtualenvs.create false --local
         #source $(dirname $(poetry run which python))/activate
-        poetry install;	
+        poetry install;
         #pip3 install numpy scipy;
-    - name: Run tests 
+    - name: Run tests
       run: |
-        #python3 tests/fba.py;
-        #python3 tests/full_dimensional.py;
+        python3 tests/fba.py;
+        python3 tests/full_dimensional.py;
         python3 tests/max_ball.py;
-        #python3 tests/scaling.py;
+        python3 tests/scaling.py;
+        # currently we do not test with gurobi
+        # python3 tests/fast_implementation_test.py;
+
         #run all tests
         #python -m unittest discover test
         #TODO: use pytest
