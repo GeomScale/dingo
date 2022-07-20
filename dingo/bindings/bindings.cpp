@@ -196,6 +196,7 @@ double HPolytopeCPP::generate_samples(int walk_len, int number_of_points,
          samples[n_si++] = (*it_s)[i];
       }
    }
+   return -1;
 }
 //////////         End of "generate_samples()"          //////////
 
