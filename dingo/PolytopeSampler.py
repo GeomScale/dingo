@@ -188,7 +188,7 @@ class PolytopeSampler:
 
     @staticmethod
     def sample_from_polytope(
-        A, b, ess=1000, psrf=False, parallel_mmcs=False, num_threads=1
+        A, b, ess=1000, psrf=False, parallel_mmcs=False, num_threads=1, mmcs = True,
     ):
         """A static function to sample from a full dimensional polytope.
 
@@ -202,17 +202,19 @@ class PolytopeSampler:
         """
 
         P = HPolytope(A, b)
+        if mmcs:
+            try:
+                import gurobipy
 
-        try:
-            import gurobipy
-
-            A, b, Tr, Tr_shift, samples = P.fast_mmcs(
-                ess, psrf, parallel_mmcs, num_threads
-            )
-        except ImportError as e:
-            A, b, Tr, Tr_shift, samples = P.slow_mmcs(
-                ess, psrf, parallel_mmcs, num_threads
-            )
+                A, b, Tr, Tr_shift, samples = P.fast_mmcs(
+                    ess, psrf, parallel_mmcs, num_threads
+                )
+            except ImportError as e:
+                A, b, Tr, Tr_shift, samples = P.slow_mmcs(
+                    ess, psrf, parallel_mmcs, num_threads
+                )
+        else:
+            samples = P.generate_samples()
 
         return samples
 
