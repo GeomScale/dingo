@@ -18,7 +18,9 @@ def dingo_preprocess_and_sampling(network):
    name = network
    current_directory = os.getcwd()
    model_stats_file = open(name + "_stats.log", "w")
-   input_file_json = current_directory + "/ext_data/"
+   dingo_directory = '/'.join(current_directory.split("/")[:-1])
+   print(dingo_directory)
+   input_file_json = dingo_directory + "/ext_data/"
    input_file_json = input_file_json + network
 
    model = MetabolicNetwork.from_json(input_file_json)
@@ -49,7 +51,7 @@ def dingo_preprocess_and_sampling(network):
       )
 
       with open(
-         "polytopes_redundancy_removals/polytope_" + name + ".pckl", "wb"
+         "polytopes_redundant_removed/polytope_" + name + ".pckl", "wb"
       ) as dingo_polytope_file:
          pickle.dump(polytope_info, dingo_polytope_file)
 
@@ -64,7 +66,7 @@ def dingo_preprocess_and_sampling(network):
 
       extra_2 = np.full((samples.shape[1], N.shape[0]), N_shift)
       steady_states = N.dot(samples) + extra_2.T
-      with open("steady_states_redundancy_removals/steady_states_" + name + ".pckl", "wb") as dingo_steadystates_file: 
+      with open("dingo_samples_redundant_removed/steady_states_" + name + ".pckl", "wb") as dingo_steadystates_file: 
             pickle.dump(steady_states, dingo_steadystates_file)
 
    except ImportError as e:
@@ -100,7 +102,7 @@ def dingo_preprocess_and_sampling(network):
       )
 
       with open(
-            "polytopes_without_removals/polytope_" + name + ".pckl", "wb"
+            "polytopes_redundant_in/polytope_" + name + ".pckl", "wb"
       ) as dingo_polytope_file:
             pickle.dump(polytope_info, dingo_polytope_file)
 
@@ -121,7 +123,7 @@ def dingo_preprocess_and_sampling(network):
       extra_2 = np.full((samples_1.shape[1], N.shape[0]), N_shift)
       steady_states = N.dot(samples_1) + extra_2.T
 
-      with open("steady_states_without_removals/steady_states_" + name + ".pckl", "wb") as dingo_steadystates_file:
+      with open("dingo_samples_redundant_in/steady_states_" + name + ".pckl", "wb") as dingo_steadystates_file:
             pickle.dump(steady_states, dingo_steadystates_file)
 
    except ImportError as e:
