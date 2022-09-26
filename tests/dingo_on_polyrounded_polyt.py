@@ -7,6 +7,22 @@ from time import process_time
 import pickle
 import multiprocessing
 
+from volestipy import HPolytope
+
+
+def is_in(point: np.ndarray, polytope: HPolytope, loop: bool = True):
+   if loop:
+      for i in range(polytope.A.shape[0]):
+         h = polytope.A.iloc[[i]].values
+         product = h.dot(point)
+         if h.dot(point)[0] > polytope.b[i]:
+            return False
+      loop = False
+      return True
+   else:
+      return (polytope.A.dot(point) <= polytope.b).all()
+
+
 def sample_on_polyround_processed_polytope(network, ess_value, psrf_status):
 
    current_directory = os.getcwd()
@@ -32,10 +48,13 @@ def sample_on_polyround_processed_polytope(network, ess_value, psrf_status):
    end = process_time() 
    sampling_runtime = end - start
 
-   print("Dingo for the " + name + " model took " + str(sampling_runtime) + " sec to sample using simplified and transformed polytope with PolyRound.")
+   print("Dingo for the " + name + " model took " + str(sampling_runtime) + " sec to sample using simplified and transformed polytope with PolyRound.\n\n")
 
    with open("dingo_samples_on_polyrounded_polytopes/dingo_polyround" + name + ".pckl", "wb") as dingo_steadystates_file: 
          pickle.dump(steady_states, dingo_steadystates_file)
+
+   return steady_states, polytope
+
 
 if __name__ == '__main__':
 
@@ -44,7 +63,19 @@ if __name__ == '__main__':
    path_to_net = current_directory + "/" + file_name
    ess_asked = sys.argv[2]
    psrf_asked = sys.argv[3]
-   sample_on_polyround_processed_polytope(path_to_net, ess_asked, psrf_asked)
+   dingo_samples, polytope_sampled = sample_on_polyround_processed_polytope(path_to_net, ess_asked, psrf_asked)
 
+   dingo_samples_t = dingo_samples.T
 
+   check = True
+   for sample in dingo_samples_t: 
+      control = is_in(sample, polytope_sampled)
+      if control:
+         continue
+      else:
+         print("huston we have a problem.")
+         print(control)
+         check = False
+   if check:
+      print("all samples in.")
 
