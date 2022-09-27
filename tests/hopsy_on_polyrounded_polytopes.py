@@ -62,33 +62,56 @@ thinning_value = polyround_A.shape[1]*100
 # accrate, states = hopsy.sample(markov_chains, rng, n_samples=num_of_samples, thinning=thinning_value)
 
 counter = 0
-for i in range(number_of_chains):
+total_time = 0
+ess_check = True
+n_samples_per_step = 1000
 
-    if counter == 0:
-        markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = starting_point)
-    else:
-        markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = last_point_of_previous_chain)
-    
-    rng = hopsy.RandomNumberGenerator(seed = i*42) 
-    accrate, states = hopsy.sample(markov_chain, rng, n_samples = num_of_samples, thinning = thinning_value)
+while ess_check: 
 
-    if counter == 0:
-        total_samples = states.copy()
-    else: 
-        total_samples = np.vstack([total_samples, states])
+        if counter == 0:
+            markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = starting_point)
+        else:
+            markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = last_point_of_previous_chain)
+        
+        rng = hopsy.RandomNumberGenerator(seed = 42) 
 
-    last_point_of_previous_chain = states[0][-1,:]
-    counter += 1
+        t_0 = time.process_time()
+
+        accrate, states = hopsy.sample(markov_chain, rng, n_samples = n_samples_per_step, thinning = thinning_value)
+
+        t_1 = time.process_time()
+
+        total_time += t_1 - t_0
+
+        if counter == 0:
+            total_samples = states.copy()
+            ess_local = hopsy.ess(total_samples) # needs to be a 3-d array
+
+        else:
+            tmp = np.concatenate((total_samples[0], states[0]), axis = 0)
+            total_samples = np.concatenate((total_samples, states), axis = 0) 
+
+            chains_on_the_run = np.array(np.split(tmp, 5))      
+            ess_local = hopsy.ess(chains_on_the_run)
+
+        if ess_local.min() > 1000: 
+            final_chains = chains_on_the_run
+            ess_check = False
+
+        last_point_of_previous_chain = states[0][-1,:]
+        counter += 1
 
 
-sampling_hopsy_t2 = time.process_time()
-rhat = hopsy.rhat(total_samples)
-ess = hopsy.ess(total_samples)
+print("total_samples shape: ", final_chains.shape)
+rhat = hopsy.rhat(final_chains)
+ess = hopsy.ess(final_chains)
 
-print("model: ", polyrounded_polytope_file, "\n")
-print("polyround_A.shape[0] : ", polyround_A.shape[0], "\n")
-print("d (polyround_A.shape[1]): ", polyround_A.shape[1], "\n")
-print("hopsy sampling time: ", str(sampling_hopsy_t2 - sampling_hopsy_t1), "\n")
-print("rhat.max : ", rhat.max(), "\n")
-print("ess.min: ", ess.min(), "\n")
+print("model: ", polyrounded_polytope_file)
+print("polyround_A.shape[0] : ", polyround_A.shape[0])
+print("d (polyround_A.shape[1]): ", polyround_A.shape[1])
+print("\n~~~~~\n")
+print("hopsy sampling time: ", str(total_time))
+print("\n~~~~~\n")
+print("rhat.max : ", rhat.max())
+print("ess.min: ", ess.min())
 
