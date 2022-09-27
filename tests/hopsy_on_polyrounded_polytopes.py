@@ -31,13 +31,15 @@ sampling_hopsy_t1 = time.process_time()
 
 problem = hopsy.Problem(polyround_A, polyround_b)
 
-number_of_chains = 1
-rng = [hopsy.RandomNumberGenerator(seed=i*42) for i in range(number_of_chains)]
+number_of_chains = 4
+# rng = [hopsy.RandomNumberGenerator(seed=i*42) for i in range(number_of_chains)]
 starting_point = hopsy.compute_chebyshev_center(problem)
 
 # ------- Uniform distribution
 proposal = hopsy.UniformCoordinateHitAndRunProposal
-markov_chains = [hopsy.MarkovChain(problem, proposal, starting_point=starting_point) for i in range(number_of_chains)]
+# markov_chains = [hopsy.MarkovChain(problem, proposal, starting_point = starting_point) \
+#                 for i in range(number_of_chains)
+#     ]
 
 
 # # ----- Gaussian 
@@ -57,13 +59,31 @@ markov_chains = [hopsy.MarkovChain(problem, proposal, starting_point=starting_po
 
 
 thinning_value = polyround_A.shape[1]*100
+# accrate, states = hopsy.sample(markov_chains, rng, n_samples=num_of_samples, thinning=thinning_value)
 
-accrate, states = hopsy.sample(markov_chains, rng, n_samples=num_of_samples, thinning=thinning_value)
+counter = 0
+for i in range(number_of_chains):
+
+    if counter == 0:
+        markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = starting_point)
+    else:
+        markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = last_point_of_previous_chain)
+    
+    rng = hopsy.RandomNumberGenerator(seed = i*42) 
+    accrate, states = hopsy.sample(markov_chain, rng, n_samples = num_of_samples, thinning = thinning_value)
+
+    if counter == 0:
+        total_samples = states.copy()
+    else: 
+        total_samples = np.vstack([total_samples, states])
+
+    last_point_of_previous_chain = states[0][-1,:]
+    counter += 1
+
 
 sampling_hopsy_t2 = time.process_time()
-
-rhat = hopsy.rhat(states)
-ess = hopsy.ess(states)
+rhat = hopsy.rhat(total_samples)
+ess = hopsy.ess(total_samples)
 
 print("model: ", polyrounded_polytope_file, "\n")
 print("polyround_A.shape[0] : ", polyround_A.shape[0], "\n")
@@ -72,24 +92,3 @@ print("hopsy sampling time: ", str(sampling_hopsy_t2 - sampling_hopsy_t1), "\n")
 print("rhat.max : ", rhat.max(), "\n")
 print("ess.min: ", ess.min(), "\n")
 
-
-
-# sampling_hopsy_tB1 = time.process_time()
-# accrate2, states2 = hopsy.sample(markov_chains, rng, n_samples=num_of_samples, thinning=8*d*d)
-# sampling_hopsy_tB2 = time.process_time()
-
-# # when doing mcmc, assessing convergence is very important!
-# #rhat = hopsy.rhat(states, series=10)
-# #print('Acceptance rates (per chain):', *accrate)
-
-# # checks convergence and ESS
-# rhat2 = hopsy.rhat(states2)
-# #print(rhat.max())
-# #assert((rhat<=1.1).all()) # asserts that convergence has been reached. Here we use a strict limit of 1.01
-
-# ess2 = hopsy.ess(states2)
-# #print(ess.min())
-# #assert((ess >= 400).all()) # asserts that we have reached the minimum number of effective samples we want, in this case 400.
-
-# print(sampling_hopsy_tB2 - sampling_hopsy_tB1,
-#     rhat2.max(), ess2.min())
