@@ -17,6 +17,7 @@ import copy
 num_of_samples = 10
 
 ## Import polyrounded polytope
+name = sys.argv[1].split("/")[-1]
 polyrounded_polytope_file = os.getcwd() + "/" + sys.argv[1]
 with open(polyrounded_polytope_file, "rb") as f:
     obj = pickle.load(f)
@@ -64,7 +65,7 @@ thinning_value = polyround_A.shape[1]*100
 counter = 0
 total_time = 0
 ess_check = True
-n_samples_per_step = 1000
+n_samples_per_step = 10000
 
 while ess_check: 
 
@@ -74,44 +75,58 @@ while ess_check:
             markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = last_point_of_previous_chain)
         
         rng = hopsy.RandomNumberGenerator(seed = 42) 
-
         t_0 = time.process_time()
 
         accrate, states = hopsy.sample(markov_chain, rng, n_samples = n_samples_per_step, thinning = thinning_value)
 
-        t_1 = time.process_time()
-
+        t_1         = time.process_time()
         total_time += t_1 - t_0
 
         if counter == 0:
+            
+            timecost_per_point = float(total_time / n_samples_per_step)
+
             total_samples = states.copy()
-            ess_local = hopsy.ess(total_samples) # needs to be a 3-d array
+            chains_on_the_run = np.array(np.split(states[0], 5))
+            ess_local         = hopsy.ess(chains_on_the_run) # needs to be a 3-d array
 
         else:
-            tmp = np.concatenate((total_samples[0], states[0]), axis = 0)
             total_samples = np.concatenate((total_samples, states), axis = 0) 
 
+            tmp               = np.concatenate((total_samples[0], states[0]), axis = 0)
             chains_on_the_run = np.array(np.split(tmp, 5))      
-            ess_local = hopsy.ess(chains_on_the_run)
+            ess_local         = hopsy.ess(chains_on_the_run)
 
         if ess_local.min() > 1000: 
+
             final_chains = chains_on_the_run
-            ess_check = False
+            ess_check    = False
 
         last_point_of_previous_chain = states[0][-1,:]
+        
         counter += 1
 
 
-print("total_samples shape: ", final_chains.shape)
+
 rhat = hopsy.rhat(final_chains)
 ess = hopsy.ess(final_chains)
+
+
+with open("hopsy_samples/total_samples_" + name + ".pckl", "wb") as hopsy_samples_file: 
+        pickle.dump(total_samples, hopsy_samples_file)
+
+
 
 print("model: ", polyrounded_polytope_file)
 print("polyround_A.shape[0] : ", polyround_A.shape[0])
 print("d (polyround_A.shape[1]): ", polyround_A.shape[1])
+print("time cost per sampling point: ", str(timecost_per_point))
 print("\n~~~~~\n")
 print("hopsy sampling time: ", str(total_time))
 print("\n~~~~~\n")
 print("rhat.max : ", rhat.max())
 print("ess.min: ", ess.min())
+
+
+
 
