@@ -40,51 +40,51 @@ n_samples_per_step = 10
 
 
 
-for i in range(3):
+# for i in range(3):
 
-    print("\n\n ~~~ \n\nITERATION #", str(i))
+#     print("\n\n ~~~ \n\nITERATION #", str(i))
 
-    if counter == 0:
-        markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = starting_point)
-    else:
-        markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = last_point_of_previous_chain)
+#     if counter == 0:
+#         markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = starting_point)
+#     else:
+#         markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = last_point_of_previous_chain)
     
-    rng = hopsy.RandomNumberGenerator(seed = 42) 
-    t_0 = time.process_time()
+#     rng = hopsy.RandomNumberGenerator(seed = 42) 
+#     t_0 = time.process_time()
 
-    accrate, states = hopsy.sample(markov_chain, rng, n_samples = n_samples_per_step, thinning = thinning_value)
+#     accrate, states = hopsy.sample(markov_chain, rng, n_samples = n_samples_per_step, thinning = thinning_value)
 
-    t_1         = time.process_time()
-    total_time += t_1 - t_0
+#     t_1         = time.process_time()
+#     total_time += t_1 - t_0
 
-    if counter == 0:
+#     if counter == 0:
         
-        total_samples     = states        # each sample is added as an extra chain, e.g (1, n_samples_per_step, d) --> (2, n_samples_per_step, d) 
-        unified_chain     = states[0]     # put all samples in a 2d array ((i+1)*n_samples_per_step , d)
+#         total_samples     = states        # each sample is added as an extra chain, e.g (1, n_samples_per_step, d) --> (2, n_samples_per_step, d) 
+#         unified_chain     = states[0]     # put all samples in a 2d array ((i+1)*n_samples_per_step , d)
 
-    else:
-        total_samples     = np.concatenate((total_samples, states), axis = 0)
-        unified_chain     = np.concatenate((unified_chain, states[0]), axis = 0)
+#     else:
+#         total_samples     = np.concatenate((total_samples, states), axis = 0)
+#         unified_chain     = np.concatenate((unified_chain, states[0]), axis = 0)
 
-    chains_on_the_run = np.array(np.split(unified_chain, 5))  # split the unified_chain in 5 chains 
+#     chains_on_the_run = np.array(np.split(unified_chain, 5))  # split the unified_chain in 5 chains 
 
-    j = i*n_samples_per_step
+#     j = i*n_samples_per_step
 
-    print("\nSamples as coming from hopsy iterations: \n")
-    print(total_samples[:,:,:3])
+#     print("\nSamples as coming from hopsy iterations: \n")
+#     print(total_samples[:,:,:3])
     
     
-    print("\nThe new points added in the unified chain: \n")
-    print(unified_chain[-num_of_samples:,:3])
+#     print("\nThe new points added in the unified chain: \n")
+#     print(unified_chain[-num_of_samples:,:3])
 
-    # print("\nThe first 2 points in the 5 chains: \n", chains_on_the_run[:,:2,:3])
-    print("\n\npoints in the 5 chains: \n", chains_on_the_run[:,:,:3])
+#     # print("\nThe first 2 points in the 5 chains: \n", chains_on_the_run[:,:2,:3])
+#     print("\n\npoints in the 5 chains: \n", chains_on_the_run[:,:,:3])
 
 
-    print(unified_chain.shape, chains_on_the_run.shape)
+#     print(unified_chain.shape, chains_on_the_run.shape)
 
-    last_point_of_previous_chain = states[0][-1,:]
-    counter += 1
+#     last_point_of_previous_chain = states[0][-1,:]
+#     counter += 1
 
 
 
@@ -110,16 +110,18 @@ while ess_check:
 
     if counter == 0:
         
-        total_samples     = states.copy()
-        chains_on_the_run = np.array(np.split(states[0], 5))
-        ess_local         = hopsy.ess(chains_on_the_run) # needs to be a 3-d array
+        total_samples     = states        # each sample is added as an extra chain, e.g (1, n_samples_per_step, d) --> (2, n_samples_per_step, d) 
+        unified_chain     = states[0]     # put all samples in a 2d array ((i+1)*n_samples_per_step , d)
 
     else:
-        total_samples = np.concatenate((total_samples, states), axis = 0) 
+        total_samples     = np.concatenate((total_samples, states), axis = 0)
+        unified_chain     = np.concatenate((unified_chain, states[0]), axis = 0)
 
-        tmp               = np.concatenate((total_samples[0], states[0]), axis = 0)
-        chains_on_the_run = np.array(np.split(tmp, 5))      
-        ess_local         = hopsy.ess(chains_on_the_run)
+    chains_on_the_run = np.array(np.split(unified_chain, 5))  # split the unified_chain in 5 chains 
+
+    print("hello friend")
+
+    ess_local         = hopsy.ess(chains_on_the_run)
 
     if ess_local.min() > 1000: 
 
