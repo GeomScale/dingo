@@ -26,7 +26,7 @@ thinning_value = polyround_A.shape[1]*100
 counter = 0
 total_time = 0
 ess_check = True
-n_samples_per_step = 100
+n_samples_per_iteration = 100
 
 
 while ess_check: 
@@ -39,15 +39,15 @@ while ess_check:
     rng = hopsy.RandomNumberGenerator(seed = 42) 
     t_0 = time.process_time()
 
-    accrate, states = hopsy.sample(markov_chain, rng, n_samples = n_samples_per_step, thinning = thinning_value)
+    accrate, states = hopsy.sample(markov_chain, rng, n_samples = n_samples_per_iteration, thinning = thinning_value)
 
     t_1         = time.process_time()
     total_time += t_1 - t_0
 
     if counter == 0:
         
-        total_samples     = states        # each sample is added as an extra chain, e.g (1, n_samples_per_step, d) --> (2, n_samples_per_step, d) 
-        unified_chain     = states[0]     # put all samples in a 2d array ((i+1)*n_samples_per_step , d)
+        total_samples     = states        # the states variable (i.e., the points sampled) have the following structure: (num_of_chains, n_samples_per_iteration, d)
+        unified_chain     = states[0]     # put all samples in a 2d array ((i+1)*n_samples_per_iteration , d)
 
     else:
         total_samples     = np.concatenate((total_samples, states), axis = 0)
@@ -56,7 +56,6 @@ while ess_check:
     chains_on_the_run = np.array(np.split(unified_chain, 5))  # split the unified_chain in 5 chains 
 
     ess_local         = hopsy.ess(chains_on_the_run)
-    print(chains_on_the_run.shape)
 
     if ess_local.min() > 1000: 
 
@@ -66,7 +65,6 @@ while ess_check:
     last_point_of_previous_chain = states[0][-1,:]
     
     counter += 1
-
 
 rhat = hopsy.rhat(final_chains)
 ess = hopsy.ess(final_chains)
@@ -83,5 +81,3 @@ with open("hopsy_samples/total_samples_" + name + ".txt", "w") as stats:
     stats.write("\n~~~~~\n")
     stats.write("rhat.max : " + str(rhat.max())+ "\n")
     stats.write("ess.min: " + str(ess.min())+ "\n")
-
-
