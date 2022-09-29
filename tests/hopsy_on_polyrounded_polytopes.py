@@ -26,7 +26,7 @@ thinning_value = polyround_A.shape[1]*100
 counter = 0
 total_time = 0
 ess_check = True
-n_samples_per_iteration = 100
+n_samples_per_iteration = 5000
 
 
 while ess_check: 
@@ -69,13 +69,14 @@ while ess_check:
 rhat = hopsy.rhat(final_chains)
 ess = hopsy.ess(final_chains)
 
-with open("hopsy_samples/total_samples_" + name + ".pckl", "wb") as hopsy_samples_file: 
+with open("hopsy_samples/hopsy_samples_" + name + ".pckl", "wb") as hopsy_samples_file: 
         pickle.dump(total_samples, hopsy_samples_file)
 
-with open("hopsy_samples/total_samples_" + name + ".txt", "w") as stats:
+with open("hopsy_samples/hopsy_samples_" + name + ".txt", "w") as stats:
     stats.write("model: " + polyrounded_polytope_file + "\n")
     stats.write("polyround_A.shape[0] : " + str(polyround_A.shape[0])+ "\n")
     stats.write("d (polyround_A.shape[1]): " + str(polyround_A.shape[1])+ "\n")
+    stats.write("n_samples_per_iteration: "+ str(n_samples_per_iteration) + "\n")
     stats.write("\n~~~~~\n")
     stats.write("hopsy sampling time: " + str(total_time))
     stats.write("\n~~~~~\n")
