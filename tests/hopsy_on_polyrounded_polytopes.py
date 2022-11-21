@@ -21,12 +21,12 @@ polyround_b = polytope.b.to_numpy()
 problem        = hopsy.Problem(polyround_A, polyround_b)
 starting_point = hopsy.compute_chebyshev_center(problem)
 proposal       = hopsy.UniformCoordinateHitAndRunProposal
-thinning_value = polyround_A.shape[1]*100
+thinning_value = polyround_A.shape[1]*200
 
 counter = 0
 total_time = 0
 ess_check = True
-n_samples_per_iteration = 5000
+n_samples_per_iteration = 10000
 
 
 while ess_check: 
@@ -35,7 +35,7 @@ while ess_check:
         markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = starting_point)
     else:
         markov_chain = hopsy.MarkovChain(problem, proposal, starting_point = last_point_of_previous_chain)
-    
+
     rng = hopsy.RandomNumberGenerator(seed = 42) 
     t_0 = time.process_time()
 
@@ -57,13 +57,21 @@ while ess_check:
 
     ess_local         = hopsy.ess(chains_on_the_run)
 
-    if ess_local.min() > 1000: 
+    print("ESS on iteration " , str(counter), " is: ", str(ess_local.min()))
+    print("and PSRF is: ", hopsy.rhat(chains_on_the_run).max())
+    print("\n~~~\n")
+
+    if ess_local.min() > 1000:
 
         final_chains = chains_on_the_run
         ess_check    = False
 
     last_point_of_previous_chain = states[0][-1,:]
-    
+
+
+    with open("hopsy_samples/temp_hopsy_samples_" + name + "iter_" + str(counter) + ".pckl", "wb") as hopsy_samples_file: 
+        pickle.dump(total_samples, hopsy_samples_file)
+
     counter += 1
 
 rhat = hopsy.rhat(final_chains)

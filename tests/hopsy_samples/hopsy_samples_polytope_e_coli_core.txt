@@ -1,0 +1,10 @@
+model: /data01/home/haris/dingo_repos/my__dingo/dingo/tests/polyrounded_polytopes/polytope_e_coli_core.xml.pckl
+polyround_A.shape[0] : 36
+d (polyround_A.shape[1]): 24
+n_samples_per_iteration: 10000
+
+~~~~~
+hopsy sampling time: 13.801318013
+~~~~~
+rhat.max : 1.0006947875174765
+ess.min: 9254.449892139584

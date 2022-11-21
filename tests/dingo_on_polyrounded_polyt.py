@@ -41,7 +41,7 @@ def sample_on_polyround_processed_polytope(network, ess_value, psrf_status):
    start = process_time() 
    steady_states = PolytopeSampler.sample_from_polytope(polyround_A,
                                                         polyround_b,
-                                                        ess = int(ess_value),
+                                                        #ess = int(ess_value),
                                                         psrf = psrf_status,
                                                         parallel_mmcs = False
                                                         )

@@ -1,0 +1,10 @@
+model: /data01/home/haris/dingo_repos/my__dingo/dingo/tests/polyrounded_polytopes/polytope_iAT_PLT_636.xml.pckl
+polyround_A.shape[0] : 593
+d (polyround_A.shape[1]): 289
+n_samples_per_iteration: 5000
+
+~~~~~
+hopsy sampling time: 674.917155602
+~~~~~
+rhat.max : 1.0058331418025317
+ess.min: 1689.2017998386425
