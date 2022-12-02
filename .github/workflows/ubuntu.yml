@@ -35,19 +35,18 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get install libsuitesparse-dev;
-        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -;
-        source $HOME/.poetry/env;
-        export POETRY_VIRTUALENVS_PATH=/home/runner/.cache/pypoetry/virtualenvs
-        poetry config virtualenvs.create false --local
-        #source $(dirname $(poetry run which python))/activate
+        curl -sSL https://install.python-poetry.org | python3 -;
+        poetry --version
+        poetry show -v
+        source $(poetry env info --path)/bin/activate
         poetry install;
-        #pip3 install numpy scipy;
+        pip3 install numpy scipy;
     - name: Run tests
       run: |
-        python3 tests/fba.py;
-        python3 tests/full_dimensional.py;
-        python3 tests/max_ball.py;
-        python3 tests/scaling.py;
+        poetry run python3 tests/fba.py;
+        poetry run python3 tests/full_dimensional.py;
+        poetry run python3 tests/max_ball.py;
+        poetry run python3 tests/scaling.py;
         # currently we do not test with gurobi
         # python3 tests/fast_implementation_test.py;
 
