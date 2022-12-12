@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 import os, sys, time, getopt
 import numpy as np
@@ -6,8 +6,7 @@ import pickle
 from PolyRound.api import PolyRoundApi
 from PolyRound.static_classes.lp_utils import ChebyshevFinder
 from PolyRound.settings import PolyRoundSettings
-import hopsy
-
+# import hopsy
 
 def polyround_preprocess(model_path):
 
@@ -15,7 +14,7 @@ def polyround_preprocess(model_path):
 
     # Import model and create Polytope object
     polytope = PolyRoundApi.sbml_to_polytope(model_path)
-    print("Polyope for network " + name + " was built.")
+    print("Polytope for network " + name + " was built.")
 
     # Make a settings object for the polyround library - optional
     settings = PolyRoundSettings()
@@ -65,7 +64,6 @@ def polyround_preprocess(model_path):
 
     return rounded_polytope, name
 
-
 if __name__ == '__main__':
 
     current_directory = os.getcwd()
@@ -74,4 +72,3 @@ if __name__ == '__main__':
 
     path_to_net = dingo_directory + "/ext_data/" + network_name
     rpolytope, name = polyround_preprocess(path_to_net)
-

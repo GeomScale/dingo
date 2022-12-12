@@ -48,7 +48,7 @@ def sample_on_polyround_processed_polytope(network, ess_value, psrf_status):
    end = process_time() 
    sampling_runtime = end - start
 
-   print("Dingo for the " + name + " model took " + str(sampling_runtime) + " sec to sample using simplified and transformed polytope with PolyRound.\n\n")
+   print("Dingo for the " + name + " model took " + str(sampling_runtime) + " sec to sample using simplified, transformed and polyrounded polytope with PolyRound.\n\n")
 
    with open("dingo_samples_on_polyrounded_polytopes/dingo_polyround" + name + ".pckl", "wb") as dingo_steadystates_file: 
          pickle.dump(steady_states, dingo_steadystates_file)

@@ -2,8 +2,6 @@
 
 # author: H.Z. 
 # date: 2022-09-23
-
-
 import os, sys
 import numpy as np
 from dingo import MetabolicNetwork, PolytopeSampler
@@ -11,7 +9,6 @@ from dingo import plot_histogram
 import time
 import pickle
 import multiprocessing
-
 
 def dingo_preprocess_and_sampling(network):
 
@@ -137,7 +134,3 @@ if __name__ == '__main__':
    print("model ", network, " is about to be processed and sampled using dingo")
    dingo_preprocess_and_sampling(network)
    print("Network " + network + " completed.")
-
-
-
-

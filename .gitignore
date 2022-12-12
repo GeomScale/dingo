@@ -9,3 +9,7 @@ volestipy.egg-info
 *.npy
 .ipynb_checkpoints/
 *.pckl
+VBOF/.Rhistory
+VBOF/.RData
+tests/sample_vbof.ipynb
+
