@@ -221,7 +221,7 @@ python-versions = "^3.7"
 develop = false
 
 [[package]]
-name = "cobrapy"
+name = "cobra"
 description = "Python wrapper for COBRA library"
 category = "main"
 optional = false
