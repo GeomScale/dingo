@@ -553,14 +553,6 @@ optional = false
 python-versions = "^3.7"
 develop = false
 
-[[package]]
-name = "cobra"
-description = "Python wrapper for COBRA library"
-category = "main"
-optional = false
-python-versions = "^3.7"
-develop = false
-
 [package.dependencies]
 cffi = "^1.0"
 numpy = "^1.21"
