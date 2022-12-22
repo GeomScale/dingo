@@ -13,6 +13,13 @@ from dingo.scaling import gmscale
 from dingo.nullspace import nullspace_dense, nullspace_sparse
 
 def compute_copula(flux1, flux2, n):
+    """A Python function to estimate the copula between two fluxes
+
+    Keyword arguments:
+    flux1: A vector that contains the measurements of the first reaxtion flux
+    flux2: A vector that contains the measurements of the second reaxtion flux
+    n: The number of cells
+    """
 
     N = flux1.size
     copula = np.zeros([n,n], dtype=float)

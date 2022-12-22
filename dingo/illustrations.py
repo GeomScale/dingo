@@ -11,6 +11,15 @@ import plotly.graph_objects as go
 from dingo.utils import compute_copula
 
 def plot_copula(data_flux1, data_flux2, n = 5):
+    """A Python function to plot the copula between two fluxes
+
+    Keyword arguments:
+    data_flux1: A list that contains: (i) the vector of the measurements of the first reaction,
+                                      (ii) the name of the first reaction
+    data_flux2: A list that contains: (i) the vector of the measurements of the second reaction,
+                                      (ii) the name of the second reaction
+    n: The number of cells
+    """
 
     flux1 = data_flux1[0]
     flux2 = data_flux2[0]
