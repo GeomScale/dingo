@@ -7,26 +7,39 @@
 
 import unittest
 import os
-import scipy
-import numpy as np
-from dingo import MetabolicNetwork, PolytopeSampler
-from dingo.inner_ball import slow_inner_ball
-from dingo.scaling import gmscale
-
+from dingo import MetabolicNetwork
 
 class TestFba(unittest.TestCase):
     
-    def test_ecoli(self):
+    def test_fba_json(self):
 
-        current_directory = os.getcwd()
-        input_file_json = current_directory + "/ext_data/e_coli_core.json"
-
+        input_file_json = os.getcwd() + "/ext_data/e_coli_core.json"
         model = MetabolicNetwork.from_json(input_file_json)
+        model.set_slow_mode()
+        res = model.fba()
+
+        self.assertTrue(abs(res[1] - 0.8739215067486387) < 1e-03)
+
+    def test_fba_mat(self):
+        
+        input_file_mat = os.getcwd() + "/ext_data/e_coli_core.mat"
+        model = MetabolicNetwork.from_mat(input_file_mat)
         model.set_slow_mode()
 
         res = model.fba()
 
         self.assertTrue(abs(res[1] - 0.8739215067486387) < 1e-03)
+
+    def test_fba_sbml(self):
+
+        input_file_sbml = os.getcwd() + "/ext_data/e_coli_core.xml"
+        model = MetabolicNetwork.from_sbml(input_file_sbml)
+        model.set_slow_mode()
+
+        res = model.fba()
+
+        self.assertTrue(abs(res[1] - 0.8739215067486387) < 1e-03)
+
 
 if __name__ == "__main__":
     unittest.main()

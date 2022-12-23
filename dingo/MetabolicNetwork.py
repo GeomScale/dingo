@@ -8,7 +8,7 @@
 
 import numpy as np
 import sys
-from dingo.loading_models import read_json_file, read_mat_file
+from dingo.loading_models import read_json_file, read_mat_file, read_sbml_file
 from dingo.fva import slow_fva
 from dingo.fba import slow_fba
 
@@ -80,6 +80,15 @@ class MetabolicNetwork:
             )
 
         return cls(read_mat_file(arg))
+
+    @classmethod
+    def from_sbml(cls, arg):
+        if (not isinstance(arg, str)) or (arg[-3:] != "xml"):
+            raise Exception(
+                "An unknown input format given to initialize a metabolic network object."
+            )
+
+        return cls(read_sbml_file(arg))
 
     def fva(self):
         """A member function to apply the FVA method on the metabolic network."""
