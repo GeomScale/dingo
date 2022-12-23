@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <math.h>
+#include <stdexcept>
 #include "bindings.h"
 
 using namespace std;
@@ -80,122 +81,65 @@ double HPolytopeCPP::compute_volume(char* vol_method, char* walk_method,
 
 
 //////////         Start of "generate_samples()"          //////////
-double HPolytopeCPP::generate_samples(int walk_len, int number_of_points, 
-                                      int number_of_points_to_burn, bool boundary,
-                                      bool cdhr, bool rdhr, bool gaussian, bool set_L,
-                                      bool accelerated_billiard, bool billiard,
-                                      bool ball_walk, double a, double L, bool max_ball,
-                                      double* inner_point, double radius, double* samples){
-   
+double HPolytopeCPP::generate_samples(int walk_len,
+                                      int number_of_points, 
+                                      int number_of_points_to_burn,
+                                      int method,
+                                      double* inner_point, 
+                                      double radius,
+                                      double* samples){
    RNGType rng(HP.dimension());
    HP.normalize();
    
    int d = HP.dimension();
    Point starting_point; 
    
-   // Check for max ball given
-   if (max_ball){
-
-      VT inner_vec(d);
-      for (int i = 0; i < d; i++){
-         inner_vec(i) = inner_point[i];
-      }
+   VT inner_vec(d);
+   for (int i = 0; i < d; i++){
+      inner_vec(i) = inner_point[i];
+   }
    
-      Point inner_point2(inner_vec); 
-      CheBall = std::pair<Point, NT>(inner_point2, radius);
-      HP.set_InnerBall(CheBall);
-      starting_point = inner_point2;
-      
-   } else {
-
-      //Point default_starting_point = HP.ComputeInnerBall().first;
-      starting_point = HP.ComputeInnerBall().first;
-   }   
+   Point inner_point2(inner_vec); 
+   CheBall = std::pair<Point, NT>(inner_point2, radius);
+   HP.set_InnerBall(CheBall);
+   starting_point = inner_point2;
       
    std::list<Point> rand_points;
 
-   if (boundary) {
-      if (cdhr) {
-         uniform_sampling_boundary<BCDHRWalk>(rand_points, HP, rng, walk_len,
-                                              number_of_points, starting_point,
-                                              number_of_points_to_burn);
-         } else {
-            uniform_sampling_boundary<BRDHRWalk>(rand_points, HP, rng, walk_len, 
-                                                 number_of_points, starting_point, 
-                                                 number_of_points_to_burn);
-         }
-   } else if (cdhr) {
-      if (gaussian) {
-         gaussian_sampling<GaussianCDHRWalk>(rand_points, HP, rng, walk_len, 
-                                             number_of_points, a, starting_point,
-                                             number_of_points_to_burn);
-      } else {
-         uniform_sampling<CDHRWalk>(rand_points, HP, rng, walk_len, number_of_points,
-                                    starting_point, number_of_points_to_burn);
-      }
-   } else if (rdhr){
-      if (gaussian) {
-         gaussian_sampling<GaussianRDHRWalk>(rand_points, HP, rng, walk_len, 
-                                             number_of_points, a, starting_point, 
-                                             number_of_points_to_burn);
-      } else {
-         uniform_sampling<RDHRWalk>(rand_points, HP, rng, walk_len, number_of_points, 
-                                    starting_point, number_of_points_to_burn);
-      }
-   } else if (billiard) {
-      if (set_L) {
-         BilliardWalk WalkType(L);
-         uniform_sampling(rand_points, HP, rng, WalkType, walk_len, number_of_points,
-                          starting_point, number_of_points_to_burn);
-      } else {
-         uniform_sampling<BilliardWalk>(rand_points, HP, rng, walk_len, 
-                                        number_of_points, starting_point, 
-                                        number_of_points_to_burn);
-      }
-   } else if (accelerated_billiard) {
-      if (set_L) {
-         AcceleratedBilliardWalk WalkType(L);
-         uniform_sampling(rand_points, HP, rng, WalkType, walk_len, number_of_points,
-                          starting_point, number_of_points_to_burn);
-      } else {
-         uniform_sampling<AcceleratedBilliardWalk>(rand_points, HP, rng, walk_len, 
-                                        number_of_points, starting_point, 
-                                        number_of_points_to_burn);
-      }
+   if (method == 1) { // cdhr
+      uniform_sampling<CDHRWalk>(rand_points, HP, rng, walk_len, number_of_points,
+                                 starting_point, number_of_points_to_burn);
+   } else if (method == 2) { // rdhr
+      uniform_sampling<RDHRWalk>(rand_points, HP, rng, walk_len, number_of_points, 
+                                 starting_point, number_of_points_to_burn);
+   } else if (method == 3) { // accelerated_billiard
+      uniform_sampling<AcceleratedBilliardWalk>(rand_points, HP, rng, walk_len, 
+                                                number_of_points, starting_point, 
+                                                number_of_points_to_burn);
+   } else if (method == 4) { // ball walk
+      uniform_sampling<BallWalk>(rand_points, HP, rng, walk_len, number_of_points, 
+                                 starting_point, number_of_points_to_burn);
+   } else if (method == 5) { // dikin walk {
+      uniform_sampling<DikinWalk>(rand_points, HP, rng, walk_len, number_of_points,
+                                  starting_point, number_of_points_to_burn);
+   } else if (method == 6) { // dikin walk {
+      uniform_sampling<JohnWalk>(rand_points, HP, rng, walk_len, number_of_points,
+                                 starting_point, number_of_points_to_burn);
+   } else if (method == 7) { // dikin walk {
+      uniform_sampling<VaidyaWalk>(rand_points, HP, rng, walk_len, number_of_points,
+                                   starting_point, number_of_points_to_burn);
    } else {
-      if (set_L) {
-         if (gaussian) {
-            GaussianBallWalk WalkType(L);
-            gaussian_sampling(rand_points, HP, rng, WalkType, walk_len,
-                              number_of_points, a, starting_point, 
-                              number_of_points_to_burn);
-            } else {
-               BallWalk WalkType(L);
-               uniform_sampling(rand_points, HP, rng, WalkType, walk_len,
-                                number_of_points, starting_point, 
-                                number_of_points_to_burn);
-            }
-        } else {
-            if (gaussian) {
-               gaussian_sampling<GaussianBallWalk>(rand_points, HP, rng, walk_len, 
-                                                   number_of_points, a, starting_point, 
-                                                   number_of_points_to_burn);
-            } else {
-               uniform_sampling<BallWalk>(rand_points, HP, rng, walk_len,
-                                          number_of_points, starting_point, 
-                                          number_of_points_to_burn);
-            }
-        }
+      throw std::runtime_error("This function must not be called.");
    }
-   std::cout<<"Sampling completed"<<std::endl;
 
-// The following block of code allows us to parse the matrix with the points we are making
+   // The following block of code allows us to parse the matrix with the points we are making
    auto n_si=0;
    for (auto it_s = rand_points.cbegin(); it_s != rand_points.cend(); it_s++){
       for (auto i = 0; i != it_s->dimension(); i++){
          samples[n_si++] = (*it_s)[i];
       }
    }
+   return 0.0;
 }
 //////////         End of "generate_samples()"          //////////
 
