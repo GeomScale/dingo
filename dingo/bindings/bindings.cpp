@@ -87,14 +87,13 @@ double HPolytopeCPP::generate_samples(int walk_len,
                                       int method,
                                       double* inner_point, 
                                       double radius,
-                                      double* samples){
+                                      double* samples) {
    RNGType rng(HP.dimension());
    HP.normalize();
-   
    int d = HP.dimension();
    Point starting_point; 
-   
    VT inner_vec(d);
+
    for (int i = 0; i < d; i++){
       inner_vec(i) = inner_point[i];
    }
@@ -103,7 +102,6 @@ double HPolytopeCPP::generate_samples(int walk_len,
    CheBall = std::pair<Point, NT>(inner_point2, radius);
    HP.set_InnerBall(CheBall);
    starting_point = inner_point2;
-      
    std::list<Point> rand_points;
 
    if (method == 1) { // cdhr
@@ -132,7 +130,7 @@ double HPolytopeCPP::generate_samples(int walk_len,
       throw std::runtime_error("This function must not be called.");
    }
 
-   // The following block of code allows us to parse the matrix with the points we are making
+   // The following block of code allows us to copy the sampled points
    auto n_si=0;
    for (auto it_s = rand_points.cbegin(); it_s != rand_points.cend(); it_s++){
       for (auto i = 0; i != it_s->dimension(); i++){
