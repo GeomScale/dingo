@@ -150,7 +150,7 @@ cdef class HPolytope:
       elif method == 'vaidya_walk':
          int_method = 7
       else:
-         raise RuntimeError("uknown MCMC sampling method")
+         raise RuntimeError("Uknown MCMC sampling method")
       
       self.polytope_cpp.generate_samples(walk_len, number_of_points, number_of_points_to_burn, \
                                          int_method, &inner_point_for_c[0], radius, &samples[0,0])
