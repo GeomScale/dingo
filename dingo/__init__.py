@@ -21,6 +21,9 @@ from dingo.utils import (
     map_samples_to_steady_states,
     get_matrices_of_low_dim_polytope,
     get_matrices_of_full_dim_polytope,
+)
+from dingo.illustrations import (
+    plot_copula,
     plot_histogram,
 )
 from dingo.parser import dingo_args

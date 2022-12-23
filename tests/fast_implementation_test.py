@@ -7,11 +7,9 @@
 
 import unittest
 import os
-import scipy
 import numpy as np
 from dingo import MetabolicNetwork, PolytopeSampler
 from dingo.gurobi_based_implementations import fast_inner_ball
-
 
 class TestFastMethods(unittest.TestCase):
     def test_fast_max_bal_computation(self):
