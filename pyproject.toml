@@ -15,7 +15,7 @@ scipy = "^1.6.1"
 argparse = "^1.4.0"
 matplotlib = "^3.4.1"
 cobra = "^0.26.0"
-plotly = "*"
+plotly = "^5.11.0"
 
 [tool.poetry.dev-dependencies]
 

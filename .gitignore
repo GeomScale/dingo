@@ -9,3 +9,4 @@ volestipy.egg-info
 *.npy
 .ipynb_checkpoints/
 .vscode
+venv
