@@ -15,6 +15,12 @@ sampler = PolytopeSampler(model)
 steady_states = sampler.generate_steady_states()
 ```
 
+`dingo` can also load a model given in `.sbml` format using the following command,  
+
+```python
+model = MetabolicNetwork.from_sbml('path/to/model_file.sbml')
+```
+
 The output variable `steady_states` is a `numpy` array that contains the steady states of the model column-wise. You could ask from the `sampler` for more statistical guarantees on sampling,  
 
 ```python
@@ -34,6 +40,16 @@ The default option is to run the sequential [Multiphase Monte Carlo Sampling alg
 
 **Tip**: After the first run of MMCS algorithm the polytope stored in object `sampler` is usually more rounded than the initial one. Thus, the function `generate_steady_states()` becomes more efficient from run to run.  
 
+To use any other MCMC sampling method that `dingo` provides you can use the following piece of code:  
+
+```python
+sampler = polytope_sampler(model)
+steady_states = sampler.generate_steady_states_no_multiphase() #default parameters (method = 'billiard_walk', n=1000, burn_in=0, thinning=1)
+```
+
+The MCMC methods that dingo (through `volesti` library) provides are the following: (i) 'cdhr': Coordinate Directions Hit-and-Run, (ii) 'rdhr': Random Directions Hit-and-Run,
+(iii) 'billiard_walk', (iv) 'ball_walk', (v) 'dikin_walk', (vi) 'john_walk', (vii) 'vaidya_walk'.  
+
 #### Fast and slow mode
 
 If you have installed successfully the `gurobi` library, dingo turns to the *fast mode* by default. To set a certain mode you could use the following member functions,
@@ -47,26 +63,6 @@ sampler.set_fast_mode()
 sampler.set_slow_mode()
 ```
 
-### Sample steady states
-
-To sample steady states using the Multiphase Monte Carlo Sampling method, use the following piece of code:  
-
-```python
-sampler = polytope_sampler(model)
-steady_states = sampler.generate_steady_states() #default parameters (ess=1000, psrf=False, parallel_mmcs=False, num_threads=1)
-```
-
-The default target for the effective sample size is 1000. When `psrf=True` then, the sampler sets as target a value of 1.1.  
-
-To use any other MCMC sampling method that `dingo` provides you can use the following piece of code:  
-
-```python
-sampler = polytope_sampler(model)
-steady_states = sampler.generate_steady_states_no_multiphase() #default parameters (method = 'billiard_walk', n=1000, burn_in=0, thinning=1)
-```
-
-The MCMC methods that dingo (through `volesti` library) provides are the following: (i) 'cdhr': Coordinate Directions Hit-and-Run, (ii) 'rdhr': Random Directions Hit-and-Run,
-(iii) 'billiard_walk', (iv) 'ball_walk', (v) 'dikin_walk', (vi) 'john_walk', (vii) 'vaidya_walk'.  
 
 ### Apply FBA and FVA methods
 
@@ -75,7 +71,7 @@ To apply FVA and FBA methods you have to use the class `metabolic_network`,
 ```python
 from dingo import MetabolicNetwork
 
-model = MetabolicNetwork('path/to/model_file.json')
+model = MetabolicNetwork.from_json('path/to/model_file.json')
 fva_output = model.fva()
 
 min_fluxes = fva_output[0]
