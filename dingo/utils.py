@@ -8,11 +8,40 @@
 import numpy as np
 import math
 import scipy.sparse as sp
-import matplotlib.pyplot as plt
 from scipy.sparse import diags
 from dingo.scaling import gmscale
 from dingo.nullspace import nullspace_dense, nullspace_sparse
 
+def compute_copula(flux1, flux2, n):
+    """A Python function to estimate the copula between two fluxes
+
+    Keyword arguments:
+    flux1: A vector that contains the measurements of the first reaxtion flux
+    flux2: A vector that contains the measurements of the second reaxtion flux
+    n: The number of cells
+    """
+
+    N = flux1.size
+    copula = np.zeros([n,n], dtype=float)
+
+    I1 = np.argsort(flux1)
+    I2 = np.argsort(flux2)
+
+    grouped_flux1 = np.zeros(N)
+    grouped_flux2 = np.zeros(N)
+
+    for j in range(n):
+        rng = range((j*math.floor(N/n)),((j+1)*math.floor(N/n)))
+        grouped_flux1[I1[rng]] = j
+        grouped_flux2[I2[rng]] = j
+    
+    for i in range(n):
+        for j in range(n):
+            copula[i,j] = sum((grouped_flux1==i) *( grouped_flux2==j))
+    
+    copula = copula / N
+    return copula
+    
 
 def apply_scaling(A, b, cs, rs):
     """A Python function to apply the scaling computed by the function `gmscale` to a convex polytope
@@ -172,27 +201,3 @@ def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
         print("gmscale failed to compute a good scaling.")
 
     return A, b, N, N_shift
-
-
-def plot_histogram(reaction_fluxes, reaction, n_bins=40):
-    """A Python function to plot the histogram of a certain reaction flux.
-
-    Keyword arguments:
-    reaction_fluxes -- a vector that contains sampled fluxes of a reaction
-    reaction -- a string with the name of the reacion
-    n_bins -- the number of bins for the histogram
-    """
-
-    plt.figure(figsize=(7, 7))
-
-    n, bins, patches = plt.hist(
-        reaction_fluxes, bins=n_bins, density=False, facecolor="red", ec="black"
-    )
-
-    plt.xlabel("Flux (mmol/gDW/h)", fontsize=16)
-    plt.ylabel("Frequency (#samples: " + str(reaction_fluxes.size) + ")", fontsize=14)
-    plt.grid(True)
-    plt.title("Reaction: " + reaction, fontweight="bold", fontsize=18)
-    plt.axis([np.amin(reaction_fluxes), np.amax(reaction_fluxes), 0, np.amax(n) * 1.2])
-
-    plt.show()

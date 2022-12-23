@@ -124,7 +124,7 @@ The generated steady states can be used to estimate the marginal density functio
 ```python
 from dingo import plot_histogram
 
-model = MetabolicNetwork('path/to/e_coli_core.json')
+model = MetabolicNetwork.from_json('path/to/e_coli_core.json')
 sampler = PolytopeSampler(model)
 steady_states = sampler.generate_steady_states(ess = 3000)
 
@@ -141,3 +141,26 @@ The default number of bins is 60. dingo uses the package `matplotlib` for plotti
 
 ![histogram](../doc/e_coli_aconta.png)
 
+### Plot a copula between two fluxes
+
+The generated steady states can be used to estimate and plot the copula between two fluxes. You can plot the copula using the samples,
+
+```python
+from dingo import plot_copula
+
+model = MetabolicNetwork.from_json('path/to/e_coli_core.json')
+sampler = PolytopeSampler(model)
+steady_states = sampler.generate_steady_states(ess = 3000)
+
+# plot the copula between the 13th (PPC) and the 14th (ACONTa) reaction in e-coli 
+reactions = model.reactions
+
+data_flux2=[steady_states[12],reactions[12]]
+data_flux1=[steady_states[13],reactions[13]]
+
+plot_copula(data_flux1, data_flux2, n=10)
+```
+
+The default number of cells is 5x5=25. dingo uses the package `plotly` for plotting.
+
+![histogram](../doc/aconta_ppc_copula.png)
