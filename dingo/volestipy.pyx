@@ -74,8 +74,8 @@ cdef extern from "bindings.h":
       void get_polytope_as_matrices(double* new_A, double* new_b);
 
       # Rounding H-Polytope
-      void rounding(char* rounding_method, double* new_A, double* new_b, double* T_matrix, double* shift, double &round_value, \
-         bool max_ball, double* inner_point, double radius);
+      void apply_rounding(int rounding_method, double* new_A, double* new_b, double* T_matrix, \
+                          double* shift, double &round_value, double* inner_point, double radius
 
    # The lowDimPolytopeCPP class along with its functions
    cdef cppclass lowDimHPolytopeCPP:
@@ -141,7 +141,7 @@ cdef class HPolytope:
 
 
    # The rounding() function; as in compute_volume, more than one method is available for this step
-   def rounding(self, rounding_method = 'max_ellipsoid', inner_point = [], radius = 0):
+   def rounding(self, rounding_method = 'john_position', fast_mode = False):
 
       # Get the dimensions of the items about to build
       n_hyperplanes, n_variables = self._A.shape[0], self._A.shape[1]
@@ -154,28 +154,33 @@ cdef class HPolytope:
       cdef double[::1] shift = np.zeros((n_variables), dtype=np.float64, order="C")
       cdef double round_value
       
-      cdef double[::1] inner_point_for_c = np.asarray(inner_point)
+      # Get max inscribed ball for the initial polytope
+      if fast_mode:
+         center, radius = fast_inner_ball(self._A, self._b)
+      else:
+         center, radius = slow_inner_ball(self._A, self._b)
       
-      # Transform the rounding_method variable to UTF-8 coding
-      rounding_method = rounding_method.encode("UTF-8")
-
-      # Check whether a max ball has been given
-      max_ball = radius > 0
+      cdef double[::1] inner_point_for_c = np.asarray(center)
+      
+      if rounding_method == 'john_position':
+         int_method = 1
+      elif rounding_method == 'isotropic_position':
+         int_method = 2
+      elif rounding_method == 'min_ellipsoid':
+         int_method = 3
+      else:
+         raise RuntimeError("Uknown rounding method")
       
       # Check whether the rounding method the user asked for is actually among those volestipy supports
-      if rounding_method in rounding_methods:
+      #if rounding_method in rounding_methods:
 
-         self.polytope_cpp.rounding(rounding_method, &new_A[0,0], &new_b[0], &T_matrix[0,0], &shift[0], round_value, max_ball, &inner_point_for_c[0], radius)
+      self.polytope_cpp.apply_rounding(int_method, &new_A[0,0], &new_b[0], &T_matrix[0,0], &shift[0], round_value, &inner_point_for_c[0], radius)
 
-         np.save('A_rounded.npy', new_A) ; np.save('b_rounded.npy', new_b)
-         np.save('T_rounded.npy', T_matrix) ; np.save('shift_rounded.npy', shift)
-         np.save('round_value.npy', np.asarray(round_value))
+         #np.save('A_rounded.npy', new_A) ; np.save('b_rounded.npy', new_b)
+         #np.save('T_rounded.npy', T_matrix) ; np.save('shift_rounded.npy', shift)
+         #np.save('round_value.npy', np.asarray(round_value))
 
-         return np.asarray(new_A),np.asarray(new_b),np.asarray(T_matrix),np.asarray(shift),np.asarray(round_value)
-
-      else:
-
-         raise Exception('"{}" is not implemented to walk types. Available methods are: {}'.format(rounding_method, rounding_methods))
+      return np.asarray(new_A),np.asarray(new_b),np.asarray(T_matrix),np.asarray(shift),np.asarray(round_value)
    
    
    # The fast version of (m)ultiphase (m)onte (c)arlo (s)ampling algorithm to generate steady states of a metabolic network

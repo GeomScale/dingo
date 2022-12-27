@@ -154,8 +154,8 @@ class HPolytopeCPP{
       void get_polytope_as_matrices(double* new_A, double* new_b) const;
 
       // the rounding() function
-      void rounding(char* rounding_method, double* new_A, double* new_b, double* T_matrix, double* shift, double &round_value,
-       bool max_ball, double* inner_point, double radius);
+      void apply_rounding(int rounding_method, double* new_A, double* new_b, double* T_matrix, 
+                          double* shift, double &round_value, double* inner_point, double radius);
       
 };
 

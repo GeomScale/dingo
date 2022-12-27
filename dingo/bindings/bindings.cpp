@@ -447,34 +447,29 @@ void HPolytopeCPP::get_mmcs_samples(double* T_matrix, double* T_shift, double* s
 
 
 //////////         Start of "rounding()"          //////////
-void HPolytopeCPP::rounding(char* rounding_method, double* new_A, double* new_b,
-                            double* T_matrix, double* shift, double &round_value,
-                            bool max_ball, double* inner_point, double radius){
+void HPolytopeCPP::apply_rounding(int rounding_method, double* new_A, double* new_b,
+                                  double* T_matrix, double* shift, double &round_value,
+                                  double* inner_point, double radius){
 
    // make a copy of the initial HP which will be used for the rounding step
    auto P(HP);
    RNGType rng(P.dimension());
    P.normalize();
    
-   // check for max ball given
-   if (max_ball){
-      
-      // if yes, then read the inner point provided by the user and the radius
-      int d = P.dimension();
-      VT inner_vec(d);
-      
-      for (int i = 0; i < d; i++){
-         inner_vec(i) = inner_point[i];
-      }
-
-      Point inner_point2(inner_vec);
-      CheBall = std::pair<Point, NT>(inner_point2, radius);
-      
-   } else {
-      CheBall = P.ComputeInnerBall();
-   }
    
+      
+   // read the inner point provided by the user and the radius
+   int d = P.dimension();
+   VT inner_vec(d);
+      
+   for (int i = 0; i < d; i++){
+      inner_vec(i) = inner_point[i];
+   }
 
+   Point inner_point2(inner_vec);
+   CheBall = std::pair<Point, NT>(inner_point2, radius);
+   P.set_InnerBall(CheBall);
+   
    // set the output variable of the rounding step
    round_result round_res;
 
@@ -482,15 +477,18 @@ void HPolytopeCPP::rounding(char* rounding_method, double* new_A, double* new_b,
    int walk_len = 2;
 
    // run the rounding method
-   if (strcmp(rounding_method,"min_ellipsoid") == 0){
+   if (rounding_method == 1) { // max ellipsoid
+      round_res = max_inscribed_ellipsoid_rounding<MT, VT, NT>(P, CheBall.first);
+      
+   } else if (rounding_method == 2) { // isotropization
+      round_res = svd_rounding<AcceleratedBilliardWalk, MT, VT>(P, CheBall, walk_len, rng);
+   } else if (rounding_method == 3) { // min ellipsoid
       round_res = min_sampling_covering_ellipsoid_rounding<AcceleratedBilliardWalk, MT, VT>(P,
                                                                                             CheBall,
                                                                                             walk_len,
                                                                                             rng);
-   } else if (strcmp(rounding_method,"svd") == 0){
-      round_res = svd_rounding<AcceleratedBilliardWalk, MT, VT>(P, CheBall, walk_len, rng);
-   } else if (strcmp(rounding_method, "max_ellipsoid") == 0){
-      round_res = max_inscribed_ellipsoid_rounding<MT, VT, NT>(P, CheBall.first);
+   } else {
+      throw std::runtime_error("Unknown rounding method.");
    }
 
    // create the new_A matrix

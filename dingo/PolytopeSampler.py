@@ -217,6 +217,19 @@ class PolytopeSampler:
         return samples
 
     @staticmethod
+    def round_polytope(
+        A, b, method = "john_position"
+    ):
+        P = HPolytope(A, b)
+        try:
+            import gurobipy
+            A, b, Tr, Tr_shift, round_value = P.rounding(method, True)
+        except ImportError as e:
+            A, b, Tr, Tr_shift, round_value = P.rounding(method, False)
+        
+        return A, b, Tr, Tr_shift
+
+    @staticmethod
     def sample_from_fva_output(
         min_fluxes,
         max_fluxes,
