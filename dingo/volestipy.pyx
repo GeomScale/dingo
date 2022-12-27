@@ -170,15 +170,8 @@ cdef class HPolytope:
          int_method = 3
       else:
          raise RuntimeError("Uknown rounding method")
-      
-      # Check whether the rounding method the user asked for is actually among those volestipy supports
-      #if rounding_method in rounding_methods:
 
       self.polytope_cpp.apply_rounding(int_method, &new_A[0,0], &new_b[0], &T_matrix[0,0], &shift[0], round_value, &inner_point_for_c[0], radius)
-
-         #np.save('A_rounded.npy', new_A) ; np.save('b_rounded.npy', new_b)
-         #np.save('T_rounded.npy', T_matrix) ; np.save('shift_rounded.npy', shift)
-         #np.save('round_value.npy', np.asarray(round_value))
 
       return np.asarray(new_A),np.asarray(new_b),np.asarray(T_matrix),np.asarray(shift),np.asarray(round_value)
    
