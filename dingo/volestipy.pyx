@@ -75,7 +75,7 @@ cdef extern from "bindings.h":
 
       # Rounding H-Polytope
       void apply_rounding(int rounding_method, double* new_A, double* new_b, double* T_matrix, \
-                          double* shift, double &round_value, double* inner_point, double radius
+                          double* shift, double &round_value, double* inner_point, double radius);
 
    # The lowDimPolytopeCPP class along with its functions
    cdef cppclass lowDimHPolytopeCPP:
