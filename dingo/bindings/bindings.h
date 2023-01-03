@@ -140,10 +140,8 @@ class HPolytopeCPP{
       double compute_volume(char* vol_method, char* walk_method, int walk_len, double epsilon, int seed) const;
 
       // the generate_samples() function
-      double generate_samples(int walk_len, int number_of_points, int number_of_points_to_burn, bool boundary, 
-       bool cdhr, bool rdhr, bool gaussian, bool set_L, bool accelerated_billiard, bool billiard, bool ball_walk, double a, double L,  
-       bool max_ball, double* inner_point, double radius,
-       double* samples);
+      double generate_samples(int walk_len, int number_of_points, int number_of_points_to_burn,
+                              int method, double* inner_point, double radius, double* samples);
 
       void mmcs_initialize(int d, int ess, bool psrf_check, bool parallelism, int num_threads);
 

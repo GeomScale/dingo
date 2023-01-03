@@ -185,6 +185,30 @@ class PolytopeSampler:
         self._T_shift = np.add(self._T_shift, Tr_shift)
 
         return steady_states
+    
+    def generate_steady_states_no_multiphase(
+        self, method = 'billiard_walk', n=1000, burn_in=0, thinning=1
+    ):
+        """A member function to sample steady states.
+
+        Keyword arguments:
+        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk'}
+        n -- the number of steady states to sample
+        burn_in -- the number of points to burn before sampling
+        thinning -- the walk length of the chain
+        """
+
+        self.get_polytope()
+
+        P = HPolytope(self._A, self._b)
+
+        samples = P.generate_samples(method, n, burn_in, thinning, self._parameters["fast_computations"])
+
+        steady_states = map_samples_to_steady_states(
+                samples, self._N, self._N_shift
+            )
+
+        return steady_states
 
     @staticmethod
     def sample_from_polytope(
@@ -213,6 +237,31 @@ class PolytopeSampler:
             A, b, Tr, Tr_shift, samples = P.slow_mmcs(
                 ess, psrf, parallel_mmcs, num_threads
             )
+
+        return samples
+    
+    @staticmethod
+    def sample_from_polytope_no_multiphase(
+        A, b, method = 'billiard_walk', n=1000, burn_in=0, thinning=1
+    ):
+        """A static function to sample from a full dimensional polytope with an MCMC method.
+
+        Keyword arguments:
+        A -- an mxn matrix that contains the normal vectors of the facets of the polytope row-wise
+        b -- a m-dimensional vector, s.t. A*x <= b
+        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk'}
+        n -- the number of steady states to sample
+        burn_in -- the number of points to burn before sampling
+        thinning -- the walk length of the chain
+        """
+
+        P = HPolytope(A, b)
+
+        try:
+            import gurobipy
+            samples = P.generate_samples(method, n, burn_in, thinning, True)
+        except ImportError as e:
+            samples = P.generate_samples(method, n, burn_in, thinning, False)
 
         return samples
 
