@@ -15,6 +15,12 @@ sampler = PolytopeSampler(model)
 steady_states = sampler.generate_steady_states()
 ```
 
+`dingo` can also load a model given in `.sbml` format using the following command,  
+
+```python
+model = MetabolicNetwork.from_sbml('path/to/model_file.sbml')
+```
+
 The output variable `steady_states` is a `numpy` array that contains the steady states of the model column-wise. You could ask from the `sampler` for more statistical guarantees on sampling,  
 
 ```python
@@ -65,6 +71,21 @@ from dingo import map_samples_to_steady_states
 steady_states = map_samples_to_steady_states(samples, N, N_shift, Tr, Tr_shift)
 ```
 
+#### Other MCMC sampling methods
+
+To use any other MCMC sampling method that `dingo` provides you can use the following piece of code:  
+
+```python
+sampler = polytope_sampler(model)
+steady_states = sampler.generate_steady_states_no_multiphase() #default parameters (method = 'billiard_walk', n=1000, burn_in=0, thinning=1)
+```
+
+The MCMC methods that dingo (through `volesti` library) provides are the following: (i) 'cdhr': Coordinate Directions Hit-and-Run, (ii) 'rdhr': Random Directions Hit-and-Run,
+(iii) 'billiard_walk', (iv) 'ball_walk', (v) 'dikin_walk', (vi) 'john_walk', (vii) 'vaidya_walk'.  
+
+
+
+
 
 #### Fast and slow mode
 
@@ -80,7 +101,6 @@ sampler.set_slow_mode()
 ```
 
 
-
 ### Apply FBA and FVA methods
 
 To apply FVA and FBA methods you have to use the class `metabolic_network`,
@@ -88,7 +108,7 @@ To apply FVA and FBA methods you have to use the class `metabolic_network`,
 ```python
 from dingo import MetabolicNetwork
 
-model = MetabolicNetwork('path/to/model_file')
+model = MetabolicNetwork.from_json('path/to/model_file.json')
 fva_output = model.fva()
 
 min_fluxes = fva_output[0]

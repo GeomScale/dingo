@@ -58,9 +58,8 @@ cdef extern from "bindings.h":
       double compute_volume(char* vol_method, char* walk_method, int walk_len, double epsilon, int seed);
 
       # Random sampling
-      double generate_samples(int walk_len, int number_of_points, int number_of_points_to_burn, bool boundary, \
-         bool cdhr, bool rdhr, bool gaussian, bool set_L, bool accelerated_billiard, bool billiard, bool ball_walk, \
-         double a, double L, bool max_ball, double* inner_point, double radius, double* samples);
+      double generate_samples(int walk_len, int number_of_points, int number_of_points_to_burn, \
+                              int method, double* inner_point, double radius, double* samples)
       
       # Initialize the parameters for the (m)ultiphase (m)onte (c)arlo (s)ampling algorithm
       void mmcs_initialize(unsigned int d, int ess, int psrf_check, int parallelism, int num_threads);
@@ -123,20 +122,38 @@ cdef class HPolytope:
          raise Exception('"{}" is not implemented to compute volume. Available methods are: {}'.format(vol_method, volume_methods))
 
    # Likewise, the generate_samples() function
-   def generate_samples(self, walk_len = 1, number_of_points = 1000, number_of_points_to_burn = 0, boundary = False, cdhr=False, \
-      rdhr = False, gaussian = False, set_L = False, accelerated_billiard = True, billiard = False, ball_walk = False, a = 0, \
-      radius = 0, inner_point = [], L = 0):
+   def generate_samples(self, method, number_of_points, number_of_points_to_burn, walk_len, fast_mode):
 
       n_variables = self._A.shape[1]
-      cdef double[:,::1] samples = np.zeros((number_of_points,  n_variables), dtype = np.float64, order = "C")
-      cdef double[::1] inner_point_for_c = np.asarray(inner_point)
+      cdef double[:,::1] samples = np.zeros((n_variables, number_of_points), dtype = np.float64, order = "C")
+
+      # Get max inscribed ball for the initial polytope
+      if fast_mode:
+         temp_center, radius = fast_inner_ball(self._A, self._b)
+      else:
+         temp_center, radius = slow_inner_ball(self._A, self._b)
       
-      # Check whether the user asks for a certain value of radius; this is of higher priority than having a radius from the corresponding function
-      max_ball = radius > 0
-      set_L = L > 0
+      cdef double[::1] inner_point_for_c = np.asarray(temp_center)
       
-      self.polytope_cpp.generate_samples(walk_len, number_of_points, number_of_points_to_burn, boundary, cdhr, rdhr, gaussian, set_L, \
-                                 accelerated_billiard, billiard, ball_walk, a, L, max_ball, &inner_point_for_c[0], radius, &samples[0,0])
+      if method == 'cdhr':
+         int_method = 1
+      elif method == 'rdhr':
+         int_method = 2
+      elif method == 'billiard_walk':
+         int_method = 3
+      elif method == 'ball_walk':
+         int_method = 4
+      elif method == 'dikin_walk':
+         int_method = 5
+      elif method == 'john_walk':
+         int_method = 6
+      elif method == 'vaidya_walk':
+         int_method = 7
+      else:
+         raise RuntimeError("Uknown MCMC sampling method")
+      
+      self.polytope_cpp.generate_samples(walk_len, number_of_points, number_of_points_to_burn, \
+                                         int_method, &inner_point_for_c[0], radius, &samples[0,0])
       return np.asarray(samples)      # we need to build a Python function for getting a starting point depending on the polytope
 
 
