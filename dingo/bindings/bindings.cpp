@@ -81,13 +81,13 @@ double HPolytopeCPP::compute_volume(char* vol_method, char* walk_method,
 
 
 //////////         Start of "generate_samples()"          //////////
-double HPolytopeCPP::generate_samples(int walk_len,
-                                      int number_of_points, 
-                                      int number_of_points_to_burn,
-                                      int method,
-                                      double* inner_point, 
-                                      double radius,
-                                      double* samples) {
+double HPolytopeCPP::apply_sampling(int walk_len,
+                                    int number_of_points, 
+                                    int number_of_points_to_burn,
+                                    int method,
+                                    double* inner_point, 
+                                    double radius,
+                                    double* samples) {
    RNGType rng(HP.dimension());
    HP.normalize();
    int d = HP.dimension();

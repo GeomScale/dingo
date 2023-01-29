@@ -58,7 +58,7 @@ cdef extern from "bindings.h":
       double compute_volume(char* vol_method, char* walk_method, int walk_len, double epsilon, int seed);
 
       # Random sampling
-      double generate_samples(int walk_len, int number_of_points, int number_of_points_to_burn, \
+      double apply_sampling(int walk_len, int number_of_points, int number_of_points_to_burn, \
                               int method, double* inner_point, double radius, double* samples)
       
       # Initialize the parameters for the (m)ultiphase (m)onte (c)arlo (s)ampling algorithm
@@ -125,7 +125,7 @@ cdef class HPolytope:
    def generate_samples(self, method, number_of_points, number_of_points_to_burn, walk_len, fast_mode):
 
       n_variables = self._A.shape[1]
-      cdef double[:,::1] samples = np.zeros((n_variables, number_of_points), dtype = np.float64, order = "C")
+      cdef double[:,::1] samples = np.zeros((number_of_points, n_variables), dtype = np.float64, order = "C")
 
       # Get max inscribed ball for the initial polytope
       if fast_mode:
@@ -152,9 +152,9 @@ cdef class HPolytope:
       else:
          raise RuntimeError("Uknown MCMC sampling method")
       
-      self.polytope_cpp.generate_samples(walk_len, number_of_points, number_of_points_to_burn, \
-                                         int_method, &inner_point_for_c[0], radius, &samples[0,0])
-      return np.asarray(samples)      # we need to build a Python function for getting a starting point depending on the polytope
+      self.polytope_cpp.apply_sampling(walk_len, number_of_points, number_of_points_to_burn, \
+                                       int_method, &inner_point_for_c[0], radius, &samples[0,0])
+      return np.asarray(samples)
 
 
    # The rounding() function; as in compute_volume, more than one method is available for this step
