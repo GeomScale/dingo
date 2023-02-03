@@ -69,7 +69,7 @@ python3 tests/fast_implementation_test.py
 
 ## Tutorial
 
-You can also have a look at our [Google Colab notebook](https://colab.research.google.com/github/GeomScale/dingo/blob/develop/tutorials/dingo_tutorial.ipynb) 
+You can have a look at our [Google Colab notebook](https://colab.research.google.com/github/GeomScale/dingo/blob/develop/tutorials/dingo_tutorial.ipynb) 
 on how to use `dingo`.
 
 
