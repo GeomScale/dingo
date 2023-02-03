@@ -40,6 +40,39 @@ The default option is to run the sequential [Multiphase Monte Carlo Sampling alg
 
 **Tip**: After the first run of MMCS algorithm the polytope stored in object `sampler` is usually more rounded than the initial one. Thus, the function `generate_steady_states()` becomes more efficient from run to run.  
 
+
+#### Rounding the polytope
+
+`dingo` provides three methods to round a polytope: (i) Bring the polytope to John position by apllying to it the transformation that maps the largest inscribed ellipsoid of the polytope to the unit ball, (ii) Bring the polytope to near-isotropic position by using uniform sampling with Billiard Walk, (iii) Apply to the polytope the transformation that maps the smallest enclosing ellipsoid of a uniform sample from the interior of the polytope to the unit ball.  
+
+```python
+from dingo import MetabolicNetwork, PolytopeSampler
+
+model = MetabolicNetwork.from_json('path/to/model_file.json')
+sampler = PolytopeSampler(model)
+A, b, N, N_shift = sampler.get_polytope()
+
+A_rounded, b_rounded, Tr, Tr_shift = sampler.round_polytope(A, b, method="john_postiion")
+A_rounded, b_rounded, Tr, Tr_shift = sampler.round_polytope(A, b, method="isotropic_postiion")
+A_rounded, b_rounded, Tr, Tr_shift = sampler.round_polytope(A, b, method="min_ellipsoid")
+```
+
+Then, to sample from the rounded polytope, the user has to call the following static method of PolytopeSampler class,
+
+```python
+samples = sample_from_polytope(A_rounded, b_rounded)
+```
+
+Last you can map the samples back to steady states,
+
+```python
+from dingo import map_samples_to_steady_states
+
+steady_states = map_samples_to_steady_states(samples, N, N_shift, Tr, Tr_shift)
+```
+
+#### Other MCMC sampling methods
+
 To use any other MCMC sampling method that `dingo` provides you can use the following piece of code:  
 
 ```python
@@ -49,6 +82,10 @@ steady_states = sampler.generate_steady_states_no_multiphase() #default paramete
 
 The MCMC methods that dingo (through `volesti` library) provides are the following: (i) 'cdhr': Coordinate Directions Hit-and-Run, (ii) 'rdhr': Random Directions Hit-and-Run,
 (iii) 'billiard_walk', (iv) 'ball_walk', (v) 'dikin_walk', (vi) 'john_walk', (vii) 'vaidya_walk'.  
+
+
+
+
 
 #### Fast and slow mode
 
