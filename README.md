@@ -267,7 +267,7 @@ plot_histogram(
 
 The default number of bins is 60. dingo uses the package `matplotlib` for plotting.
 
-![histogram](../doc/e_coli_aconta.png)
+![histogram](./doc/e_coli_aconta.png)
 
 ### Plot a copula between two fluxes
 
@@ -291,6 +291,6 @@ plot_copula(data_flux1, data_flux2, n=10)
 
 The default number of cells is 5x5=25. dingo uses the package `plotly` for plotting.
 
-![histogram](../doc/aconta_ppc_copula.png)
+![histogram](./doc/aconta_ppc_copula.png)
 
 
