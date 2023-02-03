@@ -60,6 +60,8 @@ python3 tests/fba.py
 python3 tests/full_dimensional.py
 python3 tests/max_ball.py
 python3 tests/scaling.py
+python3 tests/rounding.py
+python3 tests/sampling.py
 ```
 
 If you have installed Gurobi successfully, then run
