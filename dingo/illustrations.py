@@ -50,7 +50,9 @@ def plot_copula(data_flux1, data_flux2, n = 5, width = 900 , height = 600, expor
     fig_name = data_flux1[1] + "_" + data_flux2[1] + "_copula." + export_format
 
     camera = dict(
-        eye=dict(x=2, y=2, z=0.1)
+        up=dict(x=0, y=0, z=1),
+        center=dict(x=0, y=0, z=0),
+        eye=dict(x=1.25, y=1.25, z=1.25)
     )
 
     fig.update_layout(scene_camera=camera)
