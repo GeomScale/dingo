@@ -8,9 +8,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+import plotly.io as pio
 from dingo.utils import compute_copula
 
-def plot_copula(data_flux1, data_flux2, n = 5):
+def plot_copula(data_flux1, data_flux2, n = 5, width = 900 , height = 600, export_format = "svg"):
     """A Python function to plot the copula between two fluxes
 
     Keyword arguments:
@@ -25,15 +26,38 @@ def plot_copula(data_flux1, data_flux2, n = 5):
     flux2 = data_flux2[0]
     copula = compute_copula(flux1, flux2, n)
 
-    fig = go.Figure(data=[go.Surface(z=copula)])
+    fig = go.Figure(
+            data   = [go.Surface(z=copula)],
+            layout = go.Layout(
+                height = height, 
+                width  = width,
+            )
+        )
 
-    fig.update_layout(title='Copula between '+data_flux1[1]+' and '+data_flux2[1], autosize=False,
-                      width=500, height=500, scene = dict(xaxis_title=data_flux1[1],
-                      yaxis_title=data_flux2[1], zaxis_title='prob. mass'),
-                      margin=dict(l=65, r=50, b=65, t=90))
+
+    fig.update_layout(
+            title = 'Copula between '+ data_flux1[1] + ' and ' + data_flux2[1],
+            scene = dict(
+                    xaxis_title= data_flux1[1],
+                    yaxis_title= data_flux2[1],
+                    zaxis_title="prob, mass"
+                ),
+            margin=dict(r=30, b=30, l=30, t=50))
+
+    fig.layout.template = None
     
-    fig.update_layout()
     fig.show()
+    fig_name = data_flux1[1] + "_" + data_flux2[1] + "_copula." + export_format
+
+    camera = dict(
+        up=dict(x=0, y=0, z=1),
+        center=dict(x=0, y=0, z=0),
+        eye=dict(x=1.25, y=1.25, z=1.25)
+    )
+
+    fig.update_layout(scene_camera=camera)
+    fig.to_image(format = export_format, engine="kaleido")
+    pio.write_image(fig, fig_name, scale=2)
 
 
 def plot_histogram(reaction_fluxes, reaction, n_bins=40):
