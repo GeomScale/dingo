@@ -35,7 +35,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get install libsuitesparse-dev;
-        curl -sSL https://install.python-poetry.org | python3 -;
+        curl -sSL https://install.python-poetry.org | python3 - --version 1.3.2;
         poetry --version
         poetry show -v
         source $(poetry env info --path)/bin/activate
