@@ -131,8 +131,8 @@ model = MetabolicNetwork.from_json('path/to/model_file.json')
 sampler = PolytopeSampler(model)
 A, b, N, N_shift = sampler.get_polytope()
 
-A_rounded, b_rounded, Tr, Tr_shift = sampler.round_polytope(A, b, method="john_postiion")
-A_rounded, b_rounded, Tr, Tr_shift = sampler.round_polytope(A, b, method="isotropic_postiion")
+A_rounded, b_rounded, Tr, Tr_shift = sampler.round_polytope(A, b, method="john_position")
+A_rounded, b_rounded, Tr, Tr_shift = sampler.round_polytope(A, b, method="isotropic_position")
 A_rounded, b_rounded, Tr, Tr_shift = sampler.round_polytope(A, b, method="min_ellipsoid")
 ```
 
