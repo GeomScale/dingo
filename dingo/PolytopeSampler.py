@@ -203,10 +203,10 @@ class PolytopeSampler:
         P = HPolytope(self._A, self._b)
 
         samples = P.generate_samples(method, n, burn_in, thinning, self._parameters["fast_computations"])
-        samples = samples.T
+        samples_T = samples.T
 
         steady_states = map_samples_to_steady_states(
-                samples, self._N, self._N_shift
+                samples_T, self._N, self._N_shift
             )
 
         return steady_states
@@ -264,8 +264,8 @@ class PolytopeSampler:
         except ImportError as e:
             samples = P.generate_samples(method, n, burn_in, thinning, False)
 
-        samples = samples.T
-        return samples
+        samples_T = samples.T
+        return samples_T
 
     @staticmethod
     def round_polytope(
