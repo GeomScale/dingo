@@ -139,7 +139,7 @@ A_rounded, b_rounded, Tr, Tr_shift = sampler.round_polytope(A, b, method="min_el
 Then, to sample from the rounded polytope, the user has to call the following static method of PolytopeSampler class,
 
 ```python
-samples = sample_from_polytope(A_rounded, b_rounded)
+sampler = sample_from_polytope(A_rounded, b_rounded)
 ```
 
 Last you can map the samples back to steady states,
