@@ -104,10 +104,6 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    starting_point = inner_point2;
    std::list<Point> rand_points;
    NT variance = 1.0;
-   NT a = NT(1)/(NT(2)*variance);
-   int dim = 50;
-   Point c(dim);
-   c = GetDirection<Point>::apply(dim, rng, false);
 
    if (method == 1) { // cdhr
       uniform_sampling<CDHRWalk>(rand_points, HP, rng, walk_len, number_of_points,
@@ -133,10 +129,13 @@ double HPolytopeCPP::apply_sampling(int walk_len,
                                    starting_point, number_of_points_to_burn);
    } 
    else if (method == 8) { // gaussian sampling with gaussian HMC exact walk {
+   NT a = NT(1)/(NT(2)*variance);
    gaussian_sampling<GaussianHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, a,
                                    starting_point, number_of_points_to_burn);
    } 
    else if (method == 9) { // exponential sampling with exponential HMC exact walk {
+   Point c(d);
+   c = GetDirection<Point>::apply(d, rng, false);
    exponential_sampling<ExponentialHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, c, variance,
                                    starting_point, number_of_points_to_burn);
    } 
