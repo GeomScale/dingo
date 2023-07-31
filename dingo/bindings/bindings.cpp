@@ -89,7 +89,7 @@ double HPolytopeCPP::apply_sampling(int walk_len,
                                     double radius,
                                     double* samples,
                                     double variance_value,
-                                    double* bias_vector){ 
+                                    double* bias_vector_){ 
                                                                     
    RNGType rng(HP.dimension());
    HP.normalize();
@@ -136,20 +136,12 @@ double HPolytopeCPP::apply_sampling(int walk_len,
       gaussian_sampling<GaussianHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, a,
                                    starting_point, number_of_points_to_burn);
    } else if (method == 9) { // exponential sampling with exponential HMC exact walk
-      
-      //----------------------------
-      Point bias_vector_final; 
       VT c(d);
-
       for (int i = 0; i < d; i++){
-         c(i) = bias_vector[i];
+         c(i) = bias_vector_[i];
       }
-      Point bias_vector2(c); 
-   
-      bias_vector_final = bias_vector2;
-      //----------------------------
-      
-      exponential_sampling<ExponentialHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, bias_vector_final, variance,
+      Point bias_vector(c);       
+      exponential_sampling<ExponentialHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, bias_vector, variance,
                                    starting_point, number_of_points_to_burn);
       } 
    
