@@ -59,7 +59,7 @@ cdef extern from "bindings.h":
 
       # Random sampling
       double apply_sampling(int walk_len, int number_of_points, int number_of_points_to_burn, \
-                              int method, double* inner_point, double radius, double* samples)
+                              int method, double* inner_point, double radius, double* samples, double variance_value, double* bias_vector)
       
       # Initialize the parameters for the (m)ultiphase (m)onte (c)arlo (s)ampling algorithm
       void mmcs_initialize(unsigned int d, int ess, int psrf_check, int parallelism, int num_threads);
@@ -122,7 +122,7 @@ cdef class HPolytope:
          raise Exception('"{}" is not implemented to compute volume. Available methods are: {}'.format(vol_method, volume_methods))
 
    # Likewise, the generate_samples() function
-   def generate_samples(self, method, number_of_points, number_of_points_to_burn, walk_len, fast_mode):
+   def generate_samples(self, method, number_of_points, number_of_points_to_burn, walk_len, fast_mode, variance_value, bias_vector):
 
       n_variables = self._A.shape[1]
       cdef double[:,::1] samples = np.zeros((number_of_points, n_variables), dtype = np.float64, order = "C")
@@ -134,6 +134,8 @@ cdef class HPolytope:
          temp_center, radius = slow_inner_ball(self._A, self._b)
       
       cdef double[::1] inner_point_for_c = np.asarray(temp_center)
+      
+      cdef double[::1] bias_vector_ = np.asarray(bias_vector)
       
       if method == 'cdhr':
          int_method = 1
@@ -157,7 +159,7 @@ cdef class HPolytope:
          raise RuntimeError("Uknown MCMC sampling method")
       
       self.polytope_cpp.apply_sampling(walk_len, number_of_points, number_of_points_to_burn, \
-                                       int_method, &inner_point_for_c[0], radius, &samples[0,0])
+                                       int_method, &inner_point_for_c[0], radius, &samples[0,0], variance_value, &bias_vector_[0])
       return np.asarray(samples)
 
 
