@@ -21,14 +21,14 @@ class TestSampling(unittest.TestCase):
         sampler = PolytopeSampler(model)
         
         #gaussian hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk')
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk', n=10000, variance=50)
         print("############ mean for gaussian_hmc_walk:", steady_states[12].mean())
        
         self.assertTrue( steady_states.shape[0] == 95 )
         self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
         
         #exponential hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk')
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000, variance=50)
         print("############ mean for exponential_hmc_walk:", steady_states[12].mean())
 
         self.assertTrue( steady_states.shape[0] == 95 )
@@ -41,14 +41,14 @@ class TestSampling(unittest.TestCase):
         sampler = PolytopeSampler(model)
         
         #gaussian hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk')
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk', n=10000, variance=50)
         print("############ mean for gaussian_hmc_walk:", steady_states[12].mean())
         
         self.assertTrue( steady_states.shape[0] == 95 )
         self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
         
         #exponential hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk')
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000, variance=50)
         print("############ mean for exponential_hmc_walk:", steady_states[12].mean())
 
         self.assertTrue( steady_states.shape[0] == 95 )
@@ -62,14 +62,14 @@ class TestSampling(unittest.TestCase):
         sampler = PolytopeSampler(model)
         
         #gaussian hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk')
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk', n=10000, variance=50)
         print("############ mean for gaussian_hmc_walk:", steady_states[12].mean())
 
         self.assertTrue( steady_states.shape[0] == 95 )
         self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
         
         #exponential hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk')
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000, variance=50)
         print("############ mean for exponential_hmc_walk:", steady_states[12].mean())
 
         self.assertTrue( steady_states.shape[0] == 95 )
