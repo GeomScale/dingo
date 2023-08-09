@@ -21,7 +21,6 @@ class TestSampling(unittest.TestCase):
         sampler = PolytopeSampler(model)
 
         steady_states = sampler.generate_steady_states(ess = 20000, psrf = True)
-        print("############ mean:", steady_states[12].mean()) 
 
         self.assertTrue( steady_states.shape[0] == 95 )
         self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-02 )
@@ -33,8 +32,7 @@ class TestSampling(unittest.TestCase):
         model = MetabolicNetwork.from_mat(input_file_mat)
         sampler = PolytopeSampler(model)
 
-        steady_states = sampler.generate_steady_states(ess = 20000, psrf = True)
-        print("############ mean:", steady_states[12].mean()) 
+        steady_states = sampler.generate_steady_states(ess = 20000, psrf = True) 
 
         self.assertTrue( steady_states.shape[0] == 95 )
         self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-02 )
@@ -47,7 +45,6 @@ class TestSampling(unittest.TestCase):
         sampler = PolytopeSampler(model)
 
         steady_states = sampler.generate_steady_states(ess = 20000, psrf = True)
-        print("############ mean:", steady_states[12].mean()) 
 
         self.assertTrue( steady_states.shape[0] == 95 )
         self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-02 )
