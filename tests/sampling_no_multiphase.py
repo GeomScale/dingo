@@ -29,7 +29,7 @@ class TestSampling(unittest.TestCase):
         #self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
         
         #exponential hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000)
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000, variance=50)
 
         self.assertTrue( steady_states.shape[0] == 95 )
         self.assertTrue( steady_states.shape[1] == 10000 )
@@ -51,7 +51,7 @@ class TestSampling(unittest.TestCase):
         #self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
         
         #exponential hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000)
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000, variance=50)
 
         self.assertTrue( steady_states.shape[0] == 95 )
         self.assertTrue( steady_states.shape[1] == 10000 )
@@ -74,7 +74,7 @@ class TestSampling(unittest.TestCase):
         #self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
         
         #exponential hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000)
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000, variance=50)
 
         self.assertTrue( steady_states.shape[0] == 95 )
         self.assertTrue( steady_states.shape[1] == 10000 )
