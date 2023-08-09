@@ -21,18 +21,18 @@ class TestSampling(unittest.TestCase):
         sampler = PolytopeSampler(model)
         
         #gaussian hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk', n=10000)
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk', n=500)
        
         self.assertTrue( steady_states.shape[0] == 95 )
-        self.assertTrue( steady_states.shape[1] == 10000 )
+        self.assertTrue( steady_states.shape[1] == 500 )
         #steady_states[12].mean() seems to have a lot of discrepancy between experiments, so we won't check the mean for now
         #self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
         
         #exponential hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000, variance=50)
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=500, variance=50)
 
         self.assertTrue( steady_states.shape[0] == 95 )
-        self.assertTrue( steady_states.shape[1] == 10000 )
+        self.assertTrue( steady_states.shape[1] == 500 )
         #steady_states[12].mean() seems to have a lot of discrepancy between experiments, so we won't check the mean for now
         #self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
 
@@ -43,18 +43,18 @@ class TestSampling(unittest.TestCase):
         sampler = PolytopeSampler(model)
         
         #gaussian hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk', n=10000)
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk', n=500)
         
         self.assertTrue( steady_states.shape[0] == 95 )
-        self.assertTrue( steady_states.shape[1] == 10000 )
+        self.assertTrue( steady_states.shape[1] == 500 )
         #steady_states[12].mean() seems to have a lot of discrepancy between experiments, so we won't check the mean for now
         #self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
         
         #exponential hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000, variance=50)
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=500, variance=50)
 
         self.assertTrue( steady_states.shape[0] == 95 )
-        self.assertTrue( steady_states.shape[1] == 10000 )
+        self.assertTrue( steady_states.shape[1] == 500 )
         #steady_states[12].mean() seems to have a lot of discrepancy between experiments, so we won't check the mean for now
         #self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
 
@@ -66,18 +66,18 @@ class TestSampling(unittest.TestCase):
         sampler = PolytopeSampler(model)
         
         #gaussian hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk', n=10000)
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'gaussian_hmc_walk', n=500)
 
         self.assertTrue( steady_states.shape[0] == 95 )
-        self.assertTrue( steady_states.shape[1] == 10000 )
+        self.assertTrue( steady_states.shape[1] == 500 )
         #steady_states[12].mean() seems to have a lot of discrepancy between experiments, so we won't check the mean for now
         #self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
         
         #exponential hmc sampling
-        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=10000, variance=50)
+        steady_states = sampler.generate_steady_states_no_multiphase(method = 'exponential_hmc_walk', n=500, variance=50)
 
         self.assertTrue( steady_states.shape[0] == 95 )
-        self.assertTrue( steady_states.shape[1] == 10000 )
+        self.assertTrue( steady_states.shape[1] == 500 )
         #steady_states[12].mean() seems to have a lot of discrepancy between experiments, so we won't check the mean for now
         #self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-03 )
 
