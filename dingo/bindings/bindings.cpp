@@ -87,7 +87,10 @@ double HPolytopeCPP::apply_sampling(int walk_len,
                                     int method,
                                     double* inner_point, 
                                     double radius,
-                                    double* samples) {
+                                    double* samples,
+                                    double variance_value,
+                                    double* bias_vector_){ 
+                                                                    
    RNGType rng(HP.dimension());
    HP.normalize();
    int d = HP.dimension();
@@ -103,6 +106,8 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    HP.set_InnerBall(CheBall);
    starting_point = inner_point2;
    std::list<Point> rand_points;
+   
+   NT variance = variance_value;
 
    if (method == 1) { // cdhr
       uniform_sampling<CDHRWalk>(rand_points, HP, rng, walk_len, number_of_points,
@@ -117,16 +122,30 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    } else if (method == 4) { // ball walk
       uniform_sampling<BallWalk>(rand_points, HP, rng, walk_len, number_of_points, 
                                  starting_point, number_of_points_to_burn);
-   } else if (method == 5) { // dikin walk {
+   } else if (method == 5) { // dikin walk
       uniform_sampling<DikinWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                   starting_point, number_of_points_to_burn);
-   } else if (method == 6) { // dikin walk {
+   } else if (method == 6) { // john walk
       uniform_sampling<JohnWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                  starting_point, number_of_points_to_burn);
-   } else if (method == 7) { // dikin walk {
+   } else if (method == 7) { // vaidya walk
       uniform_sampling<VaidyaWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                    starting_point, number_of_points_to_burn);
-   } else {
+   } else if (method == 8) { // gaussian sampling with gaussian HMC exact walk
+      NT a = NT(1)/(NT(2)*variance);
+      gaussian_sampling<GaussianHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, a,
+                                   starting_point, number_of_points_to_burn);
+   } else if (method == 9) { // exponential sampling with exponential HMC exact walk
+      VT c(d);
+      for (int i = 0; i < d; i++){
+         c(i) = bias_vector_[i];
+      }
+      Point bias_vector(c);       
+      exponential_sampling<ExponentialHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, bias_vector, variance,
+                                   starting_point, number_of_points_to_burn);
+      } 
+   
+   else {
       throw std::runtime_error("This function must not be called.");
    }
 
