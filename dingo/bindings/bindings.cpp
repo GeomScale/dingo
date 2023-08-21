@@ -143,7 +143,49 @@ double HPolytopeCPP::apply_sampling(int walk_len,
       Point bias_vector(c);       
       exponential_sampling<ExponentialHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, bias_vector, variance,
                                    starting_point, number_of_points_to_burn);
-      } 
+   } else if (method == 10) { // HMC with Gaussian distribution
+      typedef GaussianFunctor::GradientFunctor<Point> NegativeGradientFunctor;
+      typedef GaussianFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
+      typedef BoostRandomNumberGenerator<boost::mt19937, NT> RandomNumberGenerator;
+      typedef LeapfrogODESolver<Point, NT, Hpolytope, NegativeGradientFunctor> Solver;
+      unsigned rng_seed = std::chrono::system_clock::now().time_since_epoch().count();
+      RandomNumberGenerator rng(rng_seed); 
+
+      GaussianFunctor::parameters<NT, Point> params(starting_point, 2 / (variance * variance), NT(-1));
+      NegativeGradientFunctor F(params);
+      NegativeLogprobFunctor f(params);
+      HamiltonianMonteCarloWalk::parameters<NT, NegativeGradientFunctor> hmc_params(F, d);
+      
+      HamiltonianMonteCarloWalk::Walk<Point, Hpolytope, RandomNumberGenerator, NegativeGradientFunctor, NegativeLogprobFunctor, Solver>hmc(&HP, starting_point, F, f, hmc_params);
+ 
+      for (int i = 0; i < number_of_points; i++) {
+         hmc.apply(rng, 3);
+         if (i > number_of_points / 2)
+            std::cout << hmc.x.getCoefficients().transpose() << std::endl;                 
+      }
+   } else if (method == 11) { // HMC with exponential distribution
+      typedef ExponentialFunctor::GradientFunctor<Point> NegativeGradientFunctor;
+      typedef ExponentialFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
+      typedef BoostRandomNumberGenerator<boost::mt19937, NT> RandomNumberGenerator;
+      typedef LeapfrogODESolver<Point, NT, Hpolytope, NegativeGradientFunctor> Solver;
+      
+      unsigned rng_seed = std::chrono::system_clock::now().time_since_epoch().count();
+      RandomNumberGenerator rng(rng_seed); 
+
+      ExponentialFunctor::parameters<NT, Point> params(1, 2 / (variance * variance));
+      
+      NegativeGradientFunctor F(params);
+      NegativeLogprobFunctor f(params);
+      HamiltonianMonteCarloWalk::parameters<NT, NegativeGradientFunctor> hmc_params(F, d);
+      
+      HamiltonianMonteCarloWalk::Walk<Point, Hpolytope, RandomNumberGenerator, NegativeGradientFunctor, NegativeLogprobFunctor, Solver>hmc(&HP, starting_point, F, f, hmc_params);
+ 
+      for (int i = 0; i < number_of_points; i++) {
+         hmc.apply(rng, 3);
+         if (i > number_of_points / 2)
+            std::cout << hmc.x.getCoefficients().transpose() << std::endl;                 
+      }      
+   }
    
    else {
       throw std::runtime_error("This function must not be called.");
