@@ -131,11 +131,11 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    } else if (method == 7) { // vaidya walk
       uniform_sampling<VaidyaWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                    starting_point, number_of_points_to_burn);
-   } else if (method == 8) { // gaussian sampling with gaussian HMC exact walk
+   } else if (method == 8) { // Gaussian sampling with exact HMC walk
       NT a = NT(1)/(NT(2)*variance);
       gaussian_sampling<GaussianHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, a,
                                    starting_point, number_of_points_to_burn);
-   } else if (method == 9) { // exponential sampling with exponential HMC exact walk
+   } else if (method == 9) { // exponential sampling with exact HMC walk
       VT c(d);
       for (int i = 0; i < d; i++){
          c(i) = bias_vector_[i];
@@ -158,11 +158,9 @@ double HPolytopeCPP::apply_sampling(int walk_len,
       
       HamiltonianMonteCarloWalk::Walk<Point, Hpolytope, RandomNumberGenerator, NegativeGradientFunctor, NegativeLogprobFunctor, Solver>hmc(&HP, starting_point, F, f, hmc_params);
  
-      for (int i = 0; i < number_of_points; i++) {
-         hmc.apply(rng, 3);
-         if (i > number_of_points / 2)
-            std::cout << hmc.x.getCoefficients().transpose() << std::endl;                 
-      }
+      for (int i = 0; i < number_of_points; i++)
+         hmc.apply(rng, walk_len);
+                          
    } else if (method == 11) { // HMC with exponential distribution
       typedef ExponentialFunctor::GradientFunctor<Point> NegativeGradientFunctor;
       typedef ExponentialFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
@@ -171,22 +169,24 @@ double HPolytopeCPP::apply_sampling(int walk_len,
       
       unsigned rng_seed = std::chrono::system_clock::now().time_since_epoch().count();
       RandomNumberGenerator rng(rng_seed); 
+      
+      VT c(d);
+      for (int i = 0; i < d; i++){
+         c(i) = bias_vector_[i];
+      }
+      Point bias_vector(c);
 
-      ExponentialFunctor::parameters<NT, Point> params(1, 2 / (variance * variance));
+      ExponentialFunctor::parameters<NT, Point> params(bias_vector, 2 / (variance * variance));
       
       NegativeGradientFunctor F(params);
       NegativeLogprobFunctor f(params);
       HamiltonianMonteCarloWalk::parameters<NT, NegativeGradientFunctor> hmc_params(F, d);
       
       HamiltonianMonteCarloWalk::Walk<Point, Hpolytope, RandomNumberGenerator, NegativeGradientFunctor, NegativeLogprobFunctor, Solver>hmc(&HP, starting_point, F, f, hmc_params);
- 
-      for (int i = 0; i < number_of_points; i++) {
-         hmc.apply(rng, 3);
-         if (i > number_of_points / 2)
-            std::cout << hmc.x.getCoefficients().transpose() << std::endl;                 
-      }      
-   }
-   
+
+      for (int i = 0; i < number_of_points; i++)
+         hmc.apply(rng, walk_len);                      
+   }   
    else {
       throw std::runtime_error("This function must not be called.");
    }
