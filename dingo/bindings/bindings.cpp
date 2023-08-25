@@ -13,6 +13,8 @@
 #include <math.h>
 #include <stdexcept>
 #include "bindings.h"
+#include "hmc_sampling.h"
+
 
 using namespace std;
 
@@ -158,9 +160,16 @@ double HPolytopeCPP::apply_sampling(int walk_len,
       
       HamiltonianMonteCarloWalk::Walk<Point, Hpolytope, RandomNumberGenerator, NegativeGradientFunctor, NegativeLogprobFunctor, Solver>hmc(&HP, starting_point, F, f, hmc_params);
  
-      for (int i = 0; i < number_of_points; i++)
+      // burning points 
+      for (int i = 0; i < number_of_points_to_burn ; i++) 
          hmc.apply(rng, walk_len);
-                          
+         
+      
+      // actual sampling 
+      for (int i = 0; i < number_of_points ; i++) { 
+        hmc.apply(rng, walk_len); 
+        rand_points.push_back(hmc.x); 
+      }                               
    } else if (method == 11) { // HMC with exponential distribution
       typedef ExponentialFunctor::GradientFunctor<Point> NegativeGradientFunctor;
       typedef ExponentialFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
@@ -184,8 +193,15 @@ double HPolytopeCPP::apply_sampling(int walk_len,
       
       HamiltonianMonteCarloWalk::Walk<Point, Hpolytope, RandomNumberGenerator, NegativeGradientFunctor, NegativeLogprobFunctor, Solver>hmc(&HP, starting_point, F, f, hmc_params);
 
-      for (int i = 0; i < number_of_points; i++)
-         hmc.apply(rng, walk_len);                      
+      
+      // burning points 
+      for (int i = 0; i < number_of_points_to_burn ; i++) 
+         hmc.apply(rng, walk_len);
+      // actual sampling 
+      for (int i = 0; i < number_of_points ; i++) { 
+        hmc.apply(rng, walk_len); 
+        rand_points.push_back(hmc.x); 
+      }                            
    }   
    else {
       throw std::runtime_error("This function must not be called.");
