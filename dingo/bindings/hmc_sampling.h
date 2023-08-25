@@ -7,27 +7,36 @@ using namespace std;
 
 
 // Initialization of the HPolytopeCPP class
-   HPolytopeCPP::HPolytopeCPP() {}
-   HPolytopeCPP::HPolytopeCPP(double *A_np, double *b_np, int n_hyperplanes, int n_variables){
+HPolytopeCPP::HPolytopeCPP() {}
+HPolytopeCPP::HPolytopeCPP(double *A_np, double *b_np, int n_hyperplanes, int n_variables){
 
-   MT A;
-   VT b;
-   A.resize(n_hyperplanes,n_variables);
-   b.resize(n_hyperplanes);
+MT A;
+VT b;
+A.resize(n_hyperplanes,n_variables);
+b.resize(n_hyperplanes);
 
-   int index = 0;
-   for (int i = 0; i < n_hyperplanes; i++){
-      b(i) = b_np[i];
-      for (int j=0; j < n_variables; j++){
-         A(i,j) = A_np[index];
-         index++;
-      }
+int index = 0;
+for (int i = 0; i < n_hyperplanes; i++){
+   b(i) = b_np[i];
+   for (int j=0; j < n_variables; j++){
+      A(i,j) = A_np[index];
+      index++;
    }
-   HP = Hpolytope(n_variables, A, b);                                 
-   RNGType rng(HP.dimension());
-   HP.normalize();
-   int d = HP.dimension();
+}
+HP = Hpolytope(n_variables, A, b);                                 
+RNGType rng(HP.dimension());
+HP.normalize();
+int d = HP.dimension();
+   
 
+void hmc_leapfrog_gaussian(int walk_len,
+                                    int number_of_points, 
+                                    int number_of_points_to_burn, 
+                                    double* samples,
+                                    double variance,
+                                    double* bias_vector_,
+                                    double* inner_point) {
+                                                                        
    Point starting_point; 
    VT inner_vec(d);
 
@@ -39,17 +48,7 @@ using namespace std;
    CheBall = std::pair<Point, NT>(inner_point2, radius);
    HP.set_InnerBall(CheBall);
    starting_point = inner_point2;
-   std::list<Point> rand_points;
-   
-
-void hmc_leapfrog_gaussian(int walk_len,
-                                    int number_of_points, 
-                                    int number_of_points_to_burn, 
-                                    double* samples,
-                                    double variance,
-                                    double* bias_vector_) {
-                                    
-                                    
+   std::list<Point> rand_points;                                 
    typedef GaussianFunctor::GradientFunctor<Point> NegativeGradientFunctor;
    typedef GaussianFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
    typedef BoostRandomNumberGenerator<boost::mt19937, NT> RandomNumberGenerator;
@@ -73,9 +72,7 @@ void hmc_leapfrog_gaussian(int walk_len,
    for (int i = 0; i < number_of_points ; i++) { 
       hmc.apply(rng, walk_len); 
       rand_points.push_back(hmc.x); 
-   }
-   
-                                  
+   }                                  
 } 
  
 
@@ -84,7 +81,21 @@ void hmc_leapfrog_exponential(int walk_len,
                                     int number_of_points_to_burn, 
                                     double* samples,
                                     double variance,
-                                    double* bias_vector_) {
+                                    double* bias_vector_,
+                                    double* inner_point) {
+
+   Point starting_point; 
+   VT inner_vec(d);
+
+   for (int i = 0; i < d; i++){
+      inner_vec(i) = inner_point[i];
+   }
+   
+   Point inner_point2(inner_vec); 
+   CheBall = std::pair<Point, NT>(inner_point2, radius);
+   HP.set_InnerBall(CheBall);
+   starting_point = inner_point2;
+   std::list<Point> rand_points;                                 
    typedef ExponentialFunctor::GradientFunctor<Point> NegativeGradientFunctor;
    typedef ExponentialFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
    typedef BoostRandomNumberGenerator<boost::mt19937, NT> RandomNumberGenerator;
