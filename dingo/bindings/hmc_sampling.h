@@ -1,10 +1,10 @@
 #include "ode_solvers/ode_solvers.hpp"
 using namespace std;   
 
-template<class Polytope, class Point, class NT> list<Point> hmc_leapfrog_gaussian(int walk_len,
+template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
                                     int number_of_points, 
                                     int number_of_points_to_burn, 
-                                    double variance,
+                                    NT variance,
                                     Point starting_point,
                                     Polytope HP) {
                                     
@@ -25,9 +25,9 @@ template<class Polytope, class Point, class NT> list<Point> hmc_leapfrog_gaussia
    HamiltonianMonteCarloWalk::Walk<Point, Polytope, RandomNumberGenerator, NegativeGradientFunctor, NegativeLogprobFunctor, Solver>hmc(&HP, starting_point, F, f, hmc_params);
 
    // burning points 
-   for (int i = 0; i < number_of_points_to_burn ; i++) 
-   hmc.apply(rng, walk_len);
- 
+   for (int i = 0; i < number_of_points_to_burn ; i++) { 
+      hmc.apply(rng, walk_len);
+    }
 
    // actual sampling 
    for (int i = 0; i < number_of_points ; i++) { 
@@ -38,10 +38,10 @@ template<class Polytope, class Point, class NT> list<Point> hmc_leapfrog_gaussia
 } 
  
 
-template<class Polytope, class Point, class NT> list<Point> hmc_leapfrog_exponential(int walk_len,
+template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_exponential(int walk_len,
                                     int number_of_points, 
                                     int number_of_points_to_burn, 
-                                    double variance,
+                                    NT variance,
                                     Point bias_vector,
                                     Point starting_point,
                                     Polytope HP) {
@@ -65,8 +65,9 @@ template<class Polytope, class Point, class NT> list<Point> hmc_leapfrog_exponen
 
       
    // burning points 
-   for (int i = 0; i < number_of_points_to_burn ; i++) 
+   for (int i = 0; i < number_of_points_to_burn ; i++) { 
       hmc.apply(rng, walk_len);
+   }
    // actual sampling 
    for (int i = 0; i < number_of_points ; i++) { 
    hmc.apply(rng, walk_len); 
