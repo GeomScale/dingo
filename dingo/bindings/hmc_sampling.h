@@ -13,22 +13,9 @@ template<class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
                                     double* samples,
                                     double variance,
                                     double* bias_vector_,
-                                    double* inner_point,
-                                    double radius,
+                                    Point starting_point,
                                     Polytope HP) {
                                     
-   int d = HP.dimension();                                                                     
-   Point starting_point; 
-   VT inner_vec(d);
-
-   for (int i = 0; i < d; i++){
-      inner_vec(i) = inner_point[i];
-   }
-   
-   Point inner_point2(inner_vec); 
-   CheBall = std::pair<Point, NT>(inner_point2, radius);
-   HP.set_InnerBall(CheBall);
-   starting_point = inner_point2;
    
    std::list<Point> rand_points;                                 
    typedef GaussianFunctor::GradientFunctor<Point> NegativeGradientFunctor;
@@ -65,21 +52,9 @@ template<class Polytope> list<Point> hmc_leapfrog_exponential(int walk_len,
                                     double* samples,
                                     double variance,
                                     double* bias_vector_,
-                                    double* inner_point,
-                                    double radius,
+                                    Point starting_point,
                                     Polytope HP) {
 
-   Point starting_point; 
-   VT inner_vec(d);
-
-   for (int i = 0; i < d; i++){
-      inner_vec(i) = inner_point[i];
-   }
-   
-   Point inner_point2(inner_vec); 
-   CheBall = std::pair<Point, NT>(inner_point2, radius);
-   HP.set_InnerBall(CheBall);
-   starting_point = inner_point2;
    std::list<Point> rand_points;                                 
    typedef ExponentialFunctor::GradientFunctor<Point> NegativeGradientFunctor;
    typedef ExponentialFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
