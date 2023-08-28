@@ -1,8 +1,5 @@
 #include "ode_solvers/ode_solvers.hpp"
 #include "random_walks.hpp"
-#include "generators/known_polytope_generators.h"
-#include "generators/boost_random_number_generator.hpp"
-#include <chrono>
 #include <list>
 using namespace std;   
 
@@ -12,13 +9,14 @@ template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_gaussia
                                     NT variance,
                                     Point starting_point,
                                     Polytope HP) {
-                                    
-   
+                               
+   int d = HP.dimension();
    std::list<Point> rand_points;                                 
    typedef GaussianFunctor::GradientFunctor<Point> NegativeGradientFunctor;
    typedef GaussianFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
    typedef BoostRandomNumberGenerator<boost::mt19937, NT> RandomNumberGenerator;
    typedef LeapfrogODESolver<Point, NT, Polytope, NegativeGradientFunctor> Solver;
+   
    unsigned rng_seed = std::chrono::system_clock::now().time_since_epoch().count();
    RandomNumberGenerator rng(rng_seed); 
 
@@ -38,11 +36,10 @@ template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_gaussia
    for (int i = 0; i < number_of_points ; i++) { 
       hmc.apply(rng, walk_len); 
       rand_points.push_back(hmc.x); 
-   }
+   }   
    return rand_points;                                  
 } 
  
-
 template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_exponential(int walk_len,
                                     int number_of_points, 
                                     int number_of_points_to_burn, 
@@ -51,6 +48,7 @@ template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_exponen
                                     Point starting_point,
                                     Polytope HP) {
 
+   int d = HP.dimension();
    std::list<Point> rand_points;                                 
    typedef ExponentialFunctor::GradientFunctor<Point> NegativeGradientFunctor;
    typedef ExponentialFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
@@ -58,7 +56,7 @@ template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_exponen
    typedef LeapfrogODESolver<Point, NT, Polytope, NegativeGradientFunctor> Solver;
       
    unsigned rng_seed = std::chrono::system_clock::now().time_since_epoch().count();
-      RandomNumberGenerator rng(rng_seed); 
+   RandomNumberGenerator rng(rng_seed); 
 
    ExponentialFunctor::parameters<NT, Point> params(bias_vector, 2 / (variance * variance));
       
