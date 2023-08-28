@@ -146,9 +146,9 @@ double HPolytopeCPP::apply_sampling(int walk_len,
       exponential_sampling<ExponentialHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, bias_vector, variance,
                                    starting_point, number_of_points_to_burn);
    } else if (method == 10) { // HMC with Gaussian distribution   
-      rand_points = hmc_leapfrog_gaussian<Hpolytope>(walk_len, number_of_points, number_of_points_to_burn, samples, variance, bias_vector_, inner_point, HP);                             
+      rand_points = hmc_leapfrog_gaussian<Hpolytope>(walk_len, number_of_points, number_of_points_to_burn, samples, variance, bias_vector_, inner_point, radius, HP);                             
    } else if (method == 11) { // HMC with exponential distribution
-      rand_points = hmc_leapfrog_exponential<Hpolytope>(walk_len, number_of_points, number_of_points_to_burn, samples, variance, bias_vector_, inner_point, HP);                            
+      rand_points = hmc_leapfrog_exponential<Hpolytope>(walk_len, number_of_points, number_of_points_to_burn, samples, variance, bias_vector_, inner_point, radius, HP);                            
    }   
    else {
       throw std::runtime_error("This function must not be called.");

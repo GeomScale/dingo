@@ -13,7 +13,8 @@ template<class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
                                     double* samples,
                                     double variance,
                                     double* bias_vector_,
-                                    double* inner_point
+                                    double* inner_point,
+                                    double radius,
                                     Polytope HP) {
                                     
    int d = HP.dimension();                                                                     
@@ -65,6 +66,7 @@ template<class Polytope> list<Point> hmc_leapfrog_exponential(int walk_len,
                                     double variance,
                                     double* bias_vector_,
                                     double* inner_point,
+                                    double radius,
                                     Polytope HP) {
 
    Point starting_point; 
