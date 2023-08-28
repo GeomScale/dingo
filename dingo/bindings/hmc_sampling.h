@@ -1,18 +1,10 @@
-#include "bindings.h" 
 #include "ode_solvers/ode_solvers.hpp"
-#include <iostream> 
-#include <math.h> 
-#include <stdexcept> 
-using namespace std;
+using namespace std;   
 
-   
-
-template<class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
+template<class Polytope, class Point, class NT> list<Point> hmc_leapfrog_gaussian(int walk_len,
                                     int number_of_points, 
                                     int number_of_points_to_burn, 
-                                    double* samples,
                                     double variance,
-                                    double* bias_vector_,
                                     Point starting_point,
                                     Polytope HP) {
                                     
@@ -21,7 +13,7 @@ template<class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
    typedef GaussianFunctor::GradientFunctor<Point> NegativeGradientFunctor;
    typedef GaussianFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
    typedef BoostRandomNumberGenerator<boost::mt19937, NT> RandomNumberGenerator;
-   typedef LeapfrogODESolver<Point, NT, Hpolytope, NegativeGradientFunctor> Solver;
+   typedef LeapfrogODESolver<Point, NT, Polytope, NegativeGradientFunctor> Solver;
    unsigned rng_seed = std::chrono::system_clock::now().time_since_epoch().count();
    RandomNumberGenerator rng(rng_seed); 
 
@@ -30,7 +22,7 @@ template<class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
    NegativeLogprobFunctor f(params);
    HamiltonianMonteCarloWalk::parameters<NT, NegativeGradientFunctor> hmc_params(F, d);
 
-   HamiltonianMonteCarloWalk::Walk<Point, Hpolytope, RandomNumberGenerator, NegativeGradientFunctor, NegativeLogprobFunctor, Solver>hmc(&HP, starting_point, F, f, hmc_params);
+   HamiltonianMonteCarloWalk::Walk<Point, Polytope, RandomNumberGenerator, NegativeGradientFunctor, NegativeLogprobFunctor, Solver>hmc(&HP, starting_point, F, f, hmc_params);
 
    // burning points 
    for (int i = 0; i < number_of_points_to_burn ; i++) 
@@ -46,12 +38,11 @@ template<class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
 } 
  
 
-template<class Polytope> list<Point> hmc_leapfrog_exponential(int walk_len,
+template<class Polytope, class Point, class NT> list<Point> hmc_leapfrog_exponential(int walk_len,
                                     int number_of_points, 
                                     int number_of_points_to_burn, 
-                                    double* samples,
                                     double variance,
-                                    double* bias_vector_,
+                                    Point bias_vector,
                                     Point starting_point,
                                     Polytope HP) {
 
@@ -59,16 +50,10 @@ template<class Polytope> list<Point> hmc_leapfrog_exponential(int walk_len,
    typedef ExponentialFunctor::GradientFunctor<Point> NegativeGradientFunctor;
    typedef ExponentialFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
    typedef BoostRandomNumberGenerator<boost::mt19937, NT> RandomNumberGenerator;
-   typedef LeapfrogODESolver<Point, NT, Hpolytope, NegativeGradientFunctor> Solver;
+   typedef LeapfrogODESolver<Point, NT, Polytope, NegativeGradientFunctor> Solver;
       
    unsigned rng_seed = std::chrono::system_clock::now().time_since_epoch().count();
       RandomNumberGenerator rng(rng_seed); 
-      
-   VT c(d);
-   for (int i = 0; i < d; i++) {
-      c(i) = bias_vector_[i];
-   }
-   Point bias_vector(c);
 
    ExponentialFunctor::parameters<NT, Point> params(bias_vector, 2 / (variance * variance));
       
@@ -76,7 +61,7 @@ template<class Polytope> list<Point> hmc_leapfrog_exponential(int walk_len,
    NegativeLogprobFunctor f(params);
    HamiltonianMonteCarloWalk::parameters<NT, NegativeGradientFunctor> hmc_params(F, d);
       
-   HamiltonianMonteCarloWalk::Walk<Point, Hpolytope, RandomNumberGenerator, NegativeGradientFunctor, NegativeLogprobFunctor, Solver>hmc(&HP, starting_point, F, f, hmc_params);
+   HamiltonianMonteCarloWalk::Walk<Point, Polytope, RandomNumberGenerator, NegativeGradientFunctor, NegativeLogprobFunctor, Solver>hmc(&HP, starting_point, F, f, hmc_params);
 
       
    // burning points 
