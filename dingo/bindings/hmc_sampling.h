@@ -5,37 +5,16 @@
 #include <stdexcept> 
 using namespace std;
 
-
-// Initialization of the HPolytopeCPP class
-HPolytopeCPP::HPolytopeCPP() {}
-HPolytopeCPP::HPolytopeCPP(double *A_np, double *b_np, int n_hyperplanes, int n_variables){
-
-MT A;
-VT b;
-A.resize(n_hyperplanes,n_variables);
-b.resize(n_hyperplanes);
-
-int index = 0;
-for (int i = 0; i < n_hyperplanes; i++){
-   b(i) = b_np[i];
-   for (int j=0; j < n_variables; j++){
-      A(i,j) = A_np[index];
-      index++;
-   }
-}
-HP = Hpolytope(n_variables, A, b);                                 
-RNGType rng(HP.dimension());
-HP.normalize();
-int d = HP.dimension();
    
 
-void hmc_leapfrog_gaussian(int walk_len,
+template<class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
                                     int number_of_points, 
                                     int number_of_points_to_burn, 
                                     double* samples,
                                     double variance,
                                     double* bias_vector_,
-                                    double* inner_point) {
+                                    double* inner_point
+                                    Polytope HP) {
                                                                         
    Point starting_point; 
    VT inner_vec(d);
@@ -72,17 +51,19 @@ void hmc_leapfrog_gaussian(int walk_len,
    for (int i = 0; i < number_of_points ; i++) { 
       hmc.apply(rng, walk_len); 
       rand_points.push_back(hmc.x); 
-   }                                  
+   }
+   return rand_points;                                  
 } 
  
 
-void hmc_leapfrog_exponential(int walk_len,
+template<class Polytope> list<Point> hmc_leapfrog_exponential(int walk_len,
                                     int number_of_points, 
                                     int number_of_points_to_burn, 
                                     double* samples,
                                     double variance,
                                     double* bias_vector_,
-                                    double* inner_point) {
+                                    double* inner_point,
+                                    Polytope HP) {
 
    Point starting_point; 
    VT inner_vec(d);
@@ -126,7 +107,8 @@ void hmc_leapfrog_exponential(int walk_len,
    for (int i = 0; i < number_of_points ; i++) { 
    hmc.apply(rng, walk_len); 
    rand_points.push_back(hmc.x); 
-   }                            
+   }
+   return rand_points;                            
 }
 
   
