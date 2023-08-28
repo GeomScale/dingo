@@ -1,7 +1,6 @@
 #include "ode_solvers/ode_solvers.hpp"
 #include "random_walks.hpp"
-#include <list>
-using namespace std;   
+#include <list>  
 
 template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
                                     int number_of_points, 
