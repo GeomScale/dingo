@@ -15,7 +15,8 @@ template<class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
                                     double* bias_vector_,
                                     double* inner_point
                                     Polytope HP) {
-                                                                        
+                                    
+   int d = HP.dimension();                                                                     
    Point starting_point; 
    VT inner_vec(d);
 
@@ -27,6 +28,7 @@ template<class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
    CheBall = std::pair<Point, NT>(inner_point2, radius);
    HP.set_InnerBall(CheBall);
    starting_point = inner_point2;
+   
    std::list<Point> rand_points;                                 
    typedef GaussianFunctor::GradientFunctor<Point> NegativeGradientFunctor;
    typedef GaussianFunctor::FunctionFunctor<Point> NegativeLogprobFunctor;
