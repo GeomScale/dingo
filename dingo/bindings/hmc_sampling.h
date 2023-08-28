@@ -1,5 +1,7 @@
 #include "ode_solvers/ode_solvers.hpp"
 #include "random_walks.hpp"
+#include "generators/known_polytope_generators.h"
+#include "generators/boost_random_number_generator.hpp"
 #include <chrono>
 #include <list>
 using namespace std;   
