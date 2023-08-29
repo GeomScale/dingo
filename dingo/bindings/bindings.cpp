@@ -153,7 +153,7 @@ double HPolytopeCPP::apply_sampling(int walk_len,
          c(i) = bias_vector_[i];
       }
       Point bias_vector(c);
-   
+         
       rand_points = hmc_leapfrog_exponential(walk_len, number_of_points, number_of_points_to_burn, variance, bias_vector, starting_point, HP); 
                                   
    }

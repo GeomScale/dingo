@@ -1,9 +1,7 @@
 #include "ode_solvers/ode_solvers.hpp"
 #include "random_walks.hpp"
-#include <list>  
-using namespace std;
 
-template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_gaussian(int walk_len,
+template<class NT, class Point, class Polytope> std::list<Point> hmc_leapfrog_gaussian(int walk_len,
                                     int number_of_points, 
                                     int number_of_points_to_burn, 
                                     NT variance,
@@ -40,7 +38,7 @@ template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_gaussia
    return rand_points;                                  
 } 
  
-template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_exponential(int walk_len,
+template<class NT, class Point, class Polytope> std::list<Point> hmc_leapfrog_exponential(int walk_len,
                                     int number_of_points, 
                                     int number_of_points_to_burn, 
                                     NT variance,
@@ -73,8 +71,8 @@ template<class NT, class Point, class Polytope> list<Point> hmc_leapfrog_exponen
    }
    // actual sampling 
    for (int i = 0; i < number_of_points ; i++) { 
-   hmc.apply(rng, walk_len); 
-   rand_points.push_back(hmc.x); 
+      hmc.apply(rng, walk_len); 
+      rand_points.push_back(hmc.x); 
    }
    return rand_points;                            
 }
