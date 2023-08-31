@@ -34,6 +34,7 @@
 //from generate_samples, some extra headers not already included
 #include <chrono>
 #include "sampling/sampling.hpp"
+#include "ode_solvers/ode_solvers.hpp"
 
 // for rounding
 #include "preprocess/min_sampling_covering_ellipsoid_rounding.hpp"

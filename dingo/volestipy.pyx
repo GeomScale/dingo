@@ -155,6 +155,10 @@ cdef class HPolytope:
          int_method = 8
       elif method == 'exponential_hmc_walk':
          int_method = 9
+      elif method == 'hmc_leapfrog_gaussian':
+         int_method = 10
+      elif method == 'hmc_leapfrog_exponential':
+         int_method = 11
       else:
          raise RuntimeError("Uknown MCMC sampling method")
       

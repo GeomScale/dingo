@@ -13,6 +13,8 @@
 #include <math.h>
 #include <stdexcept>
 #include "bindings.h"
+#include "hmc_sampling.h"
+
 
 using namespace std;
 
@@ -131,20 +133,31 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    } else if (method == 7) { // vaidya walk
       uniform_sampling<VaidyaWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                    starting_point, number_of_points_to_burn);
-   } else if (method == 8) { // gaussian sampling with gaussian HMC exact walk
+   } else if (method == 8) { // Gaussian sampling with exact HMC walk
       NT a = NT(1)/(NT(2)*variance);
       gaussian_sampling<GaussianHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, a,
                                    starting_point, number_of_points_to_burn);
-   } else if (method == 9) { // exponential sampling with exponential HMC exact walk
+   } else if (method == 9) { // exponential sampling with exact HMC walk
       VT c(d);
       for (int i = 0; i < d; i++){
          c(i) = bias_vector_[i];
       }
       Point bias_vector(c);       
       exponential_sampling<ExponentialHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, bias_vector, variance,
-                                   starting_point, number_of_points_to_burn);
-      } 
-   
+                                   starting_point, number_of_points_to_burn);                                
+   } else if (method == 10) { // HMC with Gaussian distribution         
+      rand_points = hmc_leapfrog_gaussian(walk_len, number_of_points, number_of_points_to_burn, variance, starting_point, HP);                             
+   } else if (method == 11) { // HMC with exponential distribution   
+      VT c(d);
+      for (int i = 0; i < d; i++) {
+         c(i) = bias_vector_[i];
+      }
+      Point bias_vector(c);
+         
+      rand_points = hmc_leapfrog_exponential(walk_len, number_of_points, number_of_points_to_burn, variance, bias_vector, starting_point, HP); 
+                                  
+   }
+     
    else {
       throw std::runtime_error("This function must not be called.");
    }
