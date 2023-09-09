@@ -23,80 +23,15 @@ def read_json_file(input_file):
     input_file -- a json file that contains the information about a mettabolic network, for example see http://bigg.ucsd.edu/models
     """
 
-    with open(input_file, "r") as f:
+    try: 
+        cobra.io.load_matlab_model( input_file )
+    except:
+        cobra_config = cobra.Configuration()
+        cobra_config.solver = 'glpk'
 
-        distros_dict = json.load(f)
+    model = cobra.io.load_json_model( input_file )
 
-        reactions_list = distros_dict["reactions"]
-
-        metabolites = []
-        reactions = []
-
-        for reaction in reactions_list:
-
-            metabolites_dic = reaction["metabolites"]
-            reaction_name = reaction["id"]
-            reactions.append(reaction_name)
-
-            for metabolite in metabolites_dic.keys():
-                if metabolite not in metabolites:
-                    metabolites.append(metabolite)
-
-        list_of_reaction_lists = []
-        vector_of_ubs = []
-        vector_of_lbs = []
-
-        for reaction in reactions_list:
-
-            ub = float(reaction["upper_bound"])
-            vector_of_ubs.append(ub)
-            lb = float(reaction["lower_bound"])
-            vector_of_lbs.append(lb)
-
-            metabolites_dic = reaction["metabolites"]
-            reaction_vector = []
-
-            for term in range(len(metabolites)):
-
-                metabolite = metabolites[term]
-
-                if metabolite in metabolites_dic.keys():
-
-                    reaction_vector.append(metabolites_dic[metabolite])
-                else:
-                    reaction_vector.append(0)
-
-            list_of_reaction_lists.append(reaction_vector)
-
-    # Build function's output;
-
-    # lower and upper flux bounds
-    lb = np.asarray(vector_of_lbs)
-    ub = np.asarray(vector_of_ubs)
-
-    lb = np.asarray(lb, dtype="float")
-    lb = np.ascontiguousarray(lb, dtype="float")
-
-    ub = np.asarray(ub, dtype="float")
-    ub = np.ascontiguousarray(ub, dtype="float")
-
-    # The stoichiometric martrix S
-    S = np.asarray(list_of_reaction_lists)
-    S = np.transpose(S)
-
-    S = np.asarray(S, dtype="float")
-    S = np.ascontiguousarray(S, dtype="float")
-
-    # Get biomass function if there
-    biomass_function = np.zeros(S.shape[1])
-    biomass_index = None
-    for i in reactions:
-        j = i.casefold()
-        if "biom" in j:
-            biomass_index = reactions.index(i)
-            biomass_function[biomass_index] = 1
-
-    return lb, ub, S, metabolites, reactions, biomass_index, biomass_function
+    return (parse_cobra_model( model ))
 
 def read_mat_file(input_file):
     """A Python function based on the  to read a .mat file and returns,
@@ -111,7 +46,7 @@ def read_mat_file(input_file):
     input_file -- a mat file that contains a MATLAB structure with the information about a mettabolic network, for example see http://bigg.ucsd.edu/models
     """
     try: 
-        cobra.io.load_matlab_model(  input_file )
+        cobra.io.load_matlab_model( input_file )
     except:
         cobra_config = cobra.Configuration()
         cobra_config.solver = 'glpk'
@@ -137,7 +72,7 @@ def read_sbml_file(input_file):
     https://github.com/VirtualMetabolicHuman/AGORA/blob/master/CurrentVersion/AGORA_1_03/AGORA_1_03_sbml/Abiotrophia_defectiva_ATCC_49176.xml
     """
     try: 
-        cobra.io.read_sbml_model(  input_file )
+        cobra.io.read_sbml_model( input_file )
     except:
         cobra_config = cobra.Configuration()
         cobra_config.solver = 'glpk'
@@ -188,4 +123,23 @@ def parse_cobra_model(cobra_model):
     ub = np.asarray(ub, dtype="float")
     ub = np.ascontiguousarray(ub, dtype="float")
 
-    return lb, ub, S, metabolites, reactions, biomass_index, biomass_function
+    medium = cobra_model.medium
+    inter_medium = {}
+
+    for index, reaction in enumerate(cobra_model.reactions):
+        for ex_reaction in medium.keys():
+            if ex_reaction == reaction.id:
+                inter_medium[ex_reaction] = index
+
+    exchanges_cobra_reactions = cobra_model.exchanges
+    exchanges = []
+    for reac in exchanges_cobra_reactions:
+        exchanges.append(reac.id)
+
+
+    return lb, ub, S, metabolites, reactions, biomass_index, biomass_function, medium, inter_medium, exchanges
+
+
+
+
+
