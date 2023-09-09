@@ -8,6 +8,7 @@
 
 import numpy as np
 import sys
+from typing import Dict
 import cobra
 from dingo.loading_models import read_json_file, read_mat_file, read_sbml_file, parse_cobra_model
 from dingo.fva import slow_fva
@@ -222,7 +223,7 @@ class MetabolicNetwork:
 
 
     @medium.setter
-    def medium(self, medium: dict[str, float]) -> None:
+    def medium(self, medium: Dict[str, float]) -> None:
         """Set the constraints on the model exchanges.
 
         `model.medium` returns a dictionary of the bounds for each of the
