@@ -48,6 +48,11 @@ class TestFba(unittest.TestCase):
 
         initial_medium = model.medium
         initial_fba = model.fba()[-1]
+
+        initial_medium_indices = {}
+        for reac in initial_medium:
+            initial_medium_indices[reac] = model.reactions.index(reac)
+
         glc_index = model.reactions.index("EX_glc__D_e")
 
         new_media = initial_medium.copy()
@@ -55,8 +60,15 @@ class TestFba(unittest.TestCase):
 
         model.medium = new_media
 
-        if model.lb[glc_index] != -1.5:
-            self.assertTrue(model.lb[glc_index] == -1.5)
+        updated_media = model.medium
+        updated_medium_indices = {}
+        for reac in updated_media:
+            updated_medium_indices[reac] = model.reactions.index(reac)        
+
+        if len(updated_media) == len(new_media):
+            self.assertTrue(updated_medium_indices == initial_medium_indices)
+
+        self.assertTrue(model.lb[glc_index] == -1.5)
 
         self.assertTrue(initial_fba - model.fba()[-1] > 0)
 
