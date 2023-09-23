@@ -50,7 +50,27 @@ pip3 install -i https://pypi.gurobi.com gurobipy
 
 Then, you will need a [license](https://www.gurobi.com/downloads/end-user-license-agreement-academic/). For more information, we refer to the Gurobi [download center](https://www.gurobi.com/downloads/).  
 
+## Running the Application with Docker
 
+1. **Build the Docker Image**
+
+   Open a terminal in the directory containing the Dockerfile and build the Docker image using the following command:
+   ````bash
+   docker build -t my_dingo_app .
+   ````
+
+   Replace `my_dingo_app` with the name you want to give to your Docker image.
+
+2. **Run the Docker Container**
+
+   After the image has been built, you can run a container from it using the following command:
+   ````bash
+   docker run -it my_dingo_app
+   ````
+
+   The `-it` option is used to run the Docker container in interactive mode.
+
+Please note that Docker must be installed on your system to build and run Docker images and containers. You can download Docker from [here](https://www.docker.com/products/docker-desktop).
 
 
 ## Unit tests
