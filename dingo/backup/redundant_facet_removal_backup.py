@@ -166,10 +166,10 @@ def fast_remove_redundant_facets(lb, ub, S, c, opt_percentage=100):
                             [-x for x in objective_function]
                         )
 
-                        # Call solve_lp_with_different_objectives to solve LP
                         model_iter = solve_lp_with_different_objectives(
-                            model_iter, objective_function_max
+                            model_iter.copy(), objective_function_max
                         )
+
 
                         status = model_iter.status
                         if status == GRB.OPTIMAL:
