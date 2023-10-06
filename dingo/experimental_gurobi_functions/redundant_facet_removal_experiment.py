@@ -147,6 +147,9 @@ def fast_remove_redundant_facets(lb, ub, S, c, opt_percentage=100):
 
                     b_res = []
                     A_res = np.empty((0, n), float)
+                  update_model_constraints_and_bounds(model_iter, Aeq_sparse, beq, A_sparse, [val], lb, ub)
+
+
                     for i in indices:
                         objective_function = A[i]
 
