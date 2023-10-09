@@ -56,13 +56,18 @@ def solve_lp_with_different_objectives(model, new_objective_coeffs):
 
     Parameters:
         model (gurobipy.Model): The Gurobi model with the original constraints.
-        new_objective_coeffs (list): List of new objective coefficients for the variables.
+        new_objective_coeffs (list or numpy.ndarray): List or array of new objective coefficients for the variables.
 
     Returns:
         gurobipy.Model: The updated Gurobi model with the new objective function.
     """
-    # Clear the existing objective function(precautionary step)
+    # Clear the existing objective function
     model.setObjective(0, clear=True)
+
+    # TODO: Optimization opportunity - You could pass a numpy array here (instead of a list of coefficients)
+    # and update the objective in one call without a for loop.
+    # For example, you can use:
+    # model.setObjective(new_objective_coeffs, GRB.MINIMIZE)
 
     # Update the objective function with the new coefficients
     for i, var in enumerate(model.getVars()):
@@ -72,6 +77,7 @@ def solve_lp_with_different_objectives(model, new_objective_coeffs):
     model.optimize()
 
     return model
+
 
 def fast_remove_redundant_facets(lb, ub, S, c, opt_percentage=100):
     if lb.size != S.shape[1] or ub.size != S.shape[1]:
