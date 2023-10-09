@@ -61,7 +61,7 @@ def solve_lp_with_different_objectives(model, new_objective_coeffs):
     Returns:
         gurobipy.Model: The updated Gurobi model with the new objective function.
     """
-    # Clear the existing objective function
+    # Clear the existing objective function(precautionary step)
     model.setObjective(0, clear=True)
 
     # Update the objective function with the new coefficients
