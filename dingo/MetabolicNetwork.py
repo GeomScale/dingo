@@ -8,7 +8,9 @@
 
 import numpy as np
 import sys
-from dingo.loading_models import read_json_file, read_mat_file, read_sbml_file
+from typing import Dict
+import cobra
+from dingo.loading_models import read_json_file, read_mat_file, read_sbml_file, parse_cobra_model
 from dingo.fva import slow_fva
 from dingo.fba import slow_fba
 
@@ -34,7 +36,7 @@ class MetabolicNetwork:
         except ImportError as e:
             self._parameters["fast_computations"] = False
 
-        if len(tuple_args) != 7:
+        if len(tuple_args) != 10:
             raise Exception(
                 "An unknown input format given to initialize a metabolic network object."
             )
@@ -46,6 +48,9 @@ class MetabolicNetwork:
         self._reactions = tuple_args[4]
         self._biomass_index = tuple_args[5]
         self._biomass_function = tuple_args[6]
+        self._medium = tuple_args[7]
+        self._medium_indices = tuple_args[8]
+        self._exchanges = tuple_args[9]
 
         try:
             if self._biomass_index is not None and (
@@ -83,12 +88,21 @@ class MetabolicNetwork:
 
     @classmethod
     def from_sbml(cls, arg):
-        if (not isinstance(arg, str)) or (arg[-3:] != "xml"):
+        if (not isinstance(arg, str)) and ((arg[-3:] == "xml") or (arg[-4] == "sbml")):
             raise Exception(
                 "An unknown input format given to initialize a metabolic network object."
             )
 
         return cls(read_sbml_file(arg))
+
+    @classmethod
+    def from_cobra_model(cls, arg):
+        if (not isinstance(arg, cobra.core.model.Model)):
+            raise Exception(
+                "An unknown input format given to initialize a metabolic network object."
+            )
+
+        return cls(parse_cobra_model(arg))
 
     def fva(self):
         """A member function to apply the FVA method on the metabolic network."""
@@ -147,6 +161,14 @@ class MetabolicNetwork:
         return self._biomass_function
 
     @property
+    def medium(self):
+        return self._medium
+
+    @property
+    def exchanges(self):
+        return self._exchanges
+
+    @property
     def parameters(self):
         return self._parameters
 
@@ -160,6 +182,9 @@ class MetabolicNetwork:
             self._reactions,
             self._biomass_index,
             self._biomass_function,
+            self._medium,
+            self._inter_medium,
+            self._exchanges
         )
 
     def num_of_reactions(self):
@@ -195,6 +220,72 @@ class MetabolicNetwork:
     @biomass_function.setter
     def biomass_function(self, value):
         self._biomass_function = value
+
+
+    @medium.setter
+    def medium(self, medium: Dict[str, float]) -> None:
+        """Set the constraints on the model exchanges.
+
+        `model.medium` returns a dictionary of the bounds for each of the
+        boundary reactions, in the form of `{rxn_id: rxn_bound}`, where `rxn_bound`
+        specifies the absolute value of the bound in direction of metabolite
+        creation (i.e., lower_bound for `met <--`, upper_bound for `met -->`)
+
+        Parameters
+        ----------
+        medium: dict
+            The medium to initialize. medium should be a dictionary defining
+            `{rxn_id: bound}` pairs.
+        """
+
+        def set_active_bound(reaction: str, reac_index: int, bound: float) -> None:
+            """Set active bound.
+
+            Parameters
+            ----------
+            reaction: cobra.Reaction
+                Reaction to set
+            bound: float
+                Value to set bound to. The bound is reversed and set as lower bound
+                if reaction has reactants (metabolites that are consumed). If reaction
+                has reactants, it seems the upper bound won't be set.
+            """
+            if any(x < 0 for x in  list(self._S[:, reac_index])):
+                self._lb[reac_index] = -bound
+            elif any(x > 0 for x in  list(self._S[:, reac_index])):
+                self._ub[reac_index] = bound
+
+        # Set the given media bounds
+        media_rxns = []
+        exchange_rxns = frozenset(self.exchanges)
+        for rxn_id, rxn_bound in medium.items():
+            if rxn_id not in exchange_rxns:
+                logger.warning(
+                    f"{rxn_id} does not seem to be an an exchange reaction. "
+                    f"Applying bounds anyway."
+                )
+            media_rxns.append(rxn_id)
+
+            reac_index = self._reactions.index(rxn_id)
+
+            set_active_bound(rxn_id, reac_index, rxn_bound)
+
+        frozen_media_rxns = frozenset(media_rxns)
+
+        # Turn off reactions not present in media
+        for rxn_id in exchange_rxns - frozen_media_rxns:
+            """
+            is_export for us, needs to check on the S 
+            order reactions to their lb and ub 
+            """
+            # is_export = rxn.reactants and not rxn.products
+            reac_index = self._reactions.index(rxn_id)
+            products = np.any(self._S[:,reac_index] > 0) 
+            reactants_exist = np.any(self._S[:,reac_index] < 0)
+            is_export = True if not products and reactants_exist else False
+            set_active_bound(
+                rxn_id, reac_index, min(0.0, -self._lb[reac_index] if is_export else self._ub[reac_index])
+            )
 
     def set_fast_mode(self):
 

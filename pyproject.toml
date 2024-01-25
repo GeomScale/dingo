@@ -16,7 +16,6 @@ argparse = "^1.4.0"
 matplotlib = "^3.4.1"
 cobra = "^0.26.0"
 plotly = "^5.11.0"
-#kaleido = "0.2.1"
 kaleido = "0.2.1"
 
 [tool.poetry.dev-dependencies]
