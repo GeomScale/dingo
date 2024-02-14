@@ -1,7 +1,8 @@
 [submodule "eigen"]
 	path = eigen
 	url = https://gitlab.com/libeigen/eigen.git
+	branch = 3.3
 [submodule "volesti"]
 	path = volesti
 	url = https://github.com/GeomScale/volesti.git
-	branch = volesti4dingo
+	branch = develop

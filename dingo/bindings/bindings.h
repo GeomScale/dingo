@@ -40,7 +40,7 @@
 #include "preprocess/min_sampling_covering_ellipsoid_rounding.hpp"
 #include "preprocess/svd_rounding.hpp"
 #include "preprocess/max_inscribed_ellipsoid_rounding.hpp"
-#include "preprocess/get_full_dimensional_polytope.hpp"
+//#include "preprocess/get_full_dimensional_polytope.hpp"
 
 typedef double NT;
 typedef Cartesian<NT>    Kernel;
@@ -153,10 +153,10 @@ class HPolytopeCPP{
       void get_polytope_as_matrices(double* new_A, double* new_b) const;
 
       // the rounding() function
-      void apply_rounding(int rounding_method, double* new_A, double* new_b, double* T_matrix, 
+      void apply_rounding(int rounding_method, double* new_A, double* new_b, double* T_matrix,
                           double* shift, double &round_value, double* inner_point, double radius);
-      
+
 };
 
 
-#endif 
+#endif
