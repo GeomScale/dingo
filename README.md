@@ -30,6 +30,13 @@ tar xjf boost_1_76_0.tar.bz2
 rm boost_1_76_0.tar.bz2
 ```
 
+You will also need to download and unzip the lpsolve library:
+```
+wget https://sourceforge.net/projects/lpsolve/files/lpsolve/5.5.2.11/lp_solve_5.5.2.11_source.tar.gz
+tar xzvf lp_solve_5.5.2.11_source.tar.gz
+rm lp_solve_5.5.2.11_source.tar.gz
+```
+
 Then, you need to install the dependencies for the PySPQR library; for Debian/Ubuntu Linux, run
 
 ```
@@ -48,14 +55,14 @@ To exploit the fast implementations of dingo, you have to install the [Gurobi so
 pip3 install -i https://pypi.gurobi.com gurobipy
 ```
 
-Then, you will need a [license](https://www.gurobi.com/downloads/end-user-license-agreement-academic/). For more information, we refer to the Gurobi [download center](https://www.gurobi.com/downloads/).  
+Then, you will need a [license](https://www.gurobi.com/downloads/end-user-license-agreement-academic/). For more information, we refer to the Gurobi [download center](https://www.gurobi.com/downloads/).
 
 
 
 
 ## Unit tests
 
-Now, you can run the unit tests by the following commands:  
+Now, you can run the unit tests by the following commands:
 ```
 python3 tests/fba.py
 python3 tests/full_dimensional.py
@@ -72,14 +79,14 @@ python3 tests/fast_implementation_test.py
 
 ## Tutorial
 
-You can have a look at our [Google Colab notebook](https://colab.research.google.com/github/GeomScale/dingo/blob/develop/tutorials/dingo_tutorial.ipynb) 
+You can have a look at our [Google Colab notebook](https://colab.research.google.com/github/GeomScale/dingo/blob/develop/tutorials/dingo_tutorial.ipynb)
 on how to use `dingo`.
 
 
 ## Documentation
 
 
-It quite simple to use dingo in your code. In general, dingo provides two classes:  
+It quite simple to use dingo in your code. In general, dingo provides two classes:
 
 - `metabolic_network` represents a metabolic network
 - `polytope_sampler` can be used to sample from the flux space of a metabolic network or from a general convex polytope.
@@ -94,35 +101,35 @@ sampler = PolytopeSampler(model)
 steady_states = sampler.generate_steady_states()
 ```
 
-`dingo` can also load a model given in `.sbml` format using the following command,  
+`dingo` can also load a model given in `.sbml` format using the following command,
 
 ```python
 model = MetabolicNetwork.from_sbml('path/to/model_file.sbml')
 ```
 
-The output variable `steady_states` is a `numpy` array that contains the steady states of the model column-wise. You could ask from the `sampler` for more statistical guarantees on sampling,  
+The output variable `steady_states` is a `numpy` array that contains the steady states of the model column-wise. You could ask from the `sampler` for more statistical guarantees on sampling,
 
 ```python
 steady_states = sampler.generate_steady_states(ess=2000, psrf = True)
 ```
 
-The `ess` stands for the effective sample size (ESS) (default value is `1000`) and the `psrf` is a flag to request an upper bound equal to 1.1 for the value of the  *potential scale reduction factor* of each marginal flux (default option is `False`).  
+The `ess` stands for the effective sample size (ESS) (default value is `1000`) and the `psrf` is a flag to request an upper bound equal to 1.1 for the value of the  *potential scale reduction factor* of each marginal flux (default option is `False`).
 
 You could also ask for parallel MMCS algorithm,
 
 ```python
-steady_states = sampler.generate_steady_states(ess=2000, psrf = True, 
+steady_states = sampler.generate_steady_states(ess=2000, psrf = True,
                                                parallel_mmcs = True, num_threads = 2)
 ```
 
-The default option is to run the sequential [Multiphase Monte Carlo Sampling algorithm](https://arxiv.org/abs/2012.05503) (MMCS) algorithm.  
+The default option is to run the sequential [Multiphase Monte Carlo Sampling algorithm](https://arxiv.org/abs/2012.05503) (MMCS) algorithm.
 
-**Tip**: After the first run of MMCS algorithm the polytope stored in object `sampler` is usually more rounded than the initial one. Thus, the function `generate_steady_states()` becomes more efficient from run to run.  
+**Tip**: After the first run of MMCS algorithm the polytope stored in object `sampler` is usually more rounded than the initial one. Thus, the function `generate_steady_states()` becomes more efficient from run to run.
 
 
 #### Rounding the polytope
 
-`dingo` provides three methods to round a polytope: (i) Bring the polytope to John position by apllying to it the transformation that maps the largest inscribed ellipsoid of the polytope to the unit ball, (ii) Bring the polytope to near-isotropic position by using uniform sampling with Billiard Walk, (iii) Apply to the polytope the transformation that maps the smallest enclosing ellipsoid of a uniform sample from the interior of the polytope to the unit ball.  
+`dingo` provides three methods to round a polytope: (i) Bring the polytope to John position by apllying to it the transformation that maps the largest inscribed ellipsoid of the polytope to the unit ball, (ii) Bring the polytope to near-isotropic position by using uniform sampling with Billiard Walk, (iii) Apply to the polytope the transformation that maps the smallest enclosing ellipsoid of a uniform sample from the interior of the polytope to the unit ball.
 
 ```python
 from dingo import MetabolicNetwork, PolytopeSampler
@@ -152,7 +159,7 @@ steady_states = map_samples_to_steady_states(samples, N, N_shift, Tr, Tr_shift)
 
 #### Other MCMC sampling methods
 
-To use any other MCMC sampling method that `dingo` provides you can use the following piece of code:  
+To use any other MCMC sampling method that `dingo` provides you can use the following piece of code:
 
 ```python
 sampler = polytope_sampler(model)
@@ -160,7 +167,7 @@ steady_states = sampler.generate_steady_states_no_multiphase() #default paramete
 ```
 
 The MCMC methods that dingo (through `volesti` library) provides are the following: (i) 'cdhr': Coordinate Directions Hit-and-Run, (ii) 'rdhr': Random Directions Hit-and-Run,
-(iii) 'billiard_walk', (iv) 'ball_walk', (v) 'dikin_walk', (vi) 'john_walk', (vii) 'vaidya_walk'.  
+(iii) 'billiard_walk', (iv) 'ball_walk', (v) 'dikin_walk', (vi) 'john_walk', (vii) 'vaidya_walk'.
 
 
 
@@ -175,7 +182,7 @@ sampler = polytope_sampler(model)
 
 #set fast mode to use gurobi library
 sampler.set_fast_mode()
-#set slow mode to use scipy functions 
+#set slow mode to use scipy functions
 sampler.set_slow_mode()
 ```
 
@@ -196,7 +203,7 @@ max_biomass_flux_vector = fva_output[2]
 max_biomass_objective = fva_output[3]
 ```
 
-The output of FVA method is tuple that contains `numpy` arrays. The vectors `min_fluxes` and `max_fluxes` contains the minimum and the maximum values of each flux. The vector `max_biomass_flux_vector` is the optimal flux vector according to the biomass objective function and `max_biomass_objective` is the value of that optimal solution.  
+The output of FVA method is tuple that contains `numpy` arrays. The vectors `min_fluxes` and `max_fluxes` contains the minimum and the maximum values of each flux. The vector `max_biomass_flux_vector` is the optimal flux vector according to the biomass objective function and `max_biomass_objective` is the value of that optimal solution.
 
 To apply FBA method,
 
@@ -207,7 +214,7 @@ max_biomass_flux_vector = fba_output[0]
 max_biomass_objective = fba_output[1]
 ```
 
-while the output vectors are the same with the previous example.   
+while the output vectors are the same with the previous example.
 
 
 
@@ -240,7 +247,7 @@ model.biomass_function(obj_fun)
 
 # apply FVA using the new objective function
 fva_output = model.fva()
-# sample from the flux space by restricting 
+# sample from the flux space by restricting
 # the fluxes according to the new objective function
 sampler = polytope_sampler(model)
 steady_states = sampler.generate_steady_states()
@@ -283,7 +290,7 @@ model = MetabolicNetwork.from_json('path/to/e_coli_core.json')
 sampler = PolytopeSampler(model)
 steady_states = sampler.generate_steady_states(ess = 3000)
 
-# plot the copula between the 13th (PPC) and the 14th (ACONTa) reaction in e-coli 
+# plot the copula between the 13th (PPC) and the 14th (ACONTa) reaction in e-coli
 reactions = model.reactions
 
 data_flux2=[steady_states[12],reactions[12]]
