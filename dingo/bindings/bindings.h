@@ -39,7 +39,6 @@
 #include "preprocess/min_sampling_covering_ellipsoid_rounding.hpp"
 #include "preprocess/svd_rounding.hpp"
 #include "preprocess/max_inscribed_ellipsoid_rounding.hpp"
-//#include "preprocess/get_full_dimensional_polytope.hpp"
 
 typedef double NT;
 typedef Cartesian<NT>    Kernel;
