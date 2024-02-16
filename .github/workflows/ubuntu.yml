@@ -32,6 +32,11 @@ jobs:
         wget -O boost_1_76_0.tar.bz2 https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2;
         tar xjf boost_1_76_0.tar.bz2;
         rm boost_1_76_0.tar.bz2;
+    - name: Download and unzip the lp-solve library
+      run: |
+        wget https://sourceforge.net/projects/lpsolve/files/lpsolve/5.5.2.11/lp_solve_5.5.2.11_source.tar.gz
+        tar xzvf lp_solve_5.5.2.11_source.tar.gz
+        rm lp_solve_5.5.2.11_source.tar.gz
     - name: Install dependencies
       run: |
         sudo apt-get install libsuitesparse-dev;
