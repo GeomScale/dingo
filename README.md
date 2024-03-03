@@ -15,23 +15,40 @@ metabolic network, namely Flux Balance Analysis and Flux Variability Analysis.
 [![Tutorial In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/GeomScale/dingo/blob/develop/tutorials/dingo_tutorial.ipynb)
 [![Chat](https://badges.gitter.im/geomscale.png)](https://gitter.im/GeomScale/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link)
 
+
 ## Installation
+
+**Note:** Python version should be 3.8.x. You can check this by running the following command in your terminal:
+```bash
+python --version
+```
+If you have a different version of Python installed, you'll need to install it or update alternatives [start here](https://www.youtube.com/watch?v=w7v4CZt1po8).
+
+**Note:** If you are using `GitHub Codespaces`. Start [here](https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/setting-up-your-python-project-for-codespaces) to set python version. Once your python version is `3.8.x` you are good to go.
+
+Clone dino repository
+```bash
+git clone https://github.com/GeomScale/dingo.git
+cd dingo
+```
+
+
 
 To load the submodules that dingo uses, run
 
-````unix
+````bash
 git submodule update --init
 ````
 
 You will need to download and unzip the Boost library:
-```
+```bash
 wget -O boost_1_76_0.tar.bz2 https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2
 tar xjf boost_1_76_0.tar.bz2
 rm boost_1_76_0.tar.bz2
 ```
 
 You will also need to download and unzip the lpsolve library:
-```
+```bash
 wget https://sourceforge.net/projects/lpsolve/files/lpsolve/5.5.2.11/lp_solve_5.5.2.11_source.tar.gz
 tar xzvf lp_solve_5.5.2.11_source.tar.gz
 rm lp_solve_5.5.2.11_source.tar.gz
@@ -39,19 +56,37 @@ rm lp_solve_5.5.2.11_source.tar.gz
 
 Then, you need to install the dependencies for the PySPQR library; for Debian/Ubuntu Linux, run
 
-```
-apt-get install libsuitesparse-dev
+```bash
+sudo apt-get update -y
+sudo apt-get install -y libsuitesparse-dev
 ```
 
-To install the Python dependencies, install [Poetry](https://python-poetry.org/). Then, run
+To install the Python dependencies, [Poetry](https://python-poetry.org/). 
+
+Install poetry 
+```bash
+curl -sSL https://install.python-poetry.org | python3 - --version 1.3.2
 ```
+
+Check version, should be `Poetry (version 1.3.2)`
+```bash
+poetry --version
+```
+
+Activate poetry environment, Run
+```bash
 poetry shell
+```
+After this command, `(dingo-py3.8)` environment should be actvated
+
+Install Python dependencies, Run
+```bash
 poetry install
 ```
 
 To exploit the fast implementations of dingo, you have to install the [Gurobi solver](https://www.gurobi.com/). Run
 
-```
+```bash
 pip3 install -i https://pypi.gurobi.com gurobipy
 ```
 
@@ -79,9 +114,12 @@ python3 tests/fast_implementation_test.py
 
 ## Tutorial
 
+#### In Google colab
 You can have a look at our [Google Colab notebook](https://colab.research.google.com/github/GeomScale/dingo/blob/develop/tutorials/dingo_tutorial.ipynb)
 on how to use `dingo`.
 
+#### In local environment
+You can have a look at `dingo/tutorials/dingo_walkthrough.ipynb`. Now you should be able to run all cells.
 
 ## Documentation
 
