@@ -22,9 +22,9 @@ metabolic network, namely Flux Balance Analysis and Flux Variability Analysis.
 ```bash
 python --version
 ```
-If you have a different version of Python installed, you'll need to install it or update alternatives [start here](https://www.youtube.com/watch?v=w7v4CZt1po8).
+If you have a different version of Python installed, you'll need to install it or update-alternatives [start here](https://www.youtube.com/watch?v=w7v4CZt1po8).
 
-**Note:** If you are using `GitHub Codespaces`. Start [here](https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/setting-up-your-python-project-for-codespaces) to set python version. Once your python version is `3.8.x` you are good to go.
+**Note:** If you are using `GitHub Codespaces`. Start [here](https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/setting-up-your-python-project-for-codespaces) to set the python version. Once your Python version is `3.8.x` you can start following the below instructions.
 
 Clone dino repository
 ```bash
