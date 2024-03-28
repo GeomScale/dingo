@@ -55,7 +55,7 @@ sudo apt-get update -y
 sudo apt-get install -y libsuitesparse-dev
 ```
 
-To install the Python dependencies, to install [Poetry](https://python-poetry.org/), run
+To install the Python dependencies, `dingo` is using [Poetry](https://python-poetry.org/),
 ```
 curl -sSL https://install.python-poetry.org | python3 - --version 1.3.2
 poetry shell
