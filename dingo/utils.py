@@ -34,14 +34,14 @@ def compute_copula(flux1, flux2, n):
         rng = range((j*math.floor(N/n)),((j+1)*math.floor(N/n)))
         grouped_flux1[I1[rng]] = j
         grouped_flux2[I2[rng]] = j
-    
+
     for i in range(n):
         for j in range(n):
             copula[i,j] = sum((grouped_flux1==i) *( grouped_flux2==j))
-    
+
     copula = copula / N
     return copula
-    
+
 
 def apply_scaling(A, b, cs, rs):
     """A Python function to apply the scaling computed by the function `gmscale` to a convex polytope

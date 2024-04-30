@@ -6,6 +6,7 @@
 # Licensed under GNU LGPL.3, see LICENCE file
 
 
+import copy
 import numpy as np
 import warnings
 import math
@@ -16,6 +17,7 @@ from dingo.utils import (
     get_matrices_of_low_dim_polytope,
     get_matrices_of_full_dim_polytope,
 )
+import pandas as pd
 
 try:
     import gurobipy
@@ -37,13 +39,13 @@ class PolytopeSampler:
         if not isinstance(metabol_net, MetabolicNetwork):
             raise Exception("An unknown input object given for initialization.")
 
-        self._metabolic_network = metabol_net
-        self._A = []
-        self._b = []
-        self._N = []
-        self._N_shift = []
-        self._T = []
-        self._T_shift = []
+        self._metabolic_network = copy.deepcopy(metabol_net)
+        self._A = np.empty( shape=(0, 0) )
+        self._b = np.empty( shape=(0, 0) )
+        self._N = np.empty( shape=(0, 0) )
+        self._N_shift = np.empty( shape=(0, 0) )
+        self._T = np.empty( shape=(0, 0) )
+        self._T_shift = np.empty( shape=(0, 0) )
         self._parameters = {}
         self._parameters["nullspace_method"] = "sparseQR"
         self._parameters["opt_percentage"] = self.metabolic_network.parameters[
@@ -68,18 +70,18 @@ class PolytopeSampler:
         """
 
         if (
-            self._A == []
-            or self._b == []
-            or self._N == []
-            or self._N_shift == []
-            or self._T == []
-            or self._T_shift == []
+            self._A.size == 0
+            or self._b.size == 0
+            or self._N.size == 0
+            or self._N_shift.size == 0
+            or self._T.size == 0
+            or self._T_shift.size == 0
         ):
 
             (
                 max_biomass_flux_vector,
                 max_biomass_objective,
-            ) = self._metabolic_network.fba()
+            ) = self._metabolic_network._fba()
 
             if (
                 self._parameters["fast_computations"]
@@ -106,7 +108,7 @@ class PolytopeSampler:
                     max_fluxes,
                     max_biomass_flux_vector,
                     max_biomass_objective,
-                ) = self._metabolic_network.fva()
+                ) = self._metabolic_network._fva()
 
                 A, b, Aeq, beq = get_matrices_of_low_dim_polytope(
                     self._metabolic_network.S,
@@ -166,6 +168,7 @@ class PolytopeSampler:
             self._A, self._b, Tr, Tr_shift, samples = P.fast_mmcs(
                 ess, psrf, parallel_mmcs, num_threads
             )
+
         else:
             self._A, self._b, Tr, Tr_shift, samples = P.slow_mmcs(
                 ess, psrf, parallel_mmcs, num_threads
@@ -184,8 +187,10 @@ class PolytopeSampler:
         self._T = np.dot(self._T, Tr)
         self._T_shift = np.add(self._T_shift, Tr_shift)
 
-        return steady_states
-    
+        steady_states_df = pd.DataFrame(steady_states, index = self._metabolic_network.reactions)
+
+        return steady_states_df
+
     def generate_steady_states_no_multiphase(
         self, method = 'billiard_walk', n=1000, burn_in=0, thinning=1, variance=1.0, bias_vector=None
     ):
@@ -197,11 +202,11 @@ class PolytopeSampler:
         burn_in -- the number of points to burn before sampling
         thinning -- the walk length of the chain
         """
-        	
+
         self.get_polytope()
 
         P = HPolytope(self._A, self._b)
-        
+
         if bias_vector is None:
             bias_vector = np.ones(self._A.shape[1], dtype=np.float64)
         else:
@@ -213,8 +218,9 @@ class PolytopeSampler:
         steady_states = map_samples_to_steady_states(
                 samples_T, self._N, self._N_shift
             )
+        steady_states_df = pd.DataFrame(steady_states, index = self._metabolic_network.reactions)
 
-        return steady_states
+        return steady_states_df
 
     @staticmethod
     def sample_from_polytope(
@@ -245,7 +251,7 @@ class PolytopeSampler:
             )
 
         return samples
-    
+
     @staticmethod
     def sample_from_polytope_no_multiphase(
         A, b, method = 'billiard_walk', n=1000, burn_in=0, thinning=1, variance=1.0, bias_vector=None
@@ -264,7 +270,7 @@ class PolytopeSampler:
             bias_vector = np.ones(A.shape[1], dtype=np.float64)
         else:
             bias_vector = bias_vector.astype('float64')
-            
+
         P = HPolytope(A, b)
 
         try:
@@ -286,16 +292,13 @@ class PolytopeSampler:
             A, b, Tr, Tr_shift, round_value = P.rounding(method, True)
         except ImportError as e:
             A, b, Tr, Tr_shift, round_value = P.rounding(method, False)
-        
+
         return A, b, Tr, Tr_shift
+
 
     @staticmethod
     def sample_from_fva_output(
-        min_fluxes,
-        max_fluxes,
-        biomass_function,
-        max_biomass_objective,
-        S,
+        model,
         opt_percentage=100,
         ess=1000,
         psrf=False,
@@ -305,11 +308,7 @@ class PolytopeSampler:
         """A static function to sample steady states when the output of FVA is given.
 
         Keyword arguments:
-        min_fluxes -- minimum values of the fluxes, i.e., a n-dimensional vector
-        max_fluxes -- maximum values for the fluxes, i.e., a n-dimensional vector
-        biomass_function -- the biomass objective function
-        max_biomass_objective -- the maximum value of the biomass objective function
-        S -- stoichiometric matrix
+        model -- a dingo.MetabolicNetwork() object
         opt_percentage -- consider solutions that give you at least a certain
                       percentage of the optimal solution (default is to consider
                       optimal solutions only)
@@ -319,16 +318,18 @@ class PolytopeSampler:
         num_threads -- the number of threads to use for parallel mmcs
         """
 
+        min_fluxes, max_fluxes, opt_vector, opt_value = model._fva()
+
         A, b, Aeq, beq = get_matrices_of_low_dim_polytope(
-            S, min_fluxes, max_fluxes, opt_percentage, tol
+            model.S, min_fluxes, max_fluxes, opt_percentage, model._parameters["tol"]
         )
 
-        A = np.vstack((A, -biomass_function))
+        A = np.vstack((A, -model.biomass_function))
         b = np.append(
             b,
             -(opt_percentage / 100)
-            * self._parameters["tol"]
-            * math.floor(max_biomass_objective / self._parameters["tol"]),
+            * model._parameters["tol"]
+            * math.floor(opt_value / model._parameters["tol"]),
         )
 
         A, b, N, N_shift = get_matrices_of_full_dim_polytope(A, b, Aeq, beq)
@@ -349,6 +350,17 @@ class PolytopeSampler:
         steady_states = map_samples_to_steady_states(samples, N, N_shift)
 
         return steady_states
+
+    @staticmethod
+    def samples_as_df(model, samples):
+        """A static function to convert the samples numpy ndarray to a pandas DataFrame with model's reactions as indices
+
+        Keyword arguments:
+        model --
+        samples --
+        """
+        samples_df = pd.DataFrame(samples, index = model.reactions)
+        return samples_df
 
     @property
     def A(self):
@@ -411,3 +423,4 @@ class PolytopeSampler:
     def set_opt_percentage(self, value):
 
         self._parameters["opt_percentage"] = value
+

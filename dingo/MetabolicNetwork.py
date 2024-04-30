@@ -7,12 +7,15 @@
 # Licensed under GNU LGPL.3, see LICENCE file
 
 import numpy as np
+import pandas as pd
 import sys
 from typing import Dict
 import cobra
 from dingo.loading_models import read_json_file, read_mat_file, read_sbml_file, parse_cobra_model
 from dingo.fva import slow_fva
 from dingo.fba import slow_fba
+import logging
+logger = logging.getLogger(__name__)
 
 try:
     import gurobipy
@@ -33,10 +36,12 @@ class MetabolicNetwork:
             import gurobipy
 
             self._parameters["fast_computations"] = True
+            self._parameters["tol"] = 1e-06
         except ImportError as e:
             self._parameters["fast_computations"] = False
+            self._parameters["tol"] = 1e-03
 
-        if len(tuple_args) != 10:
+        if len(tuple_args) != 12:
             raise Exception(
                 "An unknown input format given to initialize a metabolic network object."
             )
@@ -51,6 +56,8 @@ class MetabolicNetwork:
         self._medium = tuple_args[7]
         self._medium_indices = tuple_args[8]
         self._exchanges = tuple_args[9]
+        self._reactions_map = tuple_args[10]
+        self._metabolites_map = tuple_args[11]
 
         try:
             if self._biomass_index is not None and (
@@ -104,11 +111,11 @@ class MetabolicNetwork:
 
         return cls(parse_cobra_model(arg))
 
-    def fva(self):
+    def _fva(self):
         """A member function to apply the FVA method on the metabolic network."""
 
         if self._parameters["fast_computations"]:
-            return fast_fva(
+            min_fluxes, max_fluxes, max_biomass_flux_vector, max_biomass_objective = fast_fva(
                 self._lb,
                 self._ub,
                 self._S,
@@ -116,22 +123,43 @@ class MetabolicNetwork:
                 self._parameters["opt_percentage"],
             )
         else:
-            return slow_fva(
+            min_fluxes, max_fluxes, max_biomass_flux_vector, max_biomass_objective = slow_fva(
                 self._lb,
                 self._ub,
                 self._S,
                 self._biomass_function,
                 self._parameters["opt_percentage"],
             )
+        self._min_fluxes = min_fluxes
+        self._max_fluxes = max_fluxes
+        self._opt_vector = max_biomass_flux_vector
+        self._opt_value = max_biomass_objective
+        return min_fluxes, max_fluxes, max_biomass_flux_vector, max_biomass_objective
 
-    def fba(self):
+    def _fba(self):
         """A member function to apply the FBA method on the metabolic network."""
 
         if self._parameters["fast_computations"]:
-            return fast_fba(self._lb, self._ub, self._S, self._biomass_function)
+            opt_vector, opt_value = fast_fba(self._lb, self._ub, self._S, self._biomass_function)
         else:
-            return slow_fba(self._lb, self._ub, self._S, self._biomass_function)
+            opt_vector, opt_value = slow_fba(self._lb, self._ub, self._S, self._biomass_function)
+        self._opt_vector = opt_vector
+        self._opt_value = opt_value
+        return opt_vector, opt_value
 
+    def fba(self):
+        if not hasattr(self, '_opt_vector'):
+            self._fba()
+        fba_df = pd.DataFrame({'fluxes': self._opt_vector}, index=self._reactions)
+        return fba_df
+
+    def fva(self):
+        if not hasattr(self, '_min_fluxes'):
+            self._fva()
+        fva_df = pd.DataFrame({'minimum': self._min_fluxes, 'maximum': self._max_fluxes}, index=self._reactions)
+        return fva_df
+
+    # Descriptors
     @property
     def lb(self):
         return self._lb
@@ -173,6 +201,30 @@ class MetabolicNetwork:
         return self._parameters
 
     @property
+    def reactions_map(self):
+        return self._reactions_map
+
+    @property
+    def metabolites_map(self):
+        return self._metabolites_map
+
+    @property
+    def opt_value(self):
+        return self._opt_value
+
+    @property
+    def opt_vector(self):
+        return self._opt_vector
+
+    @property
+    def min_fluxes(self):
+        return self._min_fluxes
+
+    @property
+    def max_fluxes(self):
+        return self._max_fluxes
+
+    @property
     def get_as_tuple(self):
         return (
             self._lb,
@@ -183,15 +235,10 @@ class MetabolicNetwork:
             self._biomass_index,
             self._biomass_function,
             self._medium,
-            self._inter_medium,
-            self._exchanges
+            self._exchanges,
+            self._reactions_map,
+            self._metabolites_map
         )
-
-    def num_of_reactions(self):
-        return len(self._reactions)
-
-    def num_of_metabolites(self):
-        return len(self._metabolites)
 
     @lb.setter
     def lb(self, value):
@@ -220,7 +267,6 @@ class MetabolicNetwork:
     @biomass_function.setter
     def biomass_function(self, value):
         self._biomass_function = value
-
 
     @medium.setter
     def medium(self, medium: Dict[str, float]) -> None:
@@ -275,17 +321,51 @@ class MetabolicNetwork:
         # Turn off reactions not present in media
         for rxn_id in exchange_rxns - frozen_media_rxns:
             """
-            is_export for us, needs to check on the S 
-            order reactions to their lb and ub 
+            is_export for us, needs to check on the S
+            order reactions to their lb and ub
             """
             # is_export = rxn.reactants and not rxn.products
             reac_index = self._reactions.index(rxn_id)
-            products = np.any(self._S[:,reac_index] > 0) 
+            products = np.any(self._S[:,reac_index] > 0)
             reactants_exist = np.any(self._S[:,reac_index] < 0)
             is_export = True if not products and reactants_exist else False
             set_active_bound(
                 rxn_id, reac_index, min(0.0, -self._lb[reac_index] if is_export else self._ub[reac_index])
             )
+        self._medium = medium
+        self._opt_vector = None
+
+    @reactions_map.setter
+    def reactions_map(self, value):
+        self._reactions_map = value
+
+    @metabolites_map.setter
+    def metabolites_map(self, value):
+        self._metabolites_map = value
+
+    @min_fluxes.setter
+    def min_fluxes(self, value):
+        self._min_fluxes = value
+
+    @max_fluxes.setter
+    def max_fluxes(self, value):
+        self._max_fluxes = value
+
+    @opt_value.setter
+    def opt_value(self, value):
+        self._opt_value = value
+
+    @opt_vector.setter
+    def opt_vector(self, value):
+        self._opt_vector = value
+
+
+    # Attributes
+    def num_of_reactions(self):
+        return len(self._reactions)
+
+    def num_of_metabolites(self):
+        return len(self._metabolites)
 
     def set_fast_mode(self):
 

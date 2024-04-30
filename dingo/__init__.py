@@ -169,7 +169,7 @@ def dingo_main():
         else:
             raise Exception("An unknown format file given.")
 
-        result_obj = model.fba()
+        result_obj = model._fba()
 
         with open("dingo_fba_" + name + ".pckl", "wb") as dingo_fba_file:
             pickle.dump(result_obj, dingo_fba_file)

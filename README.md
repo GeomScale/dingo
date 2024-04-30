@@ -218,6 +218,27 @@ max_biomass_objective = fva_output[3]
 
 The output of FVA method is tuple that contains `numpy` arrays. The vectors `min_fluxes` and `max_fluxes` contains the minimum and the maximum values of each flux. The vector `max_biomass_flux_vector` is the optimal flux vector according to the biomass objective function and `max_biomass_objective` is the value of that optimal solution.
 
+```python
+fva_output_df = model.fva_to_df()
+```
+
+returns the solution is an easier to query dataframe with the model's reactions as indices:
+```python
+>>> fva_output_df
+           minimum    maximum
+PFK       7.477306   7.477485
+PFL       0.000000   0.000066
+PGI       4.860632   4.861110
+PGK     -16.023610 -16.023451
+PGL       4.959736   4.960214
+>>>
+>>> df.loc["NH4t"]
+minimum    4.765316
+maximum    4.765324
+Name: NH4t, dtype: float64
+```
+
+
 To apply FBA method,
 
 ```python
@@ -229,6 +250,16 @@ max_biomass_objective = fba_output[1]
 
 while the output vectors are the same with the previous example.
 
+Again, one may use the `fba_to_df()` to get the solution as a pandas dataframe with model's reactions as indices.
+```python
+>>> model.fba_to_df()
+            fluxes
+PFK       7.477382
+PFL       0.000000
+PGI       4.860861
+PGK     -16.023526
+PGL       4.959985
+```
 
 
 ### Set the restriction in the flux space
@@ -266,6 +297,46 @@ sampler = polytope_sampler(model)
 steady_states = sampler.generate_steady_states()
 ```
 
+### Change the medium on your model 
+
+To do that, you need to first describe the new medium and then assign it on your `model`. 
+For example: 
+
+```python 
+initial_medium = model.medium
+model.medium
+# {'EX_co2_e': 1000.0, 'EX_glc__D_e': 10.0, 'EX_h_e': 1000.0, 'EX_h2o_e': 1000.0, 'EX_nh4_e': 1000.0, 'EX_o2_e': 1000.0, 'EX_pi_e': 1000.0}
+model.fba()[-1]
+# 0.8739215069684305
+new_medium = initial_medium.copy()
+
+# Set anoxygenic conditions 
+new_medium['EX_o2_e'] = 0
+model.medium = new_medium 
+model.fba()[-1]
+
+# Check the difference in the optimal value
+# 0.21166294973531055
+```
+
+### Who-is-who
+
+Models may use ids for metabolites and reactions hard to interpret. 
+You may use the `reactions_map` and the `metabolites_map` that return the reactions/metabolites ids along with their corresponding names. 
+For example: 
+
+```python
+>>> model.reactions_map
+                                         reaction_name
+PFK                                Phosphofructokinase
+PFL                             Pyruvate formate lyase
+PGI                      Glucose-6-phosphate isomerase
+PGK                            Phosphoglycerate kinase
+PGL                          6-phosphogluconolactonase
+```
+
+
+
 
 
 ### Plot flux marginals
@@ -282,8 +353,8 @@ steady_states = sampler.generate_steady_states(ess = 3000)
 # plot the histogram for the 14th reaction in e-coli (ACONTa)
 reactions = model.reactions
 plot_histogram(
-        steady_states[13],
-        reactions[13],
+        steady_states.loc["ACONTa"],
+        "ACONTa",
         n_bins = 60,
         )
 ```
@@ -306,8 +377,8 @@ steady_states = sampler.generate_steady_states(ess = 3000)
 # plot the copula between the 13th (PPC) and the 14th (ACONTa) reaction in e-coli
 reactions = model.reactions
 
-data_flux2=[steady_states[12],reactions[12]]
-data_flux1=[steady_states[13],reactions[13]]
+data_flux2=[steady_states.loc["ACONTa"], "ACONTa"]
+data_flux1=[steady_states.loc["PPC"], "PPC"]
 
 plot_copula(data_flux1, data_flux2, n=10)
 ```
