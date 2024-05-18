@@ -13,7 +13,7 @@ import scipy.sparse as sp
 def slow_fba(lb, ub, S, c):
     """A Python function to perform fba using scipy.optimize LP solver `linprog`
     Returns an optimal solution and its value for the following linear program:
-    min c*v, subject to,
+    max c*v, subject to,
     Sv = 0, lb <= v <= ub
 
     Keyword arguments:

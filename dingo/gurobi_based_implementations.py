@@ -108,8 +108,8 @@ def fast_fba(lb, ub, S, c):
                     optimum_value = -model.getObjective().getValue()
                     v = model.getVars()
 
-                for i in range(n):
-                    optimum_sol.append(v[i].x)
+                    for i in range(n):
+                        optimum_sol.append(v[i].x)
 
                 optimum_sol = np.asarray(optimum_sol)
 
