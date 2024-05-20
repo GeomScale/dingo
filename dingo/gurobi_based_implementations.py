@@ -107,9 +107,7 @@ def fast_fba(lb, ub, S, c):
                 if status == GRB.OPTIMAL:
                     optimum_value = -model.getObjective().getValue()
                     v = model.getVars()
-
-                    for i in range(n):
-                        optimum_sol.append(v[i].x)
+                    optimum_sol = model.getAttr("X", v)
 
                 optimum_sol = np.asarray(optimum_sol)
 
