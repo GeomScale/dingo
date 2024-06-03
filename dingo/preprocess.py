@@ -24,27 +24,6 @@ def reactions_ids(dingo_model):
 reactions = reactions_ids(dingo_model)
 
 
-# function to find all unidirected reactions (-->)
-def unidirected_reactions(cobra_model):
-    uni_reactions = []
-    for reaction in reactions:
-        try:
-            str = cobra_model.reactions.get_by_id(reaction).reaction
-        except:
-            print("failed to find" , reaction)
-        
-        # continue if you find this arrow and not this <=>
-        try:
-            str.index("-->")
-            uni_reactions.append(reaction)   
-        except:
-            pass
-        
-    return uni_reactions
-
-uni_reactions = unidirected_reactions(cobra_model)
-
-
 # function to find metabolites participating in possible lumped reactions
 def lumped_metabolites(dingo_model):
 
@@ -117,7 +96,7 @@ def lumped_reactions_substrate_product(cobra_model, lumped_reactions):
     for lumped in lumped_reactions:
         str = cobra_model.reactions.get_by_id(lumped).reaction 
         try:
-            str.index("-->")
+            #str.index("-->")
             split = str.split(" ")
             index = split.index("-->")
             for substrate in split[0:index]:
