@@ -12,8 +12,8 @@ def load_model(model):
     cobra_model = load_json_model(model)
     return dingo_model, cobra_model
 
-dingo_model = load_model('e_coli_core.json')[0]
-cobra_model = load_model('e_coli_core.json')[1]
+dingo_model = load_model('../ext_data/e_coli_core.json')[0]
+cobra_model = load_model('../ext_data/e_coli_core.json')[1]
 
 
 # function to get a list of all reaction ids
