@@ -21,8 +21,6 @@ def reactions_ids(dingo_model):
     reactions = dingo_model.reactions
     return reactions
 
-reactions = reactions_ids(dingo_model)
-
 
 # function to find metabolites participating in possible lumped reactions
 def lumped_metabolites(dingo_model):
@@ -52,16 +50,14 @@ def lumped_metabolites(dingo_model):
     
     return lumped_metabolites, lumped_met_rows
 
-lumped_metabolites = lumped_metabolites(dingo_model)
-
 
 # function to find possible lumped reactions based on lumped metabolites
 def lumped_reactions(dingo_model):
     
-    reactions = dingo_model.reactions
+    reactions = reactions_ids(dingo_model)
     
     # find reactions where lumped metabolites are substrates
-    columns_with_negatives = np.any(lumped_metabolites[1] < 0, axis=0)
+    columns_with_negatives = np.any(lumped_metabolites(dingo_model)[1] < 0, axis=0)
     lumped_reactions = [reactions[i] for i, has_negative in enumerate(columns_with_negatives) if has_negative]
     
     return lumped_reactions
@@ -71,7 +67,7 @@ lumped_reactions = lumped_reactions(dingo_model)
 
 # function to match lumped reaction-substrate-product
 def lumped_reactions_substrate_product(cobra_model, lumped_reactions):
-        
+    
     # define some cofactors- this list must be updated
     cofactors = [
         "coa_c",
@@ -96,7 +92,7 @@ def lumped_reactions_substrate_product(cobra_model, lumped_reactions):
     for lumped in lumped_reactions:
         str = cobra_model.reactions.get_by_id(lumped).reaction 
         try:
-            #str.index("-->")
+            str.index("-->")
             split = str.split(" ")
             index = split.index("-->")
             for substrate in split[0:index]:
