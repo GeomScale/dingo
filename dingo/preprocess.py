@@ -16,10 +16,13 @@ class PreProcess:
         model.reactions.get_by_id("BIOMASS_Ecoli_core_w_GAM").lower_bound = fba_solution.objective_value
 
         fva = cobra.flux_analysis.flux_variability_analysis(model, fraction_of_optimum=0.95)
-        blocked = cobra.flux_analysis.find_blocked_reactions(model)
-        return blocked
+        blocked_fva = fva.loc[(fva['minimum'] == 0) & (fva['maximum'] == 0)]
+        blocked_reactions = blocked_fva.index.tolist()
+        
+        return blocked_reactions
 
 
 model = load_json_model("../ext_data/e_coli_core.json")
 blocked = PreProcess.blocked_reactions(model)
 print(blocked)
+
