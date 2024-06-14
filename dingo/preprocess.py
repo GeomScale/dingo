@@ -2,7 +2,7 @@
 import cobra
 from cobra.io import load_json_model
 
-model = load_json_model("e_coli_core.json")
+model = load_json_model("../ext_data/e_coli_core.json")
 
 
 model.objective = 'BIOMASS_Ecoli_core_w_GAM'
