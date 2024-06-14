@@ -9,6 +9,8 @@ class PreProcess:
         self.model = model
     
     def blocked_reactions(model):
+        
+        tol = 1e-6
 
         model.objective = 'BIOMASS_Ecoli_core_w_GAM'
         fba_solution = model.optimize()
@@ -16,7 +18,7 @@ class PreProcess:
         model.reactions.get_by_id("BIOMASS_Ecoli_core_w_GAM").lower_bound = fba_solution.objective_value
 
         fva = cobra.flux_analysis.flux_variability_analysis(model, fraction_of_optimum=0.95)
-        blocked_fva = fva.loc[(fva['minimum'] == 0) & (fva['maximum'] == 0)]
+        blocked_fva = fva.loc[ (abs(fva['minimum']) < tol ) & (abs(fva['maximum']) < tol)]
         blocked_reactions = blocked_fva.index.tolist()
         
         return blocked_reactions
