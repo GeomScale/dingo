@@ -7,15 +7,23 @@ class PreProcess:
     
     def __init__(self, model):
         self.model = model
-    
+        
+    def objective_function(model):
+        
+        objective = str(model.summary()._objective)
+        objective = objective.split(" ")[1]
+        return objective
+
     def blocked_reactions(model):
         
+        objective = PreProcess.objective_function(model)
+    
         tol = 1e-6
 
-        model.objective = 'BIOMASS_Ecoli_core_w_GAM'
+        model.objective = objective
         fba_solution = model.optimize()
 
-        model.reactions.get_by_id("BIOMASS_Ecoli_core_w_GAM").lower_bound = fba_solution.objective_value
+        model.reactions.get_by_id(objective).lower_bound = fba_solution.objective_value
 
         fva = cobra.flux_analysis.flux_variability_analysis(model, fraction_of_optimum=0.95)
         blocked_fva = fva.loc[ (abs(fva['minimum']) < tol ) & (abs(fva['maximum']) < tol)]
@@ -25,6 +33,7 @@ class PreProcess:
 
 
 model = load_json_model("../ext_data/e_coli_core.json")
+
 blocked = PreProcess.blocked_reactions(model)
 print(blocked)
 
