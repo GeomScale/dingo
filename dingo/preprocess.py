@@ -1,6 +1,7 @@
 
 import cobra
 from cobra.io import load_json_model
+import cobra.manipulation
 
 
 class PreProcess:
@@ -53,7 +54,7 @@ class PreProcess:
         return mle
     
     
-    def remove_from_model(model):
+    def list_removed_reactions(model):
 
         remove_reactions = []
 
@@ -62,14 +63,26 @@ class PreProcess:
         zero_flux = PreProcess.zero_flux(model)
 
         remove_reactions = blocked+mle+zero_flux
-        remove_reactions_unique = list(set(remove_reactions))
+        list_removed_reactions = list(set(remove_reactions))
         
-        return remove_reactions_unique
+        return list_removed_reactions
         
+
+    def remove_model_reactions(model):
+        
+        list_removed_reactions = PreProcess.list_removed_reactions(model)
+        
+        for reaction in list_removed_reactions:
+            model.reactions.get_by_id(reaction).lower_bound = 0
+            model.reactions.get_by_id(reaction).upper_bound = 0
 
 
 model = load_json_model("../ext_data/e_coli_core.json")
 
-remove = PreProcess.remove_from_model(model)
-print(remove)
+#fba_solution = model.optimize()
+#print(fba_solution.objective_value)
 
+new_model = PreProcess.remove_model_reactions(model)
+
+#fba_solution = model.optimize()
+#print(fba_solution.objective_value)
