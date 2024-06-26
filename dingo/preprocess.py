@@ -2,6 +2,7 @@
 import cobra
 from cobra.io import load_json_model
 import cobra.manipulation
+from collections import Counter
 
 
 class PreProcess:
@@ -69,20 +70,71 @@ class PreProcess:
         
 
     def remove_model_reactions(model):
+                
+        removed_reactions_list = PreProcess.list_removed_reactions(model)
         
-        list_removed_reactions = PreProcess.list_removed_reactions(model)
-        
-        for reaction in list_removed_reactions:
+        for reaction in removed_reactions_list:
             model.reactions.get_by_id(reaction).lower_bound = 0
             model.reactions.get_by_id(reaction).upper_bound = 0
+            
+        return removed_reactions_list
+            
 
+    def possible_essential_reactions(model):
+        
+        tol = 30.0
+        removed_reactions_list = PreProcess.list_removed_reactions(model)    
+    
+        # find model reactions
+        reactions_list = []
+        
+        for reaction in model.reactions:
+            reaction_id = reaction.id
+            reactions_list.append(reaction_id)
+            
+        remained_reactions = list((Counter(reactions_list)-Counter(removed_reactions_list)).elements())
+   
+        # find essential reactions
+        essential_reactions_list = []
+        essential_reactions = cobra.flux_analysis.find_essential_reactions(model)
+        for reaction in essential_reactions:
+            reaction_id = reaction.id
+            essential_reactions_list.append(reaction_id)
+            
+        possible_essential = list((Counter(remained_reactions)-Counter(essential_reactions_list)).elements())
+        
+        print(possible_essential)
+        final_possible_essential = []
+
+        
+        for reaction in possible_essential:
+            
+            initial_lower = model.reactions.get_by_id(reaction).lower_bound
+            initial_upper = model.reactions.get_by_id(reaction).upper_bound
+                        
+            model.reactions.get_by_id(reaction).lower_bound = 0
+            model.reactions.get_by_id(reaction).upper_bound = 0
+    
+            fva = cobra.flux_analysis.flux_variability_analysis(model, fraction_of_optimum=0.01)
+            active = fva.loc[ (abs(fva['minimum']) > tol ) & (abs(fva['maximum']) > tol)]
+            active = active.index.tolist()
+                        
+            model.reactions.get_by_id(reaction).upper_bound = initial_upper
+            model.reactions.get_by_id(reaction).lower_bound = initial_lower
+                        
+            if len(active) != 0:
+                final_possible_essential.append(reaction)
+            
+        return final_possible_essential
+        
 
 model = load_json_model("../ext_data/e_coli_core.json")
 
-#fba_solution = model.optimize()
-#print(fba_solution.objective_value)
+fba_solution = model.optimize()
+print(fba_solution.objective_value)
 
-new_model = PreProcess.remove_model_reactions(model)
+possible_essentials = PreProcess.possible_essential_reactions(model)
+print(possible_essentials)
 
-#fba_solution = model.optimize()
-#print(fba_solution.objective_value)
+fba_solution = model.optimize()
+print(fba_solution.objective_value)
