@@ -9,128 +9,130 @@ class PreProcess:
     
     def __init__(self, model):
         self.model = model
+        self.objective = self.objective_function()
+        self.zero_flux_reactions = self.zero_flux()
+        self.blocked_reactions = self.blocked()
+        self.mle_reactions = self.metabolically_less_efficient()
+        self.removed_reactions = self.list_removed_reactions()
+        self.essential_reactions = self.possible_essential_reactions()
         
         
-    def objective_function(model):
+    def objective_function(self):
         
-        objective = str(model.summary()._objective)
+        objective = str(self.model.summary()._objective)
         objective = objective.split(" ")[1]
-        return objective
+        
+        self.objective = objective
+        return self.objective
     
 
-    def zero_flux(model):
+    def zero_flux(self):
         
         tol = 1e-6
         
-        fva = cobra.flux_analysis.flux_variability_analysis(model, fraction_of_optimum=0)
+        fva = cobra.flux_analysis.flux_variability_analysis(self.model, fraction_of_optimum=0.9)
         zero_flux = fva.loc[ (abs(fva['minimum']) < tol ) & (abs(fva['maximum']) < tol)]
-        zero_flux = zero_flux.index.tolist()
+        zero_flux_reactions = zero_flux.index.tolist()
         
-        return zero_flux
+        self.zero_flux_reactions = zero_flux_reactions
+        return self.zero_flux_reactions
     
     
-    def blocked(model):
+    def blocked(self):
         
-        return cobra.flux_analysis.find_blocked_reactions(model)
-    
+        blocked_reactions = cobra.flux_analysis.find_blocked_reactions(self.model)
+        self.blocked_reactions =  blocked_reactions
+        return self.blocked_reactions
 
-    def metabolically_less_efficient(model):
-        
-        objective = PreProcess.objective_function(model)
-    
+
+    # to add documentation comments
+    def metabolically_less_efficient(self):
+            
         tol = 1e-6
 
-        model.objective = objective
-        fba_solution = model.optimize()
+        self.model.objective = self.objective
+        fba_solution = self.model.optimize()
 
-        wt_lower_bound = model.reactions.get_by_id(objective).lower_bound
-        model.reactions.get_by_id(objective).lower_bound = fba_solution.objective_value
+        wt_lower_bound = self.model.reactions.get_by_id(self.objective).lower_bound
+        self.model.reactions.get_by_id(self.objective).lower_bound = fba_solution.objective_value
 
-        fva = cobra.flux_analysis.flux_variability_analysis(model, fraction_of_optimum=0.95)
+        fva = cobra.flux_analysis.flux_variability_analysis(self.model, fraction_of_optimum=0.95)
         mle = fva.loc[ (abs(fva['minimum']) < tol ) & (abs(fva['maximum']) < tol)]
         mle = mle.index.tolist()
         
-        model.reactions.get_by_id(objective).lower_bound = wt_lower_bound
+        self.model.reactions.get_by_id(self.objective).lower_bound = wt_lower_bound
         
-        return mle
+        self.mle_reactions = mle
+        return self.mle_reactions
     
     
-    def list_removed_reactions(model):
+    def list_removed_reactions(self):
 
         remove_reactions = []
 
-        blocked = PreProcess.blocked(model)
-        mle = PreProcess.metabolically_less_efficient(model)
-        zero_flux = PreProcess.zero_flux(model)
-
-        remove_reactions = blocked+mle+zero_flux
+        remove_reactions = self.blocked_reactions + self.mle_reactions + self.zero_flux_reactions
         list_removed_reactions = list(set(remove_reactions))
         
-        return list_removed_reactions
+        self.removed_reactions = list_removed_reactions
+        return self.removed_reactions
         
 
-    def remove_model_reactions(model):
-                
-        removed_reactions_list = PreProcess.list_removed_reactions(model)
-        
-        for reaction in removed_reactions_list:
-            model.reactions.get_by_id(reaction).lower_bound = 0
-            model.reactions.get_by_id(reaction).upper_bound = 0
+    def remove_model_reactions(self):
+                        
+        for reaction in self.removed_reactions:
+            self.model.reactions.get_by_id(reaction).lower_bound = 0
+            self.model.reactions.get_by_id(reaction).upper_bound = 0
             
-        return removed_reactions_list
+        return self.model
             
 
-    def possible_essential_reactions(model):
-        
-        removed_reactions_list = PreProcess.list_removed_reactions(model)  
-    
+    def possible_essential_reactions(self):
+            
         # find model reactions
         reactions_list = []
         
-        for reaction in model.reactions:
+        for reaction in self.model.reactions:
             reaction_id = reaction.id
             reactions_list.append(reaction_id)
             
-        remained_reactions = list((Counter(reactions_list)-Counter(removed_reactions_list)).elements())
+        remained_reactions = list((Counter(reactions_list)-Counter(self.removed_reactions)).elements())
    
         # find essential reactions
         essential_reactions_list = []
-        essential_reactions = cobra.flux_analysis.find_essential_reactions(model)
+        essential_reactions = cobra.flux_analysis.find_essential_reactions(self.model)
         for reaction in essential_reactions:
             reaction_id = reaction.id
             essential_reactions_list.append(reaction_id)
             
         possible_essential = list((Counter(remained_reactions)-Counter(essential_reactions_list)).elements())
-        print(possible_essential)
         
         
-        PreProcess.remove_model_reactions(model)
+        self.remove_model_reactions()
         
         
-        final_possible_essential = []
-
         for reaction in possible_essential:
-            print(reaction)
                         
-            initial_lower = model.reactions.get_by_id(reaction).lower_bound
-            initial_upper = model.reactions.get_by_id(reaction).upper_bound
+            initial_lower = self.model.reactions.get_by_id(reaction).lower_bound
+            initial_upper = self.model.reactions.get_by_id(reaction).upper_bound
             
-            fba_solution_before = model.optimize().objective_value
+            fba_solution_before = self.model.optimize().objective_value
 
-            model.reactions.get_by_id(reaction).lower_bound = 0.01 * initial_lower
-            model.reactions.get_by_id(reaction).upper_bound = 0.01 * initial_upper
+            self.model.reactions.get_by_id(reaction).lower_bound = 0.01 * initial_lower
+            self.model.reactions.get_by_id(reaction).upper_bound = 0.01 * initial_upper
     
-            fba_solution_after = model.optimize().objective_value
+            fba_solution_after = self.model.optimize().objective_value
                                    
             if fba_solution_after < fba_solution_before:
                 if abs(fba_solution_before)-abs(fba_solution_after) > 0.3:
-                    final_possible_essential.append(reaction)
+                    essential_reactions_list.append(reaction)
                     
-            model.reactions.get_by_id(reaction).upper_bound = initial_upper
-            model.reactions.get_by_id(reaction).lower_bound = initial_lower
+                    self.model.reactions.get_by_id(reaction).upper_bound = initial_upper
+                    self.model.reactions.get_by_id(reaction).lower_bound = initial_lower
             
             
-        return final_possible_essential
+        self.essential_reactions = essential_reactions_list
+        return self.essential_reactions
+        
         
 
 
@@ -139,8 +141,9 @@ model = load_json_model("../ext_data/e_coli_core.json")
 fba_solution = model.optimize()
 print(fba_solution.objective_value)
 
-possible_essentials = PreProcess.possible_essential_reactions(model)
-print(possible_essentials)
+obj = PreProcess(model)
+
+print(len(obj.essential_reactions))
 
 fba_solution = model.optimize()
 print(fba_solution.objective_value)
