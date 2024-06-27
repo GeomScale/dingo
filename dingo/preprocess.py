@@ -82,7 +82,6 @@ class PreProcess:
 
     def possible_essential_reactions(model):
         
-        tol = 1e-6
         removed_reactions_list = PreProcess.list_removed_reactions(model)  
     
         # find model reactions
@@ -111,25 +110,25 @@ class PreProcess:
         final_possible_essential = []
 
         for reaction in possible_essential:
-            
-            fva = cobra.flux_analysis.flux_variability_analysis(model, fraction_of_optimum=0.9)
-            disabled_before = fva.loc[ (abs(fva['minimum']) < tol ) & (abs(fva['maximum']) < tol)]
-            disabled_before = len(disabled_before.index.tolist())
-            
+            print(reaction)
+                        
             initial_lower = model.reactions.get_by_id(reaction).lower_bound
             initial_upper = model.reactions.get_by_id(reaction).upper_bound
-                      
-            model.reactions.get_by_id(reaction).lower_bound = 0
-            model.reactions.get_by_id(reaction).upper_bound = 0
+            
+            fba_solution_before = model.optimize().objective_value
+
+            model.reactions.get_by_id(reaction).lower_bound = 0.01 * initial_lower
+            model.reactions.get_by_id(reaction).upper_bound = 0.01 * initial_upper
     
-            fva = cobra.flux_analysis.flux_variability_analysis(model, fraction_of_optimum=0.9)
-            disabled_after = fva.loc[ (abs(fva['minimum']) < tol ) & (abs(fva['maximum']) < tol)]
-            disabled_after = len(disabled_after.index.tolist())
+            fba_solution_after = model.optimize().objective_value
                                    
-            if disabled_before != disabled_after:
-                final_possible_essential.append(reaction)
-                model.reactions.get_by_id(reaction).upper_bound = initial_upper
-                model.reactions.get_by_id(reaction).lower_bound = initial_lower
+            if fba_solution_after < fba_solution_before:
+                if abs(fba_solution_before)-abs(fba_solution_after) > 0.3:
+                    final_possible_essential.append(reaction)
+                    
+            model.reactions.get_by_id(reaction).upper_bound = initial_upper
+            model.reactions.get_by_id(reaction).lower_bound = initial_lower
+            
             
         return final_possible_essential
         
@@ -140,12 +139,8 @@ model = load_json_model("../ext_data/e_coli_core.json")
 fba_solution = model.optimize()
 print(fba_solution.objective_value)
 
-#possible_essentials = PreProcess.possible_essential_reactions(model)
-#print(possible_essentials)
-
-model.reactions.get_by_id("PFK").lower_bound = 0
-model.reactions.get_by_id("PFK").upper_bound = 0
-
+possible_essentials = PreProcess.possible_essential_reactions(model)
+print(possible_essentials)
 
 fba_solution = model.optimize()
 print(fba_solution.objective_value)
