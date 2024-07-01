@@ -3,7 +3,7 @@ import unittest
 import os
 from dingo.preprocess import PreProcess
 
-class TestFba(unittest.TestCase):
+class TestPreprocess(unittest.TestCase):
 
     def test_preprocess(self):
 
