@@ -134,17 +134,17 @@ class PreProcess:
         return self.essential_reactions
         
         
-#if __name__ == "__main__":
-#    PreProcess()    
+if __name__ == "__main__":
+    PreProcess()    
 
-model = load_json_model("../ext_data/e_coli_core.json")
+#model = load_json_model("ext_data/e_coli_core.json")
 
 #fba_solution = model.optimize()
 #print(fba_solution.objective_value)
 
-obj = PreProcess(model)
+#obj = preprocess(model)
 
-print(len(obj.essential_reactions))
+#print(len(obj.essential_reactions))
 
 #fba_solution = model.optimize()
 #print(fba_solution.objective_value)

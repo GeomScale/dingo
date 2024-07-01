@@ -1,17 +1,20 @@
 
+from cobra.io import load_json_model
+from dingo.preprocess import PreProcess
 import unittest
 import os
-from dingo.preprocess import PreProcess
+
 
 class TestPreprocess(unittest.TestCase):
 
     def test_preprocess(self):
 
-        input_file_json = os.getcwd() + "/ext_data/e_coli_core.json"
-        PreProcess.blocked(input_file_json)
-        #model = MetabolicNetwork.from_json(input_file_json)
+        model = load_json_model("ext_data/e_coli_core.json")
+        obj = PreProcess(model)
+        
+        essentials = len(obj.essential_reactions)
 
-        #self.assertTrue()
+        self.assertTrue( 27-essentials < 0.01)
         
         
 
