@@ -11,11 +11,10 @@ class TestPreprocess(unittest.TestCase):
 
         model = load_json_model("ext_data/e_coli_core.json")
         obj = PreProcess(model)
-        
-        essentials = len(obj.essential_reactions)
 
-        self.assertTrue( 27-essentials < 0.01)
+        removed_reactions_count = len(obj.removed_reactions_ids())
         
+        self.assertTrue( 55 - removed_reactions_count == 0 )
         
 
 if __name__ == "__main__":
