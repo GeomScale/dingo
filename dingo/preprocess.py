@@ -17,7 +17,6 @@ class PreProcess:
         self.mle_reactions = self.metabolically_less_efficient()
         self.removed_reactions = []
 
-
         
     def objective_function(self):
         """
@@ -40,6 +39,17 @@ class PreProcess:
             self.initial_reactions.append(reaction_id)
             
         return self.initial_reactions
+    
+    
+    def reaction_bounds_dictionary(self):
+        
+        self.reaction_bounds_dict = {
+                  'reaction': (0, 100)
+                  }
+                
+        for reaction_id in self.initial_reactions:
+            bounds = self.model.reactions.get_by_id(reaction_id).bounds
+            self.reaction_bounds_dict[reaction_id] = bounds
 
 
     def essentials(self):
@@ -103,17 +113,22 @@ class PreProcess:
     
     
     def remove_model_reactions(self):
-                        
+                                
         for reaction in self.removed_reactions:
             self.model.reactions.get_by_id(reaction).lower_bound = 0
             self.model.reactions.get_by_id(reaction).upper_bound = 0
             
         return self.model
-    
-            
-    def removed_reactions_ids(self):
         
-        #remove_reactions = []
+            
+    def removed(self, extend):
+        
+        tol = 1e-6
+        
+        if extend != 0 and extend != 1:
+            raise Exception("Wrong Input to extend parameter")
+        
+        
         blocked_mle_zero = self.blocked_reactions + self.mle_reactions + self.zero_flux_reactions
         list_removed_reactions = list(set(blocked_mle_zero))
         
@@ -122,10 +137,15 @@ class PreProcess:
         
         self.remove_model_reactions()
         
+                
         remained_reactions = list((Counter(self.initial_reactions)-Counter(self.removed_reactions)).elements())
         remained_reactions = list((Counter(remained_reactions)-Counter(self.essential_reactions)).elements())
    
+        additional_removed_reactions_count = 0
+        
         for reaction in remained_reactions:
+            
+            fba_solution_before = self.model.optimize().objective_value
                         
             initial_lower = self.model.reactions.get_by_id(reaction).lower_bound
             initial_upper = self.model.reactions.get_by_id(reaction).upper_bound
@@ -134,31 +154,53 @@ class PreProcess:
             self.model.reactions.get_by_id(reaction).upper_bound = 0
     
             fba_solution_after = self.model.optimize().objective_value
-            if (fba_solution_after == None) | (fba_solution_after == 0.0):
-                pass
-            else:
-                self.removed_reactions.append(reaction)
+            
+            if fba_solution_after != None and (extend == 1):
+                if (abs(fba_solution_after - fba_solution_before) < tol):
+                    self.removed_reactions.append(reaction)
+                    additional_removed_reactions_count += 1
               
             self.model.reactions.get_by_id(reaction).upper_bound = initial_upper
             self.model.reactions.get_by_id(reaction).lower_bound = initial_lower
             
             
-        self.remove_model_reactions()
-        print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model")
+        fba_solution_initial = model.optimize().objective_value
+        self.remove_model_reactions()        
+        fba_solution_final = model.optimize().objective_value
+        
+        additional_removed_reactions_list = (self.removed_reactions[len(self.removed_reactions)-additional_removed_reactions_count:])
+        
+        if (fba_solution_final == None):
+            for reaction in additional_removed_reactions_list:
+                self.model.reactions.get_by_id(reaction).bounds = self.reaction_bounds_dict[reaction]
+                self.removed_reactions.remove(reaction)
+            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model")
+
+        elif(abs(fba_solution_final - fba_solution_initial) > tol):
+            for reaction in additional_removed_reactions_list:
+                self.model.reactions.get_by_id(reaction).bounds = self.reaction_bounds_dict[reaction]
+                self.removed_reactions.remove(reaction)
+            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model") 
+
+        else:
+            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model")      
+        
+        
         return self.removed_reactions
      
         
 
 model = load_json_model("ext_data/e_coli_core.json")
+model = load_json_model("../../../iAF1260.json")
 
-#fba_solution = model.optimize()
-#print(fba_solution.objective_value)
+fba_solution = model.optimize()
+print(fba_solution.objective_value)
 
 obj = PreProcess(model)
-rem = obj.removed_reactions_ids()
+rem = obj.removed(extend=1)
 print(len(rem))
 
-#fba_solution = model.optimize()
-#print(fba_solution.objective_value)
+fba_solution = model.optimize()
+print(fba_solution.objective_value)
 
 
