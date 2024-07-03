@@ -1,8 +1,8 @@
 
 import cobra
-from cobra.io import load_json_model
 import cobra.manipulation
 from collections import Counter
+from dingo.loading_models import parse_cobra_model
 
 
 class PreProcess:
@@ -11,6 +11,7 @@ class PreProcess:
         self.model = model
         self.objective = self.objective_function()
         self.initial_reactions = self.initial()
+        self.reaction_bounds_dict = self.reaction_bounds_dictionary()
         self.essential_reactions = self.essentials()
         self.zero_flux_reactions = self.zero_flux()
         self.blocked_reactions = self.blocked()
@@ -31,6 +32,9 @@ class PreProcess:
 
 
     def initial(self):
+        """
+        A function used to find reaction ids of a model
+        """
         
         self.initial_reactions = []
         
@@ -42,6 +46,11 @@ class PreProcess:
     
     
     def reaction_bounds_dictionary(self):
+        """
+        A function used to create a dictionary that maps
+        reactions with reactions bounds. It is used to
+        later restore some bounds to wild-type values
+        """
         
         self.reaction_bounds_dict = {
                   'reaction': (0, 100)
@@ -50,9 +59,15 @@ class PreProcess:
         for reaction_id in self.initial_reactions:
             bounds = self.model.reactions.get_by_id(reaction_id).bounds
             self.reaction_bounds_dict[reaction_id] = bounds
+            
+        return self.reaction_bounds_dict
 
 
     def essentials(self):
+        """
+        A function used to find all essential reactions
+        and appends them in a list
+        """
         
         self.essential_reactions = []
         essential_reactions = cobra.flux_analysis.find_essential_reactions(self.model)
@@ -93,6 +108,13 @@ class PreProcess:
 
     # to add documentation comments
     def metabolically_less_efficient(self):
+        """
+        A function used to find metabolically less efficient reactions.
+        These reactions are found when running an FBA and setting the  
+        optimal growth rate as the lower bound of the objective function (in 
+        this case biomass production. After running an FVA with a fraction of optimum
+        set to 0.95, the reactions that have no flux are the metabolically less efficient.
+        """
             
         tol = 1e-6
 
@@ -113,6 +135,10 @@ class PreProcess:
     
     
     def remove_model_reactions(self):
+        """
+        A function used to set lower and upper bounds of certain reactions to 0
+        (it turns off reactions)
+        """
                                 
         for reaction in self.removed_reactions:
             self.model.reactions.get_by_id(reaction).lower_bound = 0
@@ -122,27 +148,34 @@ class PreProcess:
         
             
     def removed(self, extend):
+        """
+        A function that calls "remove_model_reactions" function
+        and removes blocked, zero-flux and metabolically less efficient reactions.
+        Then it finds the remaining reactions in the model after 
+        exclusion of the essential reactions.
+        
+        The "extend" parameter when set to 1 performes an additional check to remove
+        further reactions. These reactions are the ones that if knocked-down, they
+        do not affect the value of the objective function. These reactions 
+        are removed simultaneously. If the simultaneous removal produces an infesible
+        solution (or 0) to the objective function, they are restored with their initial bounds.
+        """        
+        
+        blocked_mle_zero = self.blocked_reactions + self.mle_reactions + self.zero_flux_reactions
+        list_removed_reactions = list(set(blocked_mle_zero))        
+        self.removed_reactions = list_removed_reactions
+   
+        self.remove_model_reactions()
+                     
+        remained_reactions = list((Counter(self.initial_reactions)-Counter(self.removed_reactions)).elements())
+        remained_reactions = list((Counter(remained_reactions)-Counter(self.essential_reactions)).elements())
         
         tol = 1e-6
         
         if extend != 0 and extend != 1:
             raise Exception("Wrong Input to extend parameter")
-        
-        
-        blocked_mle_zero = self.blocked_reactions + self.mle_reactions + self.zero_flux_reactions
-        list_removed_reactions = list(set(blocked_mle_zero))
-        
-        self.removed_reactions = list_removed_reactions
-   
-        
-        self.remove_model_reactions()
-        
-                
-        remained_reactions = list((Counter(self.initial_reactions)-Counter(self.removed_reactions)).elements())
-        remained_reactions = list((Counter(remained_reactions)-Counter(self.essential_reactions)).elements())
-   
-        additional_removed_reactions_count = 0
-        
+  
+        additional_removed_reactions_count = 0       
         for reaction in remained_reactions:
             
             fba_solution_before = self.model.optimize().objective_value
@@ -164,9 +197,10 @@ class PreProcess:
             self.model.reactions.get_by_id(reaction).lower_bound = initial_lower
             
             
-        fba_solution_initial = model.optimize().objective_value
+        fba_solution_initial = self.model.optimize().objective_value
         self.remove_model_reactions()        
-        fba_solution_final = model.optimize().objective_value
+        fba_solution_final = self.model.optimize().objective_value
+
         
         additional_removed_reactions_list = (self.removed_reactions[len(self.removed_reactions)-additional_removed_reactions_count:])
         
@@ -174,33 +208,24 @@ class PreProcess:
             for reaction in additional_removed_reactions_list:
                 self.model.reactions.get_by_id(reaction).bounds = self.reaction_bounds_dict[reaction]
                 self.removed_reactions.remove(reaction)
-            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model")
+            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model with extend set to", extend)
 
         elif(abs(fba_solution_final - fba_solution_initial) > tol):
             for reaction in additional_removed_reactions_list:
                 self.model.reactions.get_by_id(reaction).bounds = self.reaction_bounds_dict[reaction]
                 self.removed_reactions.remove(reaction)
-            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model") 
+            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model with extend set to", extend) 
 
         else:
-            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model")      
-        
+            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model with extend set to", extend)      
         
         return self.removed_reactions
-     
-        
-
-model = load_json_model("ext_data/e_coli_core.json")
-model = load_json_model("../../../iAF1260.json")
-
-fba_solution = model.optimize()
-print(fba_solution.objective_value)
-
-obj = PreProcess(model)
-rem = obj.removed(extend=1)
-print(len(rem))
-
-fba_solution = model.optimize()
-print(fba_solution.objective_value)
-
+    
+    
+    def dingo_model_conversion(self):
+        """
+        A function used to convert the reduced cobra model to a dingo model
+        """
+        dingo_model = parse_cobra_model(self.model)
+        return dingo_model
 
