@@ -16,6 +16,7 @@ class PreProcess:
         self.zero_flux_reactions = self.zero_flux()
         self.blocked_reactions = self.blocked()
         self.mle_reactions = self.metabolically_less_efficient()
+        self.dingo_model = self.cobra_dingo_conversion()
         self.removed_reactions = []
 
         
@@ -145,9 +146,17 @@ class PreProcess:
             self.model.reactions.get_by_id(reaction).upper_bound = 0
             
         return self.model
-        
+    
+    
+    def cobra_dingo_conversion(self):
+        """
+        A function used to convert the reduced cobra model to a dingo model
+        """
+        self.dingo_model = parse_cobra_model(self.model)
+        return self.dingo_model
+   
             
-    def removed(self, extend):
+    def reduce(self, extend):
         """
         A function that calls "remove_model_reactions" function
         and removes blocked, zero-flux and metabolically less efficient reactions.
@@ -159,6 +168,13 @@ class PreProcess:
         do not affect the value of the objective function. These reactions 
         are removed simultaneously. If the simultaneous removal produces an infesible
         solution (or 0) to the objective function, they are restored with their initial bounds.
+        
+        The dingo model is then created from the cobra model 
+        using the "cobra_dingo_conversion" function.
+        
+        The outputs are
+        (a) A list of the removed reactions ids
+        (b) The reduced dingo model
         """        
         
         blocked_mle_zero = self.blocked_reactions + self.mle_reactions + self.zero_flux_reactions
@@ -217,15 +233,7 @@ class PreProcess:
             print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model with extend set to", extend) 
 
         else:
-            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model with extend set to", extend)      
+            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model with extend set to", extend)
+            
         
-        return self.removed_reactions
-    
-    
-    def dingo_model_conversion(self):
-        """
-        A function used to convert the reduced cobra model to a dingo model
-        """
-        dingo_model = parse_cobra_model(self.model)
-        return dingo_model
-
+        return self.removed_reactions, self.cobra_dingo_conversion() 
