@@ -2,84 +2,84 @@
 import cobra
 import cobra.manipulation
 from collections import Counter
-from dingo.loading_models import parse_cobra_model
+from dingo import MetabolicNetwork
 
 
 class PreProcess:
     
     def __init__(self, model):
-        self.model = model
-        self.objective = self.__objective_function()
-        self.initial_reactions = self.__initial()
-        self.reaction_bounds_dict = self.__reaction_bounds_dictionary()
-        self.essential_reactions = self.__essentials()
-        self.zero_flux_reactions = self.__zero_flux()
-        self.blocked_reactions = self.__blocked()
-        self.mle_reactions = self.__metabolically_less_efficient()
-        self.dingo_tuple = self.__cobra_dingo_tuple()
-        self.removed_reactions = []
 
-        
-    def __objective_function(self):
+        self._model = model
+        self._objective = self._objective_function()
+        self._initial_reactions = self._initial()
+        self._reaction_bounds_dict = self._reaction_bounds_dictionary()
+        self._essential_reactions = self._essentials()
+        self._zero_flux_reactions = self._zero_flux()
+        self._blocked_reactions = self._blocked()
+        self._mle_reactions = self._metabolically_less_efficient()
+        self._removed_reactions = []
+
+
+    def _objective_function(self):
         """
         A function used to find the objective function of a model
         """
         
-        objective = str(self.model.summary()._objective)
+        objective = str(self._model.summary()._objective)
         objective = objective.split(" ")[1]
         
-        self.objective = objective
-        return self.objective
+        self._objective = objective
+        return self._objective
 
 
-    def __initial(self):
+    def _initial(self):
         """
         A function used to find reaction ids of a model
         """
         
-        self.initial_reactions = []
+        self._initial_reactions = []
         
-        for reaction in self.model.reactions:
+        for reaction in self._model.reactions:
             reaction_id = reaction.id
-            self.initial_reactions.append(reaction_id)
+            self._initial_reactions.append(reaction_id)
             
-        return self.initial_reactions
+        return self._initial_reactions
     
     
-    def __reaction_bounds_dictionary(self):
+    def _reaction_bounds_dictionary(self):
         """
         A function used to create a dictionary that maps
         reactions with their corresponding bounds. It is used to
         later restore bounds to their wild-type values
         """
         
-        self.reaction_bounds_dict = {
-                  'reaction': (0, 100)
+        self._reaction_bounds_dict = {
+                  'reaction': (0, 1000)
                   }
                 
-        for reaction_id in self.initial_reactions:
-            bounds = self.model.reactions.get_by_id(reaction_id).bounds
-            self.reaction_bounds_dict[reaction_id] = bounds
+        for reaction_id in self._initial_reactions:
+            bounds = self._model.reactions.get_by_id(reaction_id).bounds
+            self._reaction_bounds_dict[reaction_id] = bounds
             
-        return self.reaction_bounds_dict
+        return self._reaction_bounds_dict
 
 
-    def __essentials(self):
+    def _essentials(self):
         """
         A function used to find all the essential reactions
         and append them into a list
         """
         
-        self.essential_reactions = []
-        essential_reactions = cobra.flux_analysis.find_essential_reactions(self.model)
+        self._essential_reactions = []
+        essential_reactions = cobra.flux_analysis.find_essential_reactions(self._model)
         for reaction in essential_reactions:
             reaction_id = reaction.id
-            self.essential_reactions.append(reaction_id)
+            self._essential_reactions.append(reaction_id)
             
-        return self.essential_reactions
+        return self._essential_reactions
     
 
-    def __zero_flux(self):
+    def _zero_flux(self):
         """
         A function used to find zero-flux reactions.
         These reactions are the ones that have a flux equaled to 0
@@ -88,26 +88,26 @@ class PreProcess:
         
         tol = 1e-6
         
-        fva = cobra.flux_analysis.flux_variability_analysis(self.model, fraction_of_optimum=0.9)
+        fva = cobra.flux_analysis.flux_variability_analysis(self._model, fraction_of_optimum=0.9)
         zero_flux = fva.loc[ (abs(fva['minimum']) < tol ) & (abs(fva['maximum']) < tol)]
         zero_flux_reactions = zero_flux.index.tolist()
         
-        self.zero_flux_reactions = zero_flux_reactions
-        return self.zero_flux_reactions
+        self._zero_flux_reactions = zero_flux_reactions
+        return self._zero_flux_reactions
     
     
-    def __blocked(self):
+    def _blocked(self):
         """
         A function used to find blocked reactions.
         These reactions can not have any flux other than 0
         """
         
-        blocked_reactions = cobra.flux_analysis.find_blocked_reactions(self.model)
-        self.blocked_reactions =  blocked_reactions
-        return self.blocked_reactions
+        blocked_reactions = cobra.flux_analysis.find_blocked_reactions(self._model)
+        self._blocked_reactions =  blocked_reactions
+        return self._blocked_reactions
 
 
-    def __metabolically_less_efficient(self):
+    def _metabolically_less_efficient(self):
         """
         A function used to find metabolically less efficient reactions.
         These reactions are found when running an FBA and setting the  
@@ -118,44 +118,33 @@ class PreProcess:
             
         tol = 1e-6
 
-        self.model.objective = self.objective
-        fba_solution = self.model.optimize()
+        self._model.objective = self._objective
+        fba_solution = self._model.optimize()
 
-        wt_lower_bound = self.model.reactions.get_by_id(self.objective).lower_bound
-        self.model.reactions.get_by_id(self.objective).lower_bound = fba_solution.objective_value
+        wt_lower_bound = self._model.reactions.get_by_id(self._objective).lower_bound
+        self._model.reactions.get_by_id(self._objective).lower_bound = fba_solution.objective_value
 
-        fva = cobra.flux_analysis.flux_variability_analysis(self.model, fraction_of_optimum=0.95)
+        fva = cobra.flux_analysis.flux_variability_analysis(self._model, fraction_of_optimum=0.95)
         mle = fva.loc[ (abs(fva['minimum']) < tol ) & (abs(fva['maximum']) < tol)]
         mle = mle.index.tolist()
         
-        self.model.reactions.get_by_id(self.objective).lower_bound = wt_lower_bound
+        self._model.reactions.get_by_id(self._objective).lower_bound = wt_lower_bound
         
-        self.mle_reactions = mle
-        return self.mle_reactions
+        self._mle_reactions = mle
+        return self._mle_reactions
     
     
-    def __remove_model_reactions(self):
+    def _remove_model_reactions(self):
         """
         A function used to set the lower and upper bounds of certain reactions to 0
         (it turns off reactions)
         """
                                 
-        for reaction in self.removed_reactions:
-            self.model.reactions.get_by_id(reaction).lower_bound = 0
-            self.model.reactions.get_by_id(reaction).upper_bound = 0
+        for reaction in self._removed_reactions:
+            self._model.reactions.get_by_id(reaction).lower_bound = 0
+            self._model.reactions.get_by_id(reaction).upper_bound = 0
             
-        return self.model
-    
-    
-    def __cobra_dingo_tuple(self):
-        """
-        A function used to convert the reduced cobra model to a dingo-type tuple
-        """
-        self.dingo_tuple = parse_cobra_model(self.model)
-        new_lb = self.dingo_tuple[0]
-        new_ub = self.dingo_tuple[1]
-        
-        return new_lb, new_ub
+        return self._model
    
             
     def reduce(self, extend):
@@ -180,20 +169,19 @@ class PreProcess:
         
         The outputs are
         (a) A list of the removed reactions ids
-        (b) The updated reactions lower bounds
-        (c) The updated reactions upper bounds
+        (b) A reduced dingo model
         """        
         
         # create a list from the combined blocked, zero-flux, mle reactions
-        blocked_mle_zero = self.blocked_reactions + self.mle_reactions + self.zero_flux_reactions
+        blocked_mle_zero = self._blocked_reactions + self._mle_reactions + self._zero_flux_reactions
         list_removed_reactions = list(set(blocked_mle_zero))        
-        self.removed_reactions = list_removed_reactions
+        self._removed_reactions = list_removed_reactions
    
         # remove these reactions from the model
-        self.__remove_model_reactions()
+        self._remove_model_reactions()
                      
-        remained_reactions = list((Counter(self.initial_reactions)-Counter(self.removed_reactions)).elements())
-        remained_reactions = list((Counter(remained_reactions)-Counter(self.essential_reactions)).elements())
+        remained_reactions = list((Counter(self._initial_reactions)-Counter(self._removed_reactions)).elements())
+        remained_reactions = list((Counter(remained_reactions)-Counter(self._essential_reactions)).elements())
         
         tol = 1e-6
         
@@ -204,54 +192,54 @@ class PreProcess:
         additional_removed_reactions_count = 0       
         for reaction in remained_reactions:
             
-            fba_solution_before = self.model.optimize().objective_value
+            fba_solution_before = self._model.optimize().objective_value
                         
-            initial_lower = self.model.reactions.get_by_id(reaction).lower_bound
-            initial_upper = self.model.reactions.get_by_id(reaction).upper_bound
+            initial_lower = self._model.reactions.get_by_id(reaction).lower_bound
+            initial_upper = self._model.reactions.get_by_id(reaction).upper_bound
             
             # perform a knock-out and check the output
-            self.model.reactions.get_by_id(reaction).lower_bound = 0
-            self.model.reactions.get_by_id(reaction).upper_bound = 0
+            self._model.reactions.get_by_id(reaction).lower_bound = 0
+            self._model.reactions.get_by_id(reaction).upper_bound = 0
     
-            fba_solution_after = self.model.optimize().objective_value
+            fba_solution_after = self._model.optimize().objective_value
             
             if fba_solution_after != None and (extend == 1):
                 if (abs(fba_solution_after - fba_solution_before) < tol):
-                    self.removed_reactions.append(reaction)
+                    self._removed_reactions.append(reaction)
                     additional_removed_reactions_count += 1
               
-            self.model.reactions.get_by_id(reaction).upper_bound = initial_upper
-            self.model.reactions.get_by_id(reaction).lower_bound = initial_lower
+            self._model.reactions.get_by_id(reaction).upper_bound = initial_upper
+            self._model.reactions.get_by_id(reaction).lower_bound = initial_lower
             
             
         # compare FBA solution before and after the removal of additional reactions
-        fba_solution_initial = self.model.optimize().objective_value
-        self.__remove_model_reactions()        
-        fba_solution_final = self.model.optimize().objective_value
+        fba_solution_initial = self._model.optimize().objective_value
+        self._remove_model_reactions()        
+        fba_solution_final = self._model.optimize().objective_value
 
         
         # get a list of the additional reactions to be removed
-        additional_removed_reactions_list = (self.removed_reactions[len(self.removed_reactions)-additional_removed_reactions_count:])
+        additional_removed_reactions_list = (self._removed_reactions[len(self._removed_reactions)-additional_removed_reactions_count:])
         
         # if FBA solution after removal is infesible or altered
         # restore the initial reactions bounds
         if (fba_solution_final == None):
             for reaction in additional_removed_reactions_list:
-                self.model.reactions.get_by_id(reaction).bounds = self.reaction_bounds_dict[reaction]
-                self.removed_reactions.remove(reaction)
-            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model with extend set to", extend)
+                self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
+                self._removed_reactions.remove(reaction)
+            print(len(self._removed_reactions), "of the", len(self._initial_reactions), "reactions were removed from the model with extend set to", extend)
 
         elif(abs(fba_solution_final - fba_solution_initial) > tol):
             for reaction in additional_removed_reactions_list:
-                self.model.reactions.get_by_id(reaction).bounds = self.reaction_bounds_dict[reaction]
+                self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
                 self.removed_reactions.remove(reaction)
-            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model with extend set to", extend) 
+            print(len(self._removed_reactions), "of the", len(self._initial_reactions), "reactions were removed from the model with extend set to", extend) 
 
         else:
-            print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model with extend set to", extend)
+            print(len(self._removed_reactions), "of the", len(self._initial_reactions), "reactions were removed from the model with extend set to", extend)
 
     
-        # call this functon to get updated bounds
-        new_lower_bounds, new_upper_bounds = self.__cobra_dingo_tuple()
+        # call this functon to convert cobra to dingo model
+        self._dingo_model = MetabolicNetwork.from_cobra_model(self._model)
 
-        return self.removed_reactions, new_lower_bounds, new_upper_bounds
+        return self._removed_reactions, self._dingo_model 
