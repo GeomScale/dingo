@@ -9,20 +9,20 @@ class PreProcess:
     
     def __init__(self, model):
         self.model = model
-        self.objective = self.objective_function()
-        self.initial_reactions = self.initial()
-        self.reaction_bounds_dict = self.reaction_bounds_dictionary()
-        self.essential_reactions = self.essentials()
-        self.zero_flux_reactions = self.zero_flux()
-        self.blocked_reactions = self.blocked()
-        self.mle_reactions = self.metabolically_less_efficient()
-        self.dingo_model = self.cobra_dingo_conversion()
+        self.objective = self.__objective_function()
+        self.initial_reactions = self.__initial()
+        self.reaction_bounds_dict = self.__reaction_bounds_dictionary()
+        self.essential_reactions = self.__essentials()
+        self.zero_flux_reactions = self.__zero_flux()
+        self.blocked_reactions = self.__blocked()
+        self.mle_reactions = self.__metabolically_less_efficient()
+        self.dingo_tuple = self.__cobra_dingo_tuple()
         self.removed_reactions = []
 
         
-    def objective_function(self):
+    def __objective_function(self):
         """
-        A function  used to find the objective function of a model
+        A function used to find the objective function of a model
         """
         
         objective = str(self.model.summary()._objective)
@@ -32,7 +32,7 @@ class PreProcess:
         return self.objective
 
 
-    def initial(self):
+    def __initial(self):
         """
         A function used to find reaction ids of a model
         """
@@ -46,11 +46,11 @@ class PreProcess:
         return self.initial_reactions
     
     
-    def reaction_bounds_dictionary(self):
+    def __reaction_bounds_dictionary(self):
         """
         A function used to create a dictionary that maps
-        reactions with reactions bounds. It is used to
-        later restore some bounds to wild-type values
+        reactions with their corresponding bounds. It is used to
+        later restore bounds to their wild-type values
         """
         
         self.reaction_bounds_dict = {
@@ -64,10 +64,10 @@ class PreProcess:
         return self.reaction_bounds_dict
 
 
-    def essentials(self):
+    def __essentials(self):
         """
-        A function used to find all essential reactions
-        and appends them in a list
+        A function used to find all the essential reactions
+        and append them into a list
         """
         
         self.essential_reactions = []
@@ -79,11 +79,11 @@ class PreProcess:
         return self.essential_reactions
     
 
-    def zero_flux(self):
+    def __zero_flux(self):
         """
         A function used to find zero-flux reactions.
         These reactions are the ones that have a flux equaled to 0
-        when running FVA analysis with fraction of optimum set to 90%
+        when running a FVA analysis with the fraction of optimum set to 90%
         """
         
         tol = 1e-6
@@ -96,7 +96,7 @@ class PreProcess:
         return self.zero_flux_reactions
     
     
-    def blocked(self):
+    def __blocked(self):
         """
         A function used to find blocked reactions.
         These reactions can not have any flux other than 0
@@ -107,13 +107,12 @@ class PreProcess:
         return self.blocked_reactions
 
 
-    # to add documentation comments
-    def metabolically_less_efficient(self):
+    def __metabolically_less_efficient(self):
         """
         A function used to find metabolically less efficient reactions.
         These reactions are found when running an FBA and setting the  
         optimal growth rate as the lower bound of the objective function (in 
-        this case biomass production. After running an FVA with a fraction of optimum
+        this case biomass production. After running an FVA with the fraction of optimum
         set to 0.95, the reactions that have no flux are the metabolically less efficient.
         """
             
@@ -135,9 +134,9 @@ class PreProcess:
         return self.mle_reactions
     
     
-    def remove_model_reactions(self):
+    def __remove_model_reactions(self):
         """
-        A function used to set lower and upper bounds of certain reactions to 0
+        A function used to set the lower and upper bounds of certain reactions to 0
         (it turns off reactions)
         """
                                 
@@ -148,33 +147,41 @@ class PreProcess:
         return self.model
     
     
-    def cobra_dingo_conversion(self):
+    def __cobra_dingo_tuple(self):
         """
-        A function used to convert the reduced cobra model to a dingo model
+        A function used to convert the reduced cobra model to a dingo-type tuple
         """
-        self.dingo_model = parse_cobra_model(self.model)
-        return self.dingo_model
+        self.dingo_tuple = parse_cobra_model(self.model)
+        new_lb = self.dingo_tuple[0]
+        new_ub = self.dingo_tuple[1]
+        
+        return new_lb, new_ub
    
             
     def reduce(self, extend):
         """
-        A function that calls "remove_model_reactions" function
-        and removes blocked, zero-flux and metabolically less efficient reactions.
+        A function that calls the "remove_model_reactions" function
+        and removes blocked, zero-flux and metabolically less efficient 
+        reactions from the model.
+        
         Then it finds the remaining reactions in the model after 
         exclusion of the essential reactions.
         
-        The "extend" parameter when set to 1 performes an additional check to remove
-        further reactions. These reactions are the ones that if knocked-down, they
-        do not affect the value of the objective function. These reactions 
-        are removed simultaneously. If the simultaneous removal produces an infesible
-        solution (or 0) to the objective function, they are restored with their initial bounds.
+        When the "extend" parameter is set to 1, the function  performes
+        an additional check to remove further reactions. These reactions 
+        are the ones that if knocked-down, they do not affect the value 
+        of the objective function. These reactions are removed simultaneously
+        from the model. If this simultaneous removal produces an infesible
+        solution (or a solution of 0) to the objective function, 
+        these reactions are restored with their initial bounds.
         
-        The dingo model is then created from the cobra model 
-        using the "cobra_dingo_conversion" function.
+        A dingo-type tuple is then created from the cobra model 
+        using the "cobra_dingo_tuple" function.
         
         The outputs are
         (a) A list of the removed reactions ids
-        (b) The reduced dingo model
+        (b) The updated reactions lower bounds
+        (c) The updated reactions upper bounds
         """        
         
         # create a list from the combined blocked, zero-flux, mle reactions
@@ -183,7 +190,7 @@ class PreProcess:
         self.removed_reactions = list_removed_reactions
    
         # remove these reactions from the model
-        self.remove_model_reactions()
+        self.__remove_model_reactions()
                      
         remained_reactions = list((Counter(self.initial_reactions)-Counter(self.removed_reactions)).elements())
         remained_reactions = list((Counter(remained_reactions)-Counter(self.essential_reactions)).elements())
@@ -219,10 +226,11 @@ class PreProcess:
             
         # compare FBA solution before and after the removal of additional reactions
         fba_solution_initial = self.model.optimize().objective_value
-        self.remove_model_reactions()        
+        self.__remove_model_reactions()        
         fba_solution_final = self.model.optimize().objective_value
 
         
+        # get a list of the additional reactions to be removed
         additional_removed_reactions_list = (self.removed_reactions[len(self.removed_reactions)-additional_removed_reactions_count:])
         
         # if FBA solution after removal is infesible or altered
@@ -241,6 +249,9 @@ class PreProcess:
 
         else:
             print(len(self.removed_reactions), "of the", len(self.initial_reactions), "reactions were removed from the model with extend set to", extend)
-            
-        
-        return self.removed_reactions, self.cobra_dingo_conversion() 
+
+    
+        # call this functon to get updated bounds
+        new_lower_bounds, new_upper_bounds = self.__cobra_dingo_tuple()
+
+        return self.removed_reactions, new_lower_bounds, new_upper_bounds
