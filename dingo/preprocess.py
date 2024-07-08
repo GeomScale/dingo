@@ -177,10 +177,12 @@ class PreProcess:
         (b) The reduced dingo model
         """        
         
+        # create a list from the combined blocked, zero-flux, mle reactions
         blocked_mle_zero = self.blocked_reactions + self.mle_reactions + self.zero_flux_reactions
         list_removed_reactions = list(set(blocked_mle_zero))        
         self.removed_reactions = list_removed_reactions
    
+        # remove these reactions from the model
         self.remove_model_reactions()
                      
         remained_reactions = list((Counter(self.initial_reactions)-Counter(self.removed_reactions)).elements())
@@ -191,6 +193,7 @@ class PreProcess:
         if extend != 0 and extend != 1:
             raise Exception("Wrong Input to extend parameter")
   
+        # find additional reactions with a possibility of removal
         additional_removed_reactions_count = 0       
         for reaction in remained_reactions:
             
@@ -199,6 +202,7 @@ class PreProcess:
             initial_lower = self.model.reactions.get_by_id(reaction).lower_bound
             initial_upper = self.model.reactions.get_by_id(reaction).upper_bound
             
+            # perform a knock-out and check the output
             self.model.reactions.get_by_id(reaction).lower_bound = 0
             self.model.reactions.get_by_id(reaction).upper_bound = 0
     
@@ -213,6 +217,7 @@ class PreProcess:
             self.model.reactions.get_by_id(reaction).lower_bound = initial_lower
             
             
+        # compare FBA solution before and after the removal of additional reactions
         fba_solution_initial = self.model.optimize().objective_value
         self.remove_model_reactions()        
         fba_solution_final = self.model.optimize().objective_value
@@ -220,6 +225,8 @@ class PreProcess:
         
         additional_removed_reactions_list = (self.removed_reactions[len(self.removed_reactions)-additional_removed_reactions_count:])
         
+        # if FBA solution after removal is infesible or altered
+        # restore the initial reactions bounds
         if (fba_solution_final == None):
             for reaction in additional_removed_reactions_list:
                 self.model.reactions.get_by_id(reaction).bounds = self.reaction_bounds_dict[reaction]
