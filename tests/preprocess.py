@@ -3,7 +3,7 @@ from cobra.io import load_json_model
 from dingo.preprocess import PreProcess
 import unittest
 import numpy as np
-
+import cobra
 
 class TestPreprocess(unittest.TestCase):
 
@@ -20,16 +20,16 @@ class TestPreprocess(unittest.TestCase):
 
 
         # call the reduce function from the PreProcess class 
-        # with extend=0 to remove reactions from the model        
-        obj = PreProcess(cobra_model)  
-        removed_reactions, dingo_model = obj.reduce(extend=0)      
+        # with extend=False to remove reactions from the model        
+        obj = PreProcess(cobra_model, open_exchanges=False)  
+        removed_reactions, dingo_model = obj.reduce(extend=False)      
         
-        # calculate the count of removed reactions with extend set to 0        
+        # calculate the count of removed reactions with extend set to False        
         removed_reactions_count = len(removed_reactions)
         self.assertTrue( 46 - removed_reactions_count == 0 )
 
         # calculate the count of reactions with bounds equal to 0 
-        # with extend set to 0 from the dingo model
+        # with extend set to False from the dingo model
         dingo_removed_reactions = np.sum((dingo_model.lb == 0) & (dingo_model.ub == 0))
         self.assertTrue( 46 - dingo_removed_reactions == 0 )
         
@@ -43,22 +43,22 @@ class TestPreprocess(unittest.TestCase):
         cobra_model = load_json_model("ext_data/e_coli_core.json")        
 
         # call the reduce function from the PreProcess class 
-        # with extend=1 to remove additional reactions from the model        
-        obj = PreProcess(cobra_model)        
-        removed_reactions, dingo_model = obj.reduce(extend=1)        
+        # with extend=True to remove additional reactions from the model        
+        obj = PreProcess(cobra_model, open_exchanges=False)        
+        removed_reactions, dingo_model = obj.reduce(extend=True)        
     
-        # calculate the count of removed reactions with extend set to 1        
+        # calculate the count of removed reactions with extend set to True        
         removed_reactions_count = len(removed_reactions)
         self.assertTrue( 47 - removed_reactions_count == 0 )
 
         # calculate the count of reactions with bounds equal to 0 
-        # with extend set to 1 from the dingo model
+        # with extend set to True from the dingo model
         dingo_removed_reactions = np.sum((dingo_model.lb == 0) & (dingo_model.ub == 0))
         self.assertTrue( 47 - dingo_removed_reactions == 0 )
         
         # perform an FBA to check the result after reactions removal
         res = dingo_model.fba()
-        self.assertTrue(abs(res[1] - 0.8739215067486387) < 1e-03)       
+        self.assertTrue(abs(res[1] - 0.8739215067486387) < 1e-03)   
 
 
 if __name__ == "__main__":

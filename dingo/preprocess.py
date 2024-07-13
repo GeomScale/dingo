@@ -7,9 +7,10 @@ from dingo import MetabolicNetwork
 
 class PreProcess:
     
-    def __init__(self, model):
+    def __init__(self, model, open_exchanges=False):
 
         self._model = model
+        self._open_exchanges = open_exchanges
         self._objective = self._objective_function()
         self._initial_reactions = self._initial()
         self._reaction_bounds_dict = self._reaction_bounds_dictionary()
@@ -26,9 +27,8 @@ class PreProcess:
         """
         
         objective = str(self._model.summary()._objective)
-        objective = objective.split(" ")[1]
+        self._objective = objective.split(" ")[1]
         
-        self._objective = objective
         return self._objective
 
 
@@ -37,12 +37,9 @@ class PreProcess:
         A function used to find reaction ids of a model
         """
         
-        self._initial_reactions = []
-        
-        for reaction in self._model.reactions:
-            reaction_id = reaction.id
-            self._initial_reactions.append(reaction_id)
-            
+        self._initial_reactions =  [ reaction.id for reaction in \
+        self._model.reactions ]
+                    
         return self._initial_reactions
     
     
@@ -53,9 +50,7 @@ class PreProcess:
         later restore bounds to their wild-type values
         """
         
-        self._reaction_bounds_dict = {
-                  'reaction': (0, 1000)
-                  }
+        self._reaction_bounds_dict = { }
                 
         for reaction_id in self._initial_reactions:
             bounds = self._model.reactions.get_by_id(reaction_id).bounds
@@ -67,22 +62,23 @@ class PreProcess:
     def _essentials(self):
         """
         A function used to find all the essential reactions
-        and append them into a list
+        and append them into a list. Essential reactions are
+        the ones that are required for growth. If removed the 
+        objective function gets zeroed.
         """
         
-        self._essential_reactions = []
-        essential_reactions = cobra.flux_analysis.find_essential_reactions(self._model)
-        for reaction in essential_reactions:
-            reaction_id = reaction.id
-            self._essential_reactions.append(reaction_id)
-            
+        self._essential_reactions =  [ reaction.id for reaction in \
+        cobra.flux_analysis.find_essential_reactions(self._model) ]
+                    
         return self._essential_reactions
     
 
     def _zero_flux(self):
         """
         A function used to find zero-flux reactions.
-        These reactions are the ones that have a flux equaled to 0
+        “Zero-flux” reactions cannot carry a flux while maintaining 
+        at least 90% of the maximum growth rate.
+        These reactions have both a min and a max flux equal to 0,
         when running a FVA analysis with the fraction of optimum set to 90%
         """
         
@@ -90,26 +86,26 @@ class PreProcess:
         
         fva = cobra.flux_analysis.flux_variability_analysis(self._model, fraction_of_optimum=0.9)
         zero_flux = fva.loc[ (abs(fva['minimum']) < tol ) & (abs(fva['maximum']) < tol)]
-        zero_flux_reactions = zero_flux.index.tolist()
+        self._zero_flux_reactions = zero_flux.index.tolist()
         
-        self._zero_flux_reactions = zero_flux_reactions
         return self._zero_flux_reactions
     
     
     def _blocked(self):
         """
         A function used to find blocked reactions.
+        "Blocked" reactions that cannot carry a flux in any condition.
         These reactions can not have any flux other than 0
         """
         
-        blocked_reactions = cobra.flux_analysis.find_blocked_reactions(self._model)
-        self._blocked_reactions =  blocked_reactions
+        self._blocked_reactions = cobra.flux_analysis.find_blocked_reactions(self._model, open_exchanges=self._open_exchanges)
         return self._blocked_reactions
 
 
     def _metabolically_less_efficient(self):
         """
         A function used to find metabolically less efficient reactions.
+        "Metabolically less efficient" require a reduction in growth rate if used
         These reactions are found when running an FBA and setting the  
         optimal growth rate as the lower bound of the objective function (in 
         this case biomass production. After running an FVA with the fraction of optimum
@@ -118,7 +114,6 @@ class PreProcess:
             
         tol = 1e-6
 
-        self._model.objective = self._objective
         fba_solution = self._model.optimize()
 
         wt_lower_bound = self._model.reactions.get_by_id(self._objective).lower_bound
@@ -126,11 +121,10 @@ class PreProcess:
 
         fva = cobra.flux_analysis.flux_variability_analysis(self._model, fraction_of_optimum=0.95)
         mle = fva.loc[ (abs(fva['minimum']) < tol ) & (abs(fva['maximum']) < tol)]
-        mle = mle.index.tolist()
+        self._mle_reactions = mle.index.tolist()
         
         self._model.reactions.get_by_id(self._objective).lower_bound = wt_lower_bound
         
-        self._mle_reactions = mle
         return self._mle_reactions
     
     
@@ -147,7 +141,7 @@ class PreProcess:
         return self._model
    
             
-    def reduce(self, extend):
+    def reduce(self, extend=False):
         """
         A function that calls the "remove_model_reactions" function
         and removes blocked, zero-flux and metabolically less efficient 
@@ -156,7 +150,7 @@ class PreProcess:
         Then it finds the remaining reactions in the model after 
         exclusion of the essential reactions.
         
-        When the "extend" parameter is set to 1, the function  performes
+        When the "extend" parameter is set to True, the function  performes
         an additional check to remove further reactions. These reactions 
         are the ones that if knocked-down, they do not affect the value 
         of the objective function. These reactions are removed simultaneously
@@ -185,61 +179,70 @@ class PreProcess:
         
         tol = 1e-6
         
-        if extend != 0 and extend != 1:
+        if extend != False and extend != True:
             raise Exception("Wrong Input to extend parameter")
+        
+        elif extend == False:
+            
+            print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
+            "reactions were removed from the model with extend set to", extend) 
+            
+            # call this functon to convert cobra to dingo model
+            self._dingo_model = MetabolicNetwork.from_cobra_model(self._model)
+            return self._removed_reactions, self._dingo_model 
+
+        elif extend == True:
   
-        # find additional reactions with a possibility of removal
-        additional_removed_reactions_count = 0       
-        for reaction in remained_reactions:
+            # find additional reactions with a possibility of removal
+            additional_removed_reactions_list = []
+            additional_removed_reactions_count = 0       
+            for reaction in remained_reactions:
             
-            fba_solution_before = self._model.optimize().objective_value
-                        
-            initial_lower = self._model.reactions.get_by_id(reaction).lower_bound
-            initial_upper = self._model.reactions.get_by_id(reaction).upper_bound
+                fba_solution_before = self._model.optimize().objective_value
             
-            # perform a knock-out and check the output
-            self._model.reactions.get_by_id(reaction).lower_bound = 0
-            self._model.reactions.get_by_id(reaction).upper_bound = 0
+                # perform a knock-out and check the output
+                self._model.reactions.get_by_id(reaction).lower_bound = 0
+                self._model.reactions.get_by_id(reaction).upper_bound = 0
     
-            fba_solution_after = self._model.optimize().objective_value
+                fba_solution_after = self._model.optimize().objective_value
             
-            if fba_solution_after != None and (extend == 1):
-                if (abs(fba_solution_after - fba_solution_before) < tol):
-                    self._removed_reactions.append(reaction)
-                    additional_removed_reactions_count += 1
+                if fba_solution_after != None:
+                    if (abs(fba_solution_after - fba_solution_before) < tol):
+                        self._removed_reactions.append(reaction)
+                        additional_removed_reactions_list.append(reaction)
+                        additional_removed_reactions_count += 1
               
-            self._model.reactions.get_by_id(reaction).upper_bound = initial_upper
-            self._model.reactions.get_by_id(reaction).lower_bound = initial_lower
+                self._model.reactions.get_by_id(reaction).upper_bound = self._reaction_bounds_dict[reaction][1]
+                self._model.reactions.get_by_id(reaction).lower_bound = self._reaction_bounds_dict[reaction][0]
             
             
-        # compare FBA solution before and after the removal of additional reactions
-        fba_solution_initial = self._model.optimize().objective_value
-        self._remove_model_reactions()        
-        fba_solution_final = self._model.optimize().objective_value
+            # compare FBA solution before and after the removal of additional reactions
+            fba_solution_initial = self._model.optimize().objective_value
+            self._remove_model_reactions()        
+            fba_solution_final = self._model.optimize().objective_value
 
-        
-        # get a list of the additional reactions to be removed
-        additional_removed_reactions_list = (self._removed_reactions[len(self._removed_reactions)-additional_removed_reactions_count:])
-        
-        # if FBA solution after removal is infesible or altered
-        # restore the initial reactions bounds
-        if (fba_solution_final == None):
-            for reaction in additional_removed_reactions_list:
-                self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
-                self._removed_reactions.remove(reaction)
-            print(len(self._removed_reactions), "of the", len(self._initial_reactions), "reactions were removed from the model with extend set to", extend)
+                
+            # if FBA solution after removal is infesible or altered
+            # restore the initial reactions bounds
+            if (fba_solution_final == None):
+                for reaction in additional_removed_reactions_list:
+                    self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
+                    self._removed_reactions.remove(reaction)
+                print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
+                "reactions were removed from the model with extend set to", extend)
 
-        elif(abs(fba_solution_final - fba_solution_initial) > tol):
-            for reaction in additional_removed_reactions_list:
-                self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
-                self.removed_reactions.remove(reaction)
-            print(len(self._removed_reactions), "of the", len(self._initial_reactions), "reactions were removed from the model with extend set to", extend) 
+            elif(abs(fba_solution_final - fba_solution_initial) > tol):
+                for reaction in additional_removed_reactions_list:
+                    self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
+                    self._removed_reactions.remove(reaction)
+                print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
+                "reactions were removed from the model with extend set to", extend) 
 
-        else:
-            print(len(self._removed_reactions), "of the", len(self._initial_reactions), "reactions were removed from the model with extend set to", extend)
+            else:
+                print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
+                "reactions were removed from the model with extend set to", extend)
 
     
-        # call this functon to convert cobra to dingo model
-        self._dingo_model = MetabolicNetwork.from_cobra_model(self._model)
-
-        return self._removed_reactions, self._dingo_model 
+            # call this functon to convert cobra to dingo model
+            self._dingo_model = MetabolicNetwork.from_cobra_model(self._model)
+            return self._removed_reactions, self._dingo_model 
