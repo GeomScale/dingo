@@ -7,10 +7,27 @@ from dingo import MetabolicNetwork
 
 class PreProcess:
     
-    def __init__(self, model, open_exchanges=False):
+    def __init__(self, model, tol=1e-6, open_exchanges=False):
 
+        """
+        model parameter gets a cobra model as input
+        
+        tol parameter gets a cutoff value used to classify 
+        zero-flux and mle reactions and compare FBA solutions
+        before and after reactions removal
+        
+        open_exchanges parameter is used in the function that identifies blocked reactions
+        It controls whether or not to open all exchange reactions to very high flux ranges
+        """
+        
         self._model = model
+        self._tol = tol
+        
+        if self._tol > 1e-6:
+            print("Tolerance value set to",self._tol,"while default value is 1e-6. A looser check will be performed")
+        
         self._open_exchanges = open_exchanges
+        
         self._objective = self._objective_function()
         self._initial_reactions = self._initial()
         self._reaction_bounds_dict = self._reaction_bounds_dictionary()
@@ -82,7 +99,7 @@ class PreProcess:
         when running a FVA analysis with the fraction of optimum set to 90%
         """
         
-        tol = 1e-6
+        tol = self._tol
         
         fva = cobra.flux_analysis.flux_variability_analysis(self._model, fraction_of_optimum=0.9)
         zero_flux = fva.loc[ (abs(fva['minimum']) < tol ) & (abs(fva['maximum']) < tol)]
@@ -112,7 +129,7 @@ class PreProcess:
         set to 0.95, the reactions that have no flux are the metabolically less efficient.
         """
             
-        tol = 1e-6
+        tol = self._tol
 
         fba_solution = self._model.optimize()
 
@@ -177,7 +194,7 @@ class PreProcess:
         remained_reactions = list((Counter(self._initial_reactions)-Counter(self._removed_reactions)).elements())
         remained_reactions = list((Counter(remained_reactions)-Counter(self._essential_reactions)).elements())
         
-        tol = 1e-6
+        tol = self._tol
         
         if extend != False and extend != True:
             raise Exception("Wrong Input to extend parameter")
@@ -222,21 +239,14 @@ class PreProcess:
             fba_solution_final = self._model.optimize().objective_value
 
                 
-            # if FBA solution after removal is infesible or altered
+            # if FBA solution after removal is infeasible or altered
             # restore the initial reactions bounds
-            if (fba_solution_final == None):
+            if (fba_solution_final == None) | (abs(fba_solution_final - fba_solution_initial) > tol):
                 for reaction in additional_removed_reactions_list:
                     self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
                     self._removed_reactions.remove(reaction)
                 print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
                 "reactions were removed from the model with extend set to", extend)
-
-            elif(abs(fba_solution_final - fba_solution_initial) > tol):
-                for reaction in additional_removed_reactions_list:
-                    self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
-                    self._removed_reactions.remove(reaction)
-                print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
-                "reactions were removed from the model with extend set to", extend) 
 
             else:
                 print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
