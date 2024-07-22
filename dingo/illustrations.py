@@ -85,8 +85,9 @@ def plot_histogram(reaction_fluxes, reaction, n_bins=40):
 
 
 
-from dingo import MetabolicNetwork, PolytopeSampler
+def corr():
+    from dingo import MetabolicNetwork, PolytopeSampler
 
-model = MetabolicNetwork.from_json('ext_data/e_coli_core.json')
-sampler = PolytopeSampler(model)
-steady_states = sampler.generate_steady_states()
+    model = MetabolicNetwork.from_json('ext_data/e_coli_core.json')
+    sampler = PolytopeSampler(model)
+    steady_states = sampler.generate_steady_states()
