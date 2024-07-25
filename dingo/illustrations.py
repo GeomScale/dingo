@@ -85,21 +85,23 @@ def plot_histogram(reaction_fluxes, reaction, n_bins=40):
 
 
 
-def corr(model):
+def plot_corr_matrix(steady_states, reactions, color="RdYlBu"):
     
-    from dingo import PolytopeSampler
-    
-    sampler = PolytopeSampler(model)
-    steady_states = sampler.generate_steady_states(ess=100)
-    
-    for steady_states_a in steady_states:
-        hist_counts_a, _ = np.histogram(steady_states_a, bins=60)
+    import plotly.express as px
 
-        for steady_states_b in steady_states:
-            hist_counts_b, _ = np.histogram(steady_states_b, bins=60)
+    corr_matrix = np.corrcoef(steady_states, rowvar=True)
+    corr_matrix[np.isnan(corr_matrix)] = 0
+    corr_matrix = np.tril(corr_matrix)
 
-            hist_counts_ab = np.stack((hist_counts_a, hist_counts_b), axis=0)
-            hist_counts_ab = hist_counts_ab.transpose()
-            
-            corr_matrix = np.corrcoef(hist_counts_ab, rowvar=False)
-            print("Correlation between reactions is: ",corr_matrix[0][1])
+    print("You can see the full list of color scales here: ", px.colors.named_colorscales())
+    
+    fig = px.imshow(corr_matrix, 
+                    color_continuous_scale = color,
+                    x = reactions,
+                    y = reactions)
+    
+    fig.update_layout(
+    xaxis=dict(tickfont=dict(size=5)),
+    yaxis=dict(tickfont=dict(size=5)) )
+    
+    fig.show()
