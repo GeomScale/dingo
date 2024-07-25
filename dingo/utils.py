@@ -201,3 +201,45 @@ def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
         print("gmscale failed to compute a good scaling.")
 
     return A, b, N, N_shift
+
+
+
+def correlated_reactions(steady_states, reactions, pearson_cutoff = 0.5, n = 10):
+    
+    # compute correlation matrix
+    corr_matrix = np.corrcoef(steady_states, rowvar=True)
+    # replace not assigned values with 0
+    corr_matrix[np.isnan(corr_matrix)] = 0
+    # keep only the lower triangle
+    corr_matrix = np.tril(corr_matrix)
+    # replace diagonal values with 0
+    np.fill_diagonal(corr_matrix, 0)
+    
+    # find indices of corr matrix where correlation occurs
+    indices = np.argwhere((corr_matrix > pearson_cutoff) | (corr_matrix < -pearson_cutoff))
+    
+    # compute copula for this set of correlated reactions
+    for i in range(0, indices.shape[0]):
+        index1 = indices[i][0]
+        index2 = indices[i][1]
+        flux1 = steady_states[index1]
+        flux2 = steady_states[index2]
+                
+        copula = compute_copula(flux1, flux2, n)
+        rows, cols = copula.shape
+        
+        red_mass = 0
+        blue_mass = 0
+        
+        for row in range(rows):
+            for col in range(cols):
+                if ((row-col >= -2) & (row-col <= 2)):        
+                    if ((row+col < 8) | (row+col > 12)):
+                        red_mass = red_mass + copula[row][col]
+                    
+                    elif ((row+col >= 9) | (row+col <= 13)):
+                        blue_mass = blue_mass + copula[row][col]
+
+        indicator = red_mass / blue_mass
+        if indicator > 2:
+            print(reactions[index1], reactions[index2])
