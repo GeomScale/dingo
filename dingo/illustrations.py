@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.io as pio
+import plotly.express as px
 from dingo.utils import compute_copula
 
 def plot_copula(data_flux1, data_flux2, n = 5, width = 900 , height = 600, export_format = "svg"):
@@ -85,19 +86,47 @@ def plot_histogram(reaction_fluxes, reaction, n_bins=40):
 
 
 
-def plot_corr_matrix(corr_matrix, reactions, color="RdYlBu"):
-    
-    import plotly.express as px
+def plot_corr_matrix(corr_matrix, reactions):
+    """A Python function to plot the histogram of a certain reaction flux.
 
-    print("You can see the full list of color scales here: ", px.colors.named_colorscales())
+    Keyword arguments:
+    corr_matrix -- 
+    reactions -- 
+    color -- 
+    """
     
+    sns_colormap = [[0.0, '#3f7f93'],
+                    [0.1, '#6397a7'],
+                    [0.2, '#88b1bd'],
+                    [0.3, '#acc9d2'],
+                    [0.4, '#d1e2e7'],
+                    [0.5, '#f2f2f2'],
+                    [0.6, '#f6cdd0'],
+                    [0.7, '#efa8ad'],
+                    [0.8, '#e8848b'],
+                    [0.9, '#e15e68'],
+                    [1.0, '#da3b46']]
+    
+    
+    if len(reactions) <= 95:
+        reactions_x = reactions
+        reactions_y = reactions
+    else:
+        reactions_x = None
+        reactions_y = None
+        
     fig = px.imshow(corr_matrix, 
-                    color_continuous_scale = color,
-                    x = reactions,
-                    y = reactions)
+                    color_continuous_scale = sns_colormap,
+                    x = reactions_x, y = reactions_y, origin="upper")
     
     fig.update_layout(
     xaxis=dict(tickfont=dict(size=5)),
-    yaxis=dict(tickfont=dict(size=5)) )
+    yaxis=dict(tickfont=dict(size=5)),
+    width=900, height=900, plot_bgcolor="rgba(0,0,0,0)")
+    
+    fig.update_traces(xgap=1, ygap=1,   hoverongaps=False)
     
     fig.show()
+    
+    #fig_name = "CorrelationMatrix.svg"
+    #pio.write_image(fig, fig_name, scale=2)

@@ -204,7 +204,24 @@ def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
 
 
 
-def correlated_reactions(steady_states, pearson_cutoff = 0.5, indicator_cutoff = 1000, n = 10):
+def correlated_reactions(steady_states, pearson_cutoff = 0.6, indicator_cutoff = 10, cells = 10, cop_coeff = 0.3):
+    """A Python function to 
+
+    Keyword arguments:
+    steady_states -- 
+    pearson_cutoff --
+    indicator_cutoff --
+    cells --
+    cop_coeff -- 
+    """
+    
+    if cop_coeff > 0.4 or cop_coeff < 0.2:
+        raise Exception("Input value to diag_coeff parameter must be between 0.1 and 0.4")
+    
+    # calculate coefficients to access red and blue copula mass
+    cop_coeff_1 = cop_coeff
+    cop_coeff_2 = 1 - cop_coeff
+    cop_coeff_3 = 1 + cop_coeff
     
     # compute correlation matrix
     corr_matrix = np.corrcoef(steady_states, rowvar=True)
@@ -215,60 +232,88 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.5, indicator_cutoff =
     # replace diagonal values with 0
     np.fill_diagonal(corr_matrix, 0)
 
-    combinations = np.argwhere(corr_matrix != 0)
-    
-    # find indices of corr matrix where correlation occurs
-    indices = np.argwhere((corr_matrix > pearson_cutoff) | (corr_matrix < -pearson_cutoff))
-    
-    # find indices of corr matrix where correlation occurs
-    anti_indices = np.argwhere((corr_matrix < pearson_cutoff) & (corr_matrix > -pearson_cutoff))
+    # if user does not provide an indicator cutoff then do not proceed with the filtering
+    # of the correlation matrix
+    if indicator_cutoff == 0:
+        np.fill_diagonal(corr_matrix, 1)
+        return corr_matrix
+    else:
 
-    updated_corr_matrix = corr_matrix.copy()
+        # find reactions combinations
+        combinations = sum(range(1, corr_matrix.shape[0]))
     
-    for i in range(0, anti_indices.shape[0]):
-        index1 = anti_indices[i][0]
-        index2 = anti_indices[i][1]
-        print(index1, index2)
-        updated_corr_matrix[index1, index2] = 0
+        # find indices of correlation matrix where correlation occurs
+        corr_indices = np.argwhere((corr_matrix > pearson_cutoff) | (corr_matrix < -pearson_cutoff))
+    
+        # create a copy of correlation matrix to replace values
+        filtered_corr_matrix = corr_matrix.copy()
+    
+        # find indices of correlation matrix where correlation does not occur
+        no_corr_indices = np.argwhere((corr_matrix < pearson_cutoff) & (corr_matrix > -pearson_cutoff))
+    
+        # replace values from the correlation matrix that do not overcome
+        # the pearson cutoff with 0
+        for i in range(0, no_corr_indices.shape[0]):
+            index1 = no_corr_indices[i][0]
+            index2 = no_corr_indices[i][1]
+            filtered_corr_matrix[index1, index2] = 0
 
+        # count reactions with positive or negative correlation based on indicator
+        positive = 0
+        negative = 0
     
-    positive = 0
-    negative = 0
-    
-    # compute copula for this set of correlated reactions
-    for i in range(0, indices.shape[0]):
-        index1 = indices[i][0]
-        index2 = indices[i][1]
+        # compute copula for each set of correlated reactions
+        for i in range(0, corr_indices.shape[0]):
+            
+            index1 = corr_indices[i][0]
+            index2 = corr_indices[i][1]
         
-        flux1 = steady_states[index1]
-        flux2 = steady_states[index2]
+            flux1 = steady_states[index1]
+            flux2 = steady_states[index2]
                 
-        copula = compute_copula(flux1, flux2, n)
-        rows, cols = copula.shape
+            copula = compute_copula(flux1, flux2, cells)
+            rows, cols = copula.shape
         
-        red_mass = 0
-        blue_mass = 0
-        indicator = 0
+            red_mass = 0
+            blue_mass = 0
+            indicator = 0
+                            
+            for row in range(rows):
+                for col in range(cols):
+                    # values in the diagonal
+                    if ((row-col >= -cop_coeff_1*rows) & (row-col <= cop_coeff_1*rows)):        
+                        # values near the top left and bottom right corner
+                        if ((row+col < cop_coeff_2*rows) | (row+col > cop_coeff_3*rows)):
+                            red_mass = red_mass + copula[row][col]
+                    else:
+                        # values near the top right and bottom left corner
+                        if ((row+col >= cop_coeff_2*rows-1) & (row+col <= cop_coeff_3*rows-1)):
+                            blue_mass = blue_mass + copula[row][col]
+
+            indicator = (red_mass+1e-9) / (blue_mass+1e-9)
+                    
+            # classify specific pair of reactions as positive or negative
+            # correlated based on indicator cutoff 
+            if indicator > indicator_cutoff:
+                positive += 1
+            elif indicator < 1/indicator_cutoff:
+                negative += 1
+            # if they do not overcome the cutoff replace their corresponding
+            # value in the correlation matrix with 0
+            else:
+                filtered_corr_matrix[index1, index2] = 0
                 
-        for row in range(rows):
-            for col in range(cols):
-                if ((row-col >= -0.2*rows) & (row-col <= 0.2*rows)):        
-                    if ((row+col < 0.8*rows) | (row+col > 1.2*rows)):
-                        red_mass = red_mass + copula[row][col]
-                else:
-                    if ((row+col >= 0.8*rows-1) & (row+col <= 1.2*rows-1)):
-                        blue_mass = blue_mass + copula[row][col]
-
-        indicator = (red_mass+1e-9) / (blue_mass+1e-9)
-        
-        if indicator > indicator_cutoff:
-            positive += 1
-        elif indicator < 1/indicator_cutoff:
-            negative += 1
-        else:
-            updated_corr_matrix[index1, index2] = 0
+            print("Completed process of",i+1,"from",corr_indices.shape[0],"copulas")
 
         
-    print(indices.shape[0],"out of",combinations.shape[0],
-          "reactions combinations were filtered based on pearson correlation")
-    print(negative, "out of", i+1, "copulas were negative correlated based on copula indicator")
+        print(corr_indices.shape[0],"out of",combinations,
+            "reactions combinations were filtered based on pearson correlation")
+        
+        print(positive, "out of", i+1, "copulas were positive correlated based on copula indicator")
+        print(negative, "out of", i+1, "copulas were negative correlated based on copula indicator")
+
+    
+        np.fill_diagonal(corr_matrix, 1)
+        np.fill_diagonal(filtered_corr_matrix, 1)
+
+        return corr_matrix, filtered_corr_matrix
