@@ -85,13 +85,9 @@ def plot_histogram(reaction_fluxes, reaction, n_bins=40):
 
 
 
-def plot_corr_matrix(steady_states, reactions, color="RdYlBu"):
+def plot_corr_matrix(corr_matrix, reactions, color="RdYlBu"):
     
     import plotly.express as px
-
-    corr_matrix = np.corrcoef(steady_states, rowvar=True)
-    corr_matrix[np.isnan(corr_matrix)] = 0
-    corr_matrix = np.tril(corr_matrix)
 
     print("You can see the full list of color scales here: ", px.colors.named_colorscales())
     

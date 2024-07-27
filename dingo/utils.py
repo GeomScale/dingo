@@ -204,7 +204,7 @@ def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
 
 
 
-def correlated_reactions(steady_states, reactions, pearson_cutoff = 0.5, n = 10):
+def correlated_reactions(steady_states, pearson_cutoff = 0.5, indicator_cutoff = 1000, n = 10):
     
     # compute correlation matrix
     corr_matrix = np.corrcoef(steady_states, rowvar=True)
@@ -214,14 +214,32 @@ def correlated_reactions(steady_states, reactions, pearson_cutoff = 0.5, n = 10)
     corr_matrix = np.tril(corr_matrix)
     # replace diagonal values with 0
     np.fill_diagonal(corr_matrix, 0)
+
+    combinations = np.argwhere(corr_matrix != 0)
     
     # find indices of corr matrix where correlation occurs
     indices = np.argwhere((corr_matrix > pearson_cutoff) | (corr_matrix < -pearson_cutoff))
+    
+    # find indices of corr matrix where correlation occurs
+    anti_indices = np.argwhere((corr_matrix < pearson_cutoff) & (corr_matrix > -pearson_cutoff))
+
+    updated_corr_matrix = corr_matrix.copy()
+    
+    for i in range(0, anti_indices.shape[0]):
+        index1 = anti_indices[i][0]
+        index2 = anti_indices[i][1]
+        print(index1, index2)
+        updated_corr_matrix[index1, index2] = 0
+
+    
+    positive = 0
+    negative = 0
     
     # compute copula for this set of correlated reactions
     for i in range(0, indices.shape[0]):
         index1 = indices[i][0]
         index2 = indices[i][1]
+        
         flux1 = steady_states[index1]
         flux2 = steady_states[index2]
                 
@@ -230,16 +248,27 @@ def correlated_reactions(steady_states, reactions, pearson_cutoff = 0.5, n = 10)
         
         red_mass = 0
         blue_mass = 0
-        
+        indicator = 0
+                
         for row in range(rows):
             for col in range(cols):
-                if ((row-col >= -2) & (row-col <= 2)):        
-                    if ((row+col < 8) | (row+col > 12)):
+                if ((row-col >= -0.2*rows) & (row-col <= 0.2*rows)):        
+                    if ((row+col < 0.8*rows) | (row+col > 1.2*rows)):
                         red_mass = red_mass + copula[row][col]
-                    
-                    elif ((row+col >= 9) | (row+col <= 13)):
+                else:
+                    if ((row+col >= 0.8*rows-1) & (row+col <= 1.2*rows-1)):
                         blue_mass = blue_mass + copula[row][col]
 
-        indicator = red_mass / blue_mass
-        if indicator > 2:
-            print(reactions[index1], reactions[index2])
+        indicator = (red_mass+1e-9) / (blue_mass+1e-9)
+        
+        if indicator > indicator_cutoff:
+            positive += 1
+        elif indicator < 1/indicator_cutoff:
+            negative += 1
+        else:
+            updated_corr_matrix[index1, index2] = 0
+
+        
+    print(indices.shape[0],"out of",combinations.shape[0],
+          "reactions combinations were filtered based on pearson correlation")
+    print(negative, "out of", i+1, "copulas were negative correlated based on copula indicator")
