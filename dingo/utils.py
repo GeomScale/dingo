@@ -204,19 +204,22 @@ def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
 
 
 
-def correlated_reactions(steady_states, pearson_cutoff = 0.6, indicator_cutoff = 10, cells = 10, cop_coeff = 0.3):
-    """A Python function to 
+def correlated_reactions(steady_states, pearson_cutoff = 0.5, indicator_cutoff = 2, 
+                         cells = 10, cop_coeff = 0.3, lower_triangle = True):
+    """A Python function to calculate the pearson correlation matrix of a model
+       and filter values based on the copula's indicator
 
     Keyword arguments:
-    steady_states -- 
-    pearson_cutoff --
-    indicator_cutoff --
-    cells --
-    cop_coeff -- 
+    steady_states -- A numpy array of the generated steady states fluxes 
+    pearson_cutoff -- A cutoff to filter reactions based on pearson coefficient
+    indicator_cutoff -- A cutoff to filter reactions based on indicator value
+    cells -- Number of cells to compute the copula
+    cop_coeff -- A value that narrows or widens the width of the copula's diagonal
+    lower_triangle -- A boolean variable that if True keeps only the lower triangular matrix
     """
     
     if cop_coeff > 0.4 or cop_coeff < 0.2:
-        raise Exception("Input value to diag_coeff parameter must be between 0.1 and 0.4")
+        raise Exception("Input value to cop_coeff parameter must be between 0.2 and 0.4")
     
     # calculate coefficients to access red and blue copula mass
     cop_coeff_1 = cop_coeff
@@ -225,39 +228,47 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.6, indicator_cutoff =
     
     # compute correlation matrix
     corr_matrix = np.corrcoef(steady_states, rowvar=True)
+    
     # replace not assigned values with 0
     corr_matrix[np.isnan(corr_matrix)] = 0
-    # keep only the lower triangle
-    corr_matrix = np.tril(corr_matrix)
-    # replace diagonal values with 0
-    np.fill_diagonal(corr_matrix, 0)
 
-    # if user does not provide an indicator cutoff then do not proceed with the filtering
-    # of the correlation matrix
+    # create a copy of correlation matrix to replace/filter values
+    filtered_corr_matrix = corr_matrix.copy()    
+    
+    # find indices of correlation matrix where correlation does not occur
+    no_corr_indices = np.argwhere((filtered_corr_matrix < pearson_cutoff) & (filtered_corr_matrix > -pearson_cutoff))
+    
+    # replace values from the correlation matrix that do not overcome
+    # the pearson cutoff with 0
+    for i in range(0, no_corr_indices.shape[0]):
+        index1 = no_corr_indices[i][0]
+        index2 = no_corr_indices[i][1]
+        filtered_corr_matrix[index1, index2] = 0   
+    
+    # if user does not provide an indicator cutoff then do not proceed 
+    # with the filtering of the correlation matrix
     if indicator_cutoff == 0:
-        np.fill_diagonal(corr_matrix, 1)
-        return corr_matrix
+        if lower_triangle == True:
+            corr_matrix[np.triu_indices(corr_matrix.shape[0], 1)] = np.nan
+            #corr_matrix = np.tril(corr_matrix)
+            np.fill_diagonal(corr_matrix, 1)
+            return corr_matrix
+        else:
+            np.fill_diagonal(corr_matrix, 1)
+            return corr_matrix
     else:
+        
+        # keep only the lower triangle
+        corr_matrix = np.tril(corr_matrix)
+        # replace diagonal values with 0
+        np.fill_diagonal(corr_matrix, 0)
 
         # find reactions combinations
         combinations = sum(range(1, corr_matrix.shape[0]))
     
         # find indices of correlation matrix where correlation occurs
         corr_indices = np.argwhere((corr_matrix > pearson_cutoff) | (corr_matrix < -pearson_cutoff))
-    
-        # create a copy of correlation matrix to replace values
-        filtered_corr_matrix = corr_matrix.copy()
-    
-        # find indices of correlation matrix where correlation does not occur
-        no_corr_indices = np.argwhere((corr_matrix < pearson_cutoff) & (corr_matrix > -pearson_cutoff))
-    
-        # replace values from the correlation matrix that do not overcome
-        # the pearson cutoff with 0
-        for i in range(0, no_corr_indices.shape[0]):
-            index1 = no_corr_indices[i][0]
-            index2 = no_corr_indices[i][1]
-            filtered_corr_matrix[index1, index2] = 0
-
+            
         # count reactions with positive or negative correlation based on indicator
         positive = 0
         negative = 0
@@ -302,6 +313,7 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.6, indicator_cutoff =
             # value in the correlation matrix with 0
             else:
                 filtered_corr_matrix[index1, index2] = 0
+                filtered_corr_matrix[index2, index1] = 0
                 
             print("Completed process of",i+1,"from",corr_indices.shape[0],"copulas")
 
@@ -311,9 +323,13 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.6, indicator_cutoff =
         
         print(positive, "out of", i+1, "copulas were positive correlated based on copula indicator")
         print(negative, "out of", i+1, "copulas were negative correlated based on copula indicator")
+        
+        if lower_triangle == True:
+            filtered_corr_matrix[np.triu_indices(filtered_corr_matrix.shape[0], 1)] = np.nan
+            #filtered_corr_matrix = np.tril(filtered_corr_matrix)
+            np.fill_diagonal(filtered_corr_matrix, 1)
+            return filtered_corr_matrix
 
-    
-        np.fill_diagonal(corr_matrix, 1)
-        np.fill_diagonal(filtered_corr_matrix, 1)
-
-        return corr_matrix, filtered_corr_matrix
+        else:
+            np.fill_diagonal(filtered_corr_matrix, 1)
+            return filtered_corr_matrix

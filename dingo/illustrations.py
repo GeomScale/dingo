@@ -86,13 +86,12 @@ def plot_histogram(reaction_fluxes, reaction, n_bins=40):
 
 
 
-def plot_corr_matrix(corr_matrix, reactions):
-    """A Python function to plot the histogram of a certain reaction flux.
+def plot_corr_matrix(corr_matrix, reactions, format="svg"):
+    """A Python function to plot the heatmap of a model's pearson correlation matrix.
 
     Keyword arguments:
-    corr_matrix -- 
-    reactions -- 
-    color -- 
+    corr_matrix -- A matrix produced from the "correlated_reactions" function
+    reactions -- A list with the model's reactions
     """
     
     sns_colormap = [[0.0, '#3f7f93'],
@@ -106,18 +105,10 @@ def plot_corr_matrix(corr_matrix, reactions):
                     [0.8, '#e8848b'],
                     [0.9, '#e15e68'],
                     [1.0, '#da3b46']]
-    
-    
-    if len(reactions) <= 95:
-        reactions_x = reactions
-        reactions_y = reactions
-    else:
-        reactions_x = None
-        reactions_y = None
-        
+            
     fig = px.imshow(corr_matrix, 
                     color_continuous_scale = sns_colormap,
-                    x = reactions_x, y = reactions_y, origin="upper")
+                    x = reactions, y = reactions, origin="upper")
     
     fig.update_layout(
     xaxis=dict(tickfont=dict(size=5)),
@@ -128,5 +119,5 @@ def plot_corr_matrix(corr_matrix, reactions):
     
     fig.show()
     
-    #fig_name = "CorrelationMatrix.svg"
+    #fig_name = "CorrelationMatrix." + format
     #pio.write_image(fig, fig_name, scale=2)
