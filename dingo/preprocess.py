@@ -172,10 +172,11 @@ class PreProcess:
         When the "extend" parameter is set to True, the function  performes
         an additional check to remove further reactions. These reactions 
         are the ones that if knocked-down, they do not affect the value 
-        of the objective function. These reactions are removed simultaneously
-        from the model. If this simultaneous removal produces an infesible
-        solution (or a solution of 0) to the objective function, 
-        these reactions are restored with their initial bounds.
+        of the objective function. Reactions are removed in an ordered way. 
+        The ones with the least overall correlation in a correlation matrix 
+        are removed first. These reactions are removed one by one from the model. 
+        If this removal produces an infeasible solution (or a solution of 0) 
+        to the objective function, these reactions are restored to their initial bounds.
         
         A dingo-type tuple is then created from the cobra model 
         using the "cobra_dingo_tuple" function.
@@ -249,21 +250,22 @@ class PreProcess:
                         if (abs(fba_solution_after - fba_solution_before) > tol):
                             self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
                     
+                    # if system has no solution
                     except:
                         self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
-                        break
                     
                     finally:
-                        if fba_solution_after != None and fba_solution_after != 0:
-                            if (abs(fba_solution_after - fba_solution_before) < tol):
-                                self._removed_reactions.append(reaction)
-                                additional_removed_reactions_list.append(reaction)
-                                additional_removed_reactions_count += 1
-            
-                
+                        if (fba_solution_after != None) and (abs(fba_solution_after - fba_solution_before) < tol):
+                            self._removed_reactions.append(reaction)
+                            additional_removed_reactions_list.append(reaction)
+                            additional_removed_reactions_count += 1
+                        else:
+                            self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
+
+              
             print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
             "reactions were removed from the model with extend set to", extend)
-
+                        
             # call this functon to convert cobra to dingo model
             self._dingo_model = MetabolicNetwork.from_cobra_model(self._model)
             return self._removed_reactions, self._dingo_model 
