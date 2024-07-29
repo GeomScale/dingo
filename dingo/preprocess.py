@@ -227,16 +227,19 @@ class PreProcess:
                                 cop_coeff = 0.3,
                                 lower_triangle = False)
             
+            # convert pearson values to absolute values
             abs_array = abs(corr_matrix)
+            # sum absolute pearson values per row 
             sum_array = np.sum((abs_array), axis=1)
+            # get indices of ordered sum values
             order_sum_indices = np.argsort(sum_array)
             
-            # find additional reactions with a possibility of removal
-            additional_removed_reactions_list = []
+            fba_solution_before = self._model.optimize().objective_value
+            
+            # count additional reactions with a possibility of removal
             additional_removed_reactions_count = 0 
             
-            fba_solution_before = self._model.optimize().objective_value
-
+            # find additional reactions with a possibility of removal
             for index in order_sum_indices:
                 if reactions[index] in remained_reactions:
                     reaction = reactions[index]
@@ -248,6 +251,7 @@ class PreProcess:
                     try:
                         fba_solution_after = self._model.optimize().objective_value
                         if (abs(fba_solution_after - fba_solution_before) > tol):
+                            # restore bounds
                             self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
                     
                     # if system has no solution
@@ -257,14 +261,15 @@ class PreProcess:
                     finally:
                         if (fba_solution_after != None) and (abs(fba_solution_after - fba_solution_before) < tol):
                             self._removed_reactions.append(reaction)
-                            additional_removed_reactions_list.append(reaction)
                             additional_removed_reactions_count += 1
                         else:
+                            # restore bounds
                             self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
 
               
             print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
             "reactions were removed from the model with extend set to", extend)
+            print(additional_removed_reactions_count, "additional reaction(s) removed")
                         
             # call this functon to convert cobra to dingo model
             self._dingo_model = MetabolicNetwork.from_cobra_model(self._model)

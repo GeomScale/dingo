@@ -215,7 +215,7 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.5, indicator_cutoff =
     indicator_cutoff -- A cutoff to filter reactions based on indicator value
     cells -- Number of cells to compute the copula
     cop_coeff -- A value that narrows or widens the width of the copula's diagonal
-    lower_triangle -- A boolean variable that if True keeps only the lower triangular matrix
+    lower_triangle -- A boolean variable that if True plots only the lower triangular matrix
     """
     
     if cop_coeff > 0.4 or cop_coeff < 0.2:
@@ -250,7 +250,6 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.5, indicator_cutoff =
     if indicator_cutoff == 0:
         if lower_triangle == True:
             corr_matrix[np.triu_indices(corr_matrix.shape[0], 1)] = np.nan
-            #corr_matrix = np.tril(corr_matrix)
             np.fill_diagonal(corr_matrix, 1)
             return corr_matrix
         else:
@@ -326,7 +325,6 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.5, indicator_cutoff =
         
         if lower_triangle == True:
             filtered_corr_matrix[np.triu_indices(filtered_corr_matrix.shape[0], 1)] = np.nan
-            #filtered_corr_matrix = np.tril(filtered_corr_matrix)
             np.fill_diagonal(filtered_corr_matrix, 1)
             return filtered_corr_matrix
 
