@@ -108,7 +108,6 @@ def plot_corr_matrix(corr_matrix, reactions, removed_reactions=[], format="svg")
                     [0.9, '#e15e68'],
                     [1.0, '#da3b46']]
     
-    print(len(removed_reactions))
     if removed_reactions != 0:
         for reaction in reactions:
             index = reactions.index(reaction)

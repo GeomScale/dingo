@@ -204,7 +204,7 @@ def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
 
 
 
-def correlated_reactions(steady_states, pearson_cutoff = 0.5, indicator_cutoff = 2, 
+def correlated_reactions(steady_states, pearson_cutoff = 0.90, indicator_cutoff = 10, 
                          cells = 10, cop_coeff = 0.3, lower_triangle = True):
     """A Python function to calculate the pearson correlation matrix of a model
        and filter values based on the copula's indicator
@@ -249,21 +249,18 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.5, indicator_cutoff =
     # with the filtering of the correlation matrix
     if indicator_cutoff == 0:
         if lower_triangle == True:
-            corr_matrix[np.triu_indices(corr_matrix.shape[0], 1)] = np.nan
-            np.fill_diagonal(corr_matrix, 1)
-            return corr_matrix
+            filtered_corr_matrix[np.triu_indices(filtered_corr_matrix.shape[0], 1)] = np.nan
+            np.fill_diagonal(filtered_corr_matrix, 1)
+            return filtered_corr_matrix
         else:
-            np.fill_diagonal(corr_matrix, 1)
-            return corr_matrix
+            np.fill_diagonal(filtered_corr_matrix, 1)
+            return filtered_corr_matrix
     else:
         
         # keep only the lower triangle
         corr_matrix = np.tril(corr_matrix)
         # replace diagonal values with 0
         np.fill_diagonal(corr_matrix, 0)
-
-        # find reactions combinations
-        combinations = sum(range(1, corr_matrix.shape[0]))
     
         # find indices of correlation matrix where correlation occurs
         corr_indices = np.argwhere((corr_matrix > pearson_cutoff) | (corr_matrix < -pearson_cutoff))
@@ -316,10 +313,7 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.5, indicator_cutoff =
                 
             print("Completed process of",i+1,"from",corr_indices.shape[0],"copulas")
 
-        
-        print(corr_indices.shape[0],"out of",combinations,
-            "reactions combinations were filtered based on pearson correlation")
-        
+                
         print(positive, "out of", i+1, "copulas were positive correlated based on copula indicator")
         print(negative, "out of", i+1, "copulas were negative correlated based on copula indicator")
         
