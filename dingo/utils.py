@@ -204,13 +204,14 @@ def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
 
 
 
-def correlated_reactions(steady_states, pearson_cutoff = 0.90, indicator_cutoff = 10, 
+def correlated_reactions(steady_states, reactions=[], pearson_cutoff = 0.90, indicator_cutoff = 10, 
                          cells = 10, cop_coeff = 0.3, lower_triangle = True):
     """A Python function to calculate the pearson correlation matrix of a model
        and filter values based on the copula's indicator
 
     Keyword arguments:
-    steady_states -- A numpy array of the generated steady states fluxes 
+    steady_states -- A numpy array of the generated steady states fluxes
+    reactions -- A list with the model's reactions
     pearson_cutoff -- A cutoff to filter reactions based on pearson coefficient
     indicator_cutoff -- A cutoff to filter reactions based on indicator value
     cells -- Number of cells to compute the copula
@@ -256,6 +257,10 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.90, indicator_cutoff 
             np.fill_diagonal(filtered_corr_matrix, 1)
             return filtered_corr_matrix
     else:
+        # a dictionary that will store for each filtered reaction combination, 
+        # the pearson correlation value, the copula's indicator value 
+        # and the correlation classification
+        indicator_dict = {}
         
         # keep only the lower triangle
         corr_matrix = np.tril(corr_matrix)
@@ -264,17 +269,16 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.90, indicator_cutoff 
     
         # find indices of correlation matrix where correlation occurs
         corr_indices = np.argwhere((corr_matrix > pearson_cutoff) | (corr_matrix < -pearson_cutoff))
-            
-        # count reactions with positive or negative correlation based on indicator
-        positive = 0
-        negative = 0
     
         # compute copula for each set of correlated reactions
         for i in range(0, corr_indices.shape[0]):
             
             index1 = corr_indices[i][0]
             index2 = corr_indices[i][1]
-        
+            
+            reaction1 = reactions[index1]
+            reaction2 = reactions[index2]
+            
             flux1 = steady_states[index1]
             flux2 = steady_states[index2]
                 
@@ -302,26 +306,35 @@ def correlated_reactions(steady_states, pearson_cutoff = 0.90, indicator_cutoff 
             # classify specific pair of reactions as positive or negative
             # correlated based on indicator cutoff 
             if indicator > indicator_cutoff:
-                positive += 1
+                pearson = filtered_corr_matrix[index1, index2]
+                indicator_dict[reaction1 + "_" + reaction2] = {'pearson': pearson,
+                                                               'indicator': indicator, 
+                                                               'classification': "positive"}
+
             elif indicator < 1/indicator_cutoff:
-                negative += 1
+                pearson = filtered_corr_matrix[index1, index2]
+                indicator_dict[reaction1 + "_" + reaction2] = {'pearson': pearson,
+                                                               'indicator': indicator, 
+                                                               'classification': "negative"}
+
             # if they do not overcome the cutoff replace their corresponding
             # value in the correlation matrix with 0
             else:
                 filtered_corr_matrix[index1, index2] = 0
                 filtered_corr_matrix[index2, index1] = 0
+                pearson = filtered_corr_matrix[index1, index2]
+                indicator_dict[reaction1 + "_" + reaction2] = {'pearson': pearson,
+                                                               'indicator': indicator, 
+                                                               'classification': "no correlation"}
                 
             print("Completed process of",i+1,"from",corr_indices.shape[0],"copulas")
-
-                
-        print(positive, "out of", i+1, "copulas were positive correlated based on copula indicator")
-        print(negative, "out of", i+1, "copulas were negative correlated based on copula indicator")
         
         if lower_triangle == True:
             filtered_corr_matrix[np.triu_indices(filtered_corr_matrix.shape[0], 1)] = np.nan
             np.fill_diagonal(filtered_corr_matrix, 1)
-            return filtered_corr_matrix
+            return filtered_corr_matrix, indicator_dict
 
         else:
             np.fill_diagonal(filtered_corr_matrix, 1)
-            return filtered_corr_matrix
+            return filtered_corr_matrix, indicator_dict
+            
