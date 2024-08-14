@@ -205,7 +205,7 @@ def get_matrices_of_full_dim_polytope(A, b, Aeq, beq):
 
 
 def correlated_reactions(steady_states, reactions=[], pearson_cutoff = 0.90, indicator_cutoff = 10, 
-                         cells = 10, cop_coeff = 0.3, lower_triangle = True):
+                         cells = 10, cop_coeff = 0.3, lower_triangle = True, verbose = False):
     """A Python function to calculate the pearson correlation matrix of a model
        and filter values based on the copula's indicator
 
@@ -217,6 +217,7 @@ def correlated_reactions(steady_states, reactions=[], pearson_cutoff = 0.90, ind
     cells -- Number of cells to compute the copula
     cop_coeff -- A value that narrows or widens the width of the copula's diagonal
     lower_triangle -- A boolean variable that if True plots only the lower triangular matrix
+    verbose -- A boolean variable that if True additional information is printed as an output.
     """
     
     if cop_coeff > 0.4 or cop_coeff < 0.2:
@@ -328,7 +329,8 @@ def correlated_reactions(steady_states, reactions=[], pearson_cutoff = 0.90, ind
                                                                'indicator': indicator, 
                                                                'classification': "no correlation"}
                 
-            print("Completed process of",i+1,"from",corr_indices.shape[0],"copulas")
+            if verbose == True:
+                print("Completed process of",i+1,"from",corr_indices.shape[0],"copulas")
         
         if lower_triangle == True:
             filtered_corr_matrix[np.triu_indices(filtered_corr_matrix.shape[0], 1)] = np.nan

@@ -9,27 +9,32 @@ import numpy as np
 
 class PreProcess:
     
-    def __init__(self, model, tol=1e-6, open_exchanges=False):
+    def __init__(self, model, tol = 1e-6, open_exchanges = False, verbose = False):
 
         """
-        model parameter gets a cobra model as input
+        model -- parameter gets a cobra model as input
         
-        tol parameter gets a cutoff value used to classify 
-        zero-flux and mle reactions and compare FBA solutions
-        before and after reactions removal
+        tol -- parameter gets a cutoff value used to classify 
+               zero-flux and mle reactions and compare FBA solutions
+               before and after reactions removal
         
-        open_exchanges parameter is used in the function that identifies blocked reactions
-        It controls whether or not to open all exchange reactions to very high flux ranges
+        open_exchanges -- parameter is used in the function that identifies blocked reactions
+                          It controls whether or not to open all exchange reactions 
+                          to very high flux ranges.
+                          
+        verbose -- A boolean type variable that if True 
+                   additional information for preprocess is printed.
         """
         
         self._model = model
         self._tol = tol
-        
-        if self._tol > 1e-6:
-            print("Tolerance value set to",self._tol,"while default value is 1e-6. A looser check will be performed")
-        
+                
         self._open_exchanges = open_exchanges
+        self._verbose = verbose
         
+        if self._tol > 1e-6 and verbose == True:
+            print("Tolerance value set to",self._tol,"while default value is 1e-6. A looser check will be performed")
+
         self._objective = self._objective_function()
         self._initial_reactions = self._initial()
         self._reaction_bounds_dict = self._reaction_bounds_dictionary()
@@ -204,8 +209,9 @@ class PreProcess:
         
         elif extend == False:
             
-            print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
-            "reactions were removed from the model with extend set to", extend) 
+            if self._verbose == True:
+                print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
+                "reactions were removed from the model with extend set to", extend) 
             
             # call this functon to convert cobra to dingo model
             self._dingo_model = MetabolicNetwork.from_cobra_model(self._model)
@@ -266,10 +272,11 @@ class PreProcess:
                             # restore bounds
                             self._model.reactions.get_by_id(reaction).bounds = self._reaction_bounds_dict[reaction]
 
-              
-            print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
-            "reactions were removed from the model with extend set to", extend)
-            print(additional_removed_reactions_count, "additional reaction(s) removed")
+            
+            if self._verbose == True:  
+                print(len(self._removed_reactions), "of the", len(self._initial_reactions), \
+                "reactions were removed from the model with extend set to", extend)
+                print(additional_removed_reactions_count, "additional reaction(s) removed")
                         
             # call this functon to convert cobra to dingo model
             self._dingo_model = MetabolicNetwork.from_cobra_model(self._model)

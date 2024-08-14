@@ -19,7 +19,8 @@ class TestCorrelation(unittest.TestCase):
                                         reactions = reactions,
                                         indicator_cutoff = 5,
                                         pearson_cutoff = 0.999999,
-                                        lower_triangle = False)
+                                        lower_triangle = False,
+                                        verbose = False)
 
         # sum values in the diagonal of the correlation matrix ==> 95*pearson ==> 95*1
         self.assertTrue(np.trace(corr_matrix) == len(reactions))
@@ -38,7 +39,8 @@ class TestCorrelation(unittest.TestCase):
         corr_matrix = correlated_reactions(steady_states, 
                                            indicator_cutoff = 0,
                                            pearson_cutoff = 0,
-                                           lower_triangle = True)
+                                           lower_triangle = True,
+                                           verbose = False)
 
         # sum values in the diagonal of the correlation matrix ==> 95*pearson ==> 95*1
         self.assertTrue(np.trace(corr_matrix) == len(reactions))

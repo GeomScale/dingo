@@ -21,7 +21,7 @@ class TestPreprocess(unittest.TestCase):
 
         # call the reduce function from the PreProcess class 
         # with extend=False to remove reactions from the model        
-        obj = PreProcess(cobra_model, tol=1e-5, open_exchanges=False)  
+        obj = PreProcess(cobra_model, tol=1e-5, open_exchanges=False, verbose=False)  
         removed_reactions, final_dingo_model = obj.reduce(extend=False)      
         
         # calculate the count of removed reactions with extend set to False        
@@ -46,7 +46,7 @@ class TestPreprocess(unittest.TestCase):
      
         # call the reduce function from the PreProcess class 
         # with extend=True to remove additional reactions from the model        
-        obj = PreProcess(cobra_model, tol=1e-6, open_exchanges=False)        
+        obj = PreProcess(cobra_model, tol=1e-6, open_exchanges=False, verbose=False)        
         removed_reactions, final_dingo_model = obj.reduce(extend=True)        
     
         # calculate the count of removed reactions with extend set to True        
