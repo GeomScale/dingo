@@ -238,14 +238,15 @@ def correlated_reactions(steady_states, reactions=[], pearson_cutoff = 0.90, ind
     
     # find indices of correlation matrix where correlation does not occur
     no_corr_indices = np.argwhere((filtered_corr_matrix < pearson_cutoff) & (filtered_corr_matrix > -pearson_cutoff))
-    
+        
     # replace values from the correlation matrix that do not overcome
     # the pearson cutoff with 0
-    for i in range(0, no_corr_indices.shape[0]):
+    for i in range(0, no_corr_indices.shape[0]):        
         index1 = no_corr_indices[i][0]
         index2 = no_corr_indices[i][1]
-        filtered_corr_matrix[index1, index2] = 0   
-    
+        
+        filtered_corr_matrix[index1, index2] = 0  
+
     # if user does not provide an indicator cutoff then do not proceed 
     # with the filtering of the correlation matrix
     if indicator_cutoff == 0:
@@ -307,13 +308,13 @@ def correlated_reactions(steady_states, reactions=[], pearson_cutoff = 0.90, ind
             # correlated based on indicator cutoff 
             if indicator > indicator_cutoff:
                 pearson = filtered_corr_matrix[index1, index2]
-                indicator_dict[reaction1 + "_" + reaction2] = {'pearson': pearson,
+                indicator_dict[reaction1 + "~" + reaction2] = {'pearson': pearson,
                                                                'indicator': indicator, 
                                                                'classification': "positive"}
 
             elif indicator < 1/indicator_cutoff:
                 pearson = filtered_corr_matrix[index1, index2]
-                indicator_dict[reaction1 + "_" + reaction2] = {'pearson': pearson,
+                indicator_dict[reaction1 + "~" + reaction2] = {'pearson': pearson,
                                                                'indicator': indicator, 
                                                                'classification': "negative"}
 
@@ -323,7 +324,7 @@ def correlated_reactions(steady_states, reactions=[], pearson_cutoff = 0.90, ind
                 filtered_corr_matrix[index1, index2] = 0
                 filtered_corr_matrix[index2, index1] = 0
                 pearson = filtered_corr_matrix[index1, index2]
-                indicator_dict[reaction1 + "_" + reaction2] = {'pearson': pearson,
+                indicator_dict[reaction1 + "~" + reaction2] = {'pearson': pearson,
                                                                'indicator': indicator, 
                                                                'classification': "no correlation"}
                 
