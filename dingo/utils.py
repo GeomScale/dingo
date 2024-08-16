@@ -11,6 +11,9 @@ import scipy.sparse as sp
 from scipy.sparse import diags
 from dingo.scaling import gmscale
 from dingo.nullspace import nullspace_dense, nullspace_sparse
+from scipy.cluster import hierarchy
+from networkx.algorithms.components import connected_components
+import networkx as nx
 
 def compute_copula(flux1, flux2, n):
     """A Python function to estimate the copula between two fluxes
@@ -340,4 +343,75 @@ def correlated_reactions(steady_states, reactions=[], pearson_cutoff = 0.90, ind
         else:
             np.fill_diagonal(filtered_corr_matrix, 1)
             return filtered_corr_matrix, indicator_dict
-            
+
+
+
+def cluster_corr_reactions(correlation_matrix, reactions, method, 
+                           linkage="ward", t = 4.0,
+                           min_cluster_size = 2, n_clusters=8):
+        
+    # function to return a nested list with grouped reactions based on clustering
+    def clusters_list(reactions, labels):
+        clusters = []
+        unique_labels = np.unique(labels)
+        for label in unique_labels:
+            cluster = []
+            label_where = np.where(labels == label)[0]
+            for where in label_where:
+                cluster.append(reactions[where])
+            clusters.append(cluster)
+        return clusters
+    
+    if method == "hierarchical":
+        dissimilarity_matrix = 1 - abs(correlation_matrix)     
+        Z = hierarchy.linkage(dissimilarity_matrix, linkage)
+        labels = hierarchy.fcluster(Z, t, criterion='distance')
+        
+        clusters = clusters_list(reactions, labels)
+        return dissimilarity_matrix, labels, clusters
+    
+    
+
+def graph_corr_matrix(correlation_matrix, reactions, correction=True, clusters=[]):
+       
+    graph_matrix = correlation_matrix.copy()
+    np.fill_diagonal(graph_matrix, 0)
+    
+    if correction == True:
+        for cluster in clusters:
+            for reaction_a in cluster:
+                for reaction_b in cluster:
+                    reaction_a_index = reactions.index(reaction_a)
+                    reaction_b_index = reactions.index(reaction_b)
+                    graph_matrix[reaction_a_index, reaction_b_index] = abs(graph_matrix[reaction_a_index, reaction_b_index])
+                    graph_matrix[reaction_b_index, reaction_a_index] = abs(graph_matrix[reaction_b_index, reaction_a_index])
+        
+    G = nx.from_numpy_array(graph_matrix)
+    G = nx.relabel_nodes(G, lambda x: reactions[x])
+    
+    pos = nx.spring_layout(G)
+    unconnected_nodes = list(nx.isolates(G))
+    G.remove_nodes_from(unconnected_nodes)
+    G_nodes = G.nodes()
+    print(G_nodes)
+    
+    graph_list = []
+    layout_list = []
+    
+    graph_list.append(G)
+    layout_list.append(pos)
+
+    subgraphs = [G.subgraph(c) for c in connected_components(G)]
+    H_nodes_list = []
+
+    for i in range(len(subgraphs)):
+        if len(subgraphs[i].nodes()) > 4 and len(subgraphs[i].nodes()) != len(G_nodes):           
+            H = G.subgraph(subgraphs[i].nodes())
+            for cluster in clusters:
+                if H.has_node(cluster[0]) and H.nodes() not in H_nodes_list:
+                    H_nodes_list.append(H.nodes())
+                    pos = nx.spring_layout(H)
+                    graph_list.append(H)
+                    layout_list.append(pos)
+                    
+    return graph_list, layout_list

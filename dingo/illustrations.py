@@ -11,6 +11,8 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import plotly.express as px
 from dingo.utils import compute_copula
+import plotly.figure_factory as ff
+from scipy.cluster import hierarchy
 
 def plot_copula(data_flux1, data_flux2, n = 5, width = 900 , height = 600, export_format = "svg"):
     """A Python function to plot the copula between two fluxes
@@ -129,3 +131,58 @@ def plot_corr_matrix(corr_matrix, reactions, removed_reactions=[], format="svg")
     
     fig_name = "CorrelationMatrix." + format
     pio.write_image(fig, fig_name, scale=2)
+
+
+
+def plot_dendrogram(dissimilarity_matrix, reactions , plot_labels=False, t=2.0, linkage="ward"):
+    fig = ff.create_dendrogram(dissimilarity_matrix,
+                               labels=reactions,
+                               linkagefun=lambda x: hierarchy.linkage(x, linkage),                           
+                               color_threshold=t)
+    fig.update_layout(width=800, height=800)
+    
+    if plot_labels == False:
+        fig.update_layout(
+            xaxis=dict(
+            showticklabels=False,
+            ticks="") )
+    else:
+        fig.update_layout(
+        xaxis=dict(
+            title_font=dict(size=10),
+            tickfont=dict(size=8) ),
+        yaxis=dict(
+            title_font=dict(size=10),
+            tickfont=dict(size=8) ) )
+        
+    fig.show()
+    
+
+
+def plot_graph(G, pos):
+    fig = go.Figure()
+
+    for u, v, data in G.edges(data=True):
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+        
+        edge_color = 'blue' if data['weight'] > 0 else 'red'
+        
+        fig.add_trace(go.Scatter(x=[x0, x1], y=[y0, y1], mode='lines', 
+                                    line=dict(width=abs(data['weight']) * 1, 
+                                    color=edge_color), hoverinfo='none',
+                                    showlegend=False))
+
+    for node in G.nodes():
+        x, y = pos[node]
+        node_name = G.nodes[node].get('name', f'Node {node}')
+  
+        fig.add_trace(go.Scatter(x=[x], y=[y], mode='markers', 
+                                    marker=dict(size=10),
+                                    text=[node_name],
+                                    textposition='top center',
+                                    name = node_name,
+                                    showlegend=True))
+        
+    fig.update_layout(width=800, height=800)
+    fig.show()
