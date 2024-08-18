@@ -135,6 +135,18 @@ def plot_corr_matrix(corr_matrix, reactions, removed_reactions=[], format="svg")
 
 
 def plot_dendrogram(dissimilarity_matrix, reactions , plot_labels=False, t=2.0, linkage="ward"):
+    """A Python function to plot the dendrogram of a dissimilarity matrix.
+
+    Keyword arguments:
+    dissimilarity_matrix -- A matrix produced from the "cluster_corr_reactions" function
+    reactions -- A list with the model's reactions
+    plot_labels -- A boolean variable that if True plots the reactions labels in the dendrogram
+    t -- A threshold that defines a threshold that cuts the dendrogram 
+         at a specific height and colors the occuring clusters accordingly
+    linkage -- linkage defines the type of linkage. 
+               Available linkage types are: single, average, complete, ward.
+    """
+
     fig = ff.create_dendrogram(dissimilarity_matrix,
                                labels=reactions,
                                linkagefun=lambda x: hierarchy.linkage(x, linkage),                           
@@ -160,6 +172,13 @@ def plot_dendrogram(dissimilarity_matrix, reactions , plot_labels=False, t=2.0, 
 
 
 def plot_graph(G, pos):
+    """A Python function to plot a graph created from a correlation matrix.
+
+    Keyword arguments:
+    G -- A graph produced from the "graph_corr_matrix" function.
+    pos -- A layout for the corresponding graph.
+    """
+
     fig = go.Figure()
 
     for u, v, data in G.edges(data=True):
@@ -182,7 +201,7 @@ def plot_graph(G, pos):
                                     text=[node_name],
                                     textposition='top center',
                                     name = node_name,
-                                    showlegend=True))
+                                    showlegend=False))
         
     fig.update_layout(width=800, height=800)
     fig.show()
