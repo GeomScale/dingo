@@ -3,6 +3,7 @@
 
 # Copyright (c) 2021 Apostolos Chalkis
 # Copyright (c) 2021 Vissarion Fisikopoulos
+# Copyright (c) 2024 Ke Shi
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
@@ -11,15 +12,7 @@ import sys
 from typing import Dict
 import cobra
 from dingo.loading_models import read_json_file, read_mat_file, read_sbml_file, parse_cobra_model
-from dingo.fva import slow_fva
-from dingo.fba import slow_fba
-
-try:
-    import gurobipy
-    from dingo.gurobi_based_implementations import fast_fba, fast_fva, fast_inner_ball
-except ImportError as e:
-    pass
-
+from dingo.pyoptinterface_based_impl import fba,fva,inner_ball,remove_redundant_facets
 
 class MetabolicNetwork:
     def __init__(self, tuple_args):
@@ -28,13 +21,7 @@ class MetabolicNetwork:
         self._parameters["opt_percentage"] = 100
         self._parameters["distribution"] = "uniform"
         self._parameters["nullspace_method"] = "sparseQR"
-
-        try:
-            import gurobipy
-
-            self._parameters["fast_computations"] = True
-        except ImportError as e:
-            self._parameters["fast_computations"] = False
+        self._parameters["solver"] = None
 
         if len(tuple_args) != 10:
             raise Exception(
@@ -107,30 +94,18 @@ class MetabolicNetwork:
     def fva(self):
         """A member function to apply the FVA method on the metabolic network."""
 
-        if self._parameters["fast_computations"]:
-            return fast_fva(
-                self._lb,
-                self._ub,
-                self._S,
-                self._objective_function,
-                self._parameters["opt_percentage"],
-            )
-        else:
-            return slow_fva(
-                self._lb,
-                self._ub,
-                self._S,
-                self._objective_function,
-                self._parameters["opt_percentage"],
-            )
+        return fva(
+            self._lb,
+            self._ub,
+            self._S,
+            self._objective_function,
+            self._parameters["opt_percentage"],
+            self._parameters["solver"]
+        )
 
     def fba(self):
         """A member function to apply the FBA method on the metabolic network."""
-
-        if self._parameters["fast_computations"]:
-            return fast_fba(self._lb, self._ub, self._S, self._objective_function)
-        else:
-            return slow_fba(self._lb, self._ub, self._S, self._objective_function)
+        return fba(self._lb, self._ub, self._S, self._objective_function, self._parameters["solver"])
 
     @property
     def lb(self):
@@ -286,20 +261,9 @@ class MetabolicNetwork:
             set_active_bound(
                 rxn_id, reac_index, min(0.0, -self._lb[reac_index] if is_export else self._ub[reac_index])
             )
-
-    def set_fast_mode(self):
-
-        try:
-            import gurobipy
-
-            self._parameters["fast_computations"] = True
-        except ImportError as e:
-            print("You have to install gurobi to use the fast computations.")
-            self._parameters["fast_computations"] = False
-
-    def set_slow_mode(self):
-
-        self._parameters["fast_computations"] = False
+    
+    def set_solver(self, solver: str):
+        self._parameters["solver"] = solver
 
     def set_nullspace_method(self, value):
 

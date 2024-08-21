@@ -4,12 +4,15 @@
 # Copyright (c) 2022 Apostolos Chalkis
 # Copyright (c) 2022 Vissarion Fisikopoulos
 # Copyright (c) 2022 Haris Zafeiropoulos
+# Copyright (c) 2024 Ke Shi
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
 import unittest
 import os
+import sys
 from dingo import MetabolicNetwork, PolytopeSampler
+from dingo.pyoptinterface_based_impl import set_default_solver
 
 
 class TestSampling(unittest.TestCase):
@@ -52,4 +55,7 @@ class TestSampling(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        set_default_solver(sys.argv[1])
+        sys.argv.pop(1)
     unittest.main()

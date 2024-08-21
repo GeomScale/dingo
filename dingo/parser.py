@@ -212,9 +212,9 @@ def dingo_args():
     optional.add_argument(
         "--solver",
         "-s",
-        help="the solver to use for the linear programs. Choose between `scipy` and `gurobi` (faster computations --- it needs a licence). The default value is `scipy`.",
+        help="the solver to use for the linear programs. Choose between `highs` and `gurobi` (faster computations --- it needs a licence). The default value is `highs`.",
         required=False,
-        default="scipy",
+        default="highs",
         metavar="",
     )
 

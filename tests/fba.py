@@ -2,12 +2,15 @@
 # dingo is part of GeomScale project
 
 # Copyright (c) 2021 Apostolos Chalkis
+# Copyright (c) 2024 Ke Shi
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
 import unittest
 import os
+import sys
 from dingo import MetabolicNetwork
+from dingo.pyoptinterface_based_impl import set_default_solver
 
 class TestFba(unittest.TestCase):
 
@@ -15,7 +18,6 @@ class TestFba(unittest.TestCase):
 
         input_file_json = os.getcwd() + "/ext_data/e_coli_core.json"
         model = MetabolicNetwork.from_json(input_file_json)
-        model.set_slow_mode()
         res = model.fba()
 
         self.assertTrue(abs(res[1] - 0.8739215067486387) < 1e-03)
@@ -24,7 +26,6 @@ class TestFba(unittest.TestCase):
 
         input_file_mat = os.getcwd() + "/ext_data/e_coli_core.mat"
         model = MetabolicNetwork.from_mat(input_file_mat)
-        model.set_slow_mode()
 
         res = model.fba()
 
@@ -34,7 +35,6 @@ class TestFba(unittest.TestCase):
 
         input_file_sbml = os.getcwd() + "/ext_data/e_coli_core.xml"
         model = MetabolicNetwork.from_sbml(input_file_sbml)
-        model.set_slow_mode()
 
         res = model.fba()
 
@@ -44,7 +44,6 @@ class TestFba(unittest.TestCase):
 
         input_file_sbml = os.getcwd() + "/ext_data/e_coli_core.xml"
         model = MetabolicNetwork.from_sbml(input_file_sbml)
-        model.set_slow_mode()
 
         initial_medium = model.medium
         initial_fba = model.fba()[-1]
@@ -81,4 +80,7 @@ class TestFba(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        set_default_solver(sys.argv[1])
+        sys.argv.pop(1)
     unittest.main()

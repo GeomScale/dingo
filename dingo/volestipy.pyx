@@ -5,6 +5,7 @@
 # Copyright (c) 2018-2021 Apostolos Chalkis
 # Copyright (c) 2020-2021 Pedro Zuidberg Dos Martires
 # Copyright (c) 2020-2021 Haris Zafeiropoulos
+# Copyright (c) 2024 Ke Shi
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
@@ -25,13 +26,7 @@ import json
 import scipy.io
 # ----------------------------------------------------------------------------------
 
-from dingo.inner_ball import slow_inner_ball
-try:
-   import gurobipy
-   from dingo.gurobi_based_implementations import fast_inner_ball
-except ImportError as e:
-   pass
-
+from dingo.pyoptinterface_based_impl import inner_ball
 
 # Set the time
 def get_time_seed():
@@ -122,16 +117,13 @@ cdef class HPolytope:
          raise Exception('"{}" is not implemented to compute volume. Available methods are: {}'.format(vol_method, volume_methods))
 
    # Likewise, the generate_samples() function
-   def generate_samples(self, method, number_of_points, number_of_points_to_burn, walk_len, fast_mode, variance_value, bias_vector):
+   def generate_samples(self, method, number_of_points, number_of_points_to_burn, walk_len, variance_value, bias_vector, solver = None):
 
       n_variables = self._A.shape[1]
       cdef double[:,::1] samples = np.zeros((number_of_points, n_variables), dtype = np.float64, order = "C")
 
       # Get max inscribed ball for the initial polytope
-      if fast_mode:
-         temp_center, radius = fast_inner_ball(self._A, self._b)
-      else:
-         temp_center, radius = slow_inner_ball(self._A, self._b)
+      temp_center, radius = inner_ball(self._A, self._b, solver)
       
       cdef double[::1] inner_point_for_c = np.asarray(temp_center)
       
@@ -168,7 +160,7 @@ cdef class HPolytope:
 
 
    # The rounding() function; as in compute_volume, more than one method is available for this step
-   def rounding(self, rounding_method = 'john_position', fast_mode = False):
+   def rounding(self, rounding_method = 'john_position', solver = None):
 
       # Get the dimensions of the items about to build
       n_hyperplanes, n_variables = self._A.shape[0], self._A.shape[1]
@@ -182,10 +174,7 @@ cdef class HPolytope:
       cdef double round_value
       
       # Get max inscribed ball for the initial polytope
-      if fast_mode:
-         center, radius = fast_inner_ball(self._A, self._b)
-      else:
-         center, radius = slow_inner_ball(self._A, self._b)
+      center, radius = inner_ball(self._A, self._b, solver)
       
       cdef double[::1] inner_point_for_c = np.asarray(center)
       
@@ -203,8 +192,8 @@ cdef class HPolytope:
       return np.asarray(new_A),np.asarray(new_b),np.asarray(T_matrix),np.asarray(shift),np.asarray(round_value)
    
    
-   # The fast version of (m)ultiphase (m)onte (c)arlo (s)ampling algorithm to generate steady states of a metabolic network
-   def fast_mmcs(self, ess = 1000, psrf_check = True, parallelism = False, num_threads = 2):
+   # (m)ultiphase (m)onte (c)arlo (s)ampling algorithm to generate steady states of a metabolic network
+   def mmcs(self, ess = 1000, psrf_check = True, parallelism = False, num_threads = 2, solver = None):
 
       n_hyperplanes, n_variables = self._A.shape[0], self._A.shape[1]
 
@@ -220,7 +209,7 @@ cdef class HPolytope:
       self.polytope_cpp.mmcs_initialize(n_variables, ess, check_psrf, parallel, num_threads)
 
       # Get max inscribed ball for the initial polytope
-      temp_center, radius = fast_inner_ball(self._A, self._b)
+      temp_center, radius = inner_ball(self._A, self._b, solver)
       cdef double[::1] inner_point_for_c = np.asarray(temp_center)
 
       while True:
@@ -231,45 +220,7 @@ cdef class HPolytope:
             break
 
          self.polytope_cpp.get_polytope_as_matrices(&new_A[0,0], &new_b[0])
-         new_temp_c, radius = fast_inner_ball(np.asarray(new_A), np.asarray(new_b))
-         inner_point_for_c = np.asarray(new_temp_c)
-      
-      cdef double[:,::1] samples = np.zeros((n_variables, N_samples), dtype=np.float64, order="C")
-      self.polytope_cpp.get_mmcs_samples(&T_matrix[0,0], &T_shift[0], &samples[0,0])
-      self.polytope_cpp.get_polytope_as_matrices(&new_A[0,0], &new_b[0])
-
-      return np.asarray(new_A), np.asarray(new_b), np.asarray(T_matrix), np.asarray(T_shift), np.asarray(samples)
-   
-
-   # The slow version of (m)ultiphase (m)onte (c)arlo (s)ampling algorithm to generate steady states of a metabolic network
-   def slow_mmcs(self, ess = 1000, psrf_check = True, parallelism = False, num_threads = 2):
-
-      n_hyperplanes, n_variables = self._A.shape[0], self._A.shape[1]
-
-      cdef double[:,::1] new_A = np.zeros((n_hyperplanes, n_variables), dtype=np.float64, order="C")
-      cdef double[::1] new_b = np.zeros(n_hyperplanes, dtype=np.float64, order="C")
-      cdef double[:,::1] T_matrix = np.zeros((n_variables, n_variables), dtype=np.float64, order="C")
-      cdef double[::1] T_shift = np.zeros((n_variables), dtype=np.float64, order="C")
-      cdef int N_samples
-      cdef int N_ess = ess
-      cdef bint check_psrf = bool(psrf_check)
-      cdef bint parallel = bool(parallelism)
-      
-      self.polytope_cpp.mmcs_initialize(n_variables, ess, check_psrf, parallel, num_threads)
-
-      # Get max inscribed ball for the initial polytope
-      temp_center, radius = slow_inner_ball(self._A, self._b)
-      cdef double[::1] inner_point_for_c = np.asarray(temp_center)
-
-      while True:
-
-         check = self.polytope_cpp.mmcs_step(&inner_point_for_c[0], radius, N_samples)
-         
-         if check > 1.0 and check < 2.0:
-            break
-
-         self.polytope_cpp.get_polytope_as_matrices(&new_A[0,0], &new_b[0])
-         new_temp_c, radius = slow_inner_ball(np.asarray(new_A), np.asarray(new_b))
+         new_temp_c, radius = inner_ball(np.asarray(new_A), np.asarray(new_b), solver)
          inner_point_for_c = np.asarray(new_temp_c)
       
       cdef double[:,::1] samples = np.zeros((n_variables, N_samples), dtype=np.float64, order="C")

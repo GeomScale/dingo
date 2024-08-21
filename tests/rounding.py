@@ -4,14 +4,16 @@
 # Copyright (c) 2022 Apostolos Chalkis
 # Copyright (c) 2022-2024 Vissarion Fisikopoulos
 # Copyright (c) 2022 Haris Zafeiropoulos
+# Copyright (c) 2024 Ke Shi
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
 import unittest
 import os
+import sys
 import numpy as np
 from dingo import MetabolicNetwork, PolytopeSampler
-from dingo.gurobi_based_implementations import fast_inner_ball
+from dingo.pyoptinterface_based_impl import set_default_solver
 
 def test_rounding(self, method_str):
 
@@ -63,4 +65,7 @@ class TestSampling(unittest.TestCase):
         test_rounding(self, "john_position")
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        set_default_solver(sys.argv[1])
+        sys.argv.pop(1)
     unittest.main()

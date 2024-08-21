@@ -2,6 +2,7 @@
 # dingo is part of GeomScale project
 
 # Copyright (c) 2021 Apostolos Chalkis
+# Copyright (c) 2024 Ke Shi
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
@@ -10,23 +11,13 @@ import numpy as np
 import warnings
 import math
 from dingo.MetabolicNetwork import MetabolicNetwork
-from dingo.fva import slow_fva
 from dingo.utils import (
     map_samples_to_steady_states,
     get_matrices_of_low_dim_polytope,
     get_matrices_of_full_dim_polytope,
 )
 
-try:
-    import gurobipy
-    from dingo.gurobi_based_implementations import (
-        fast_fba,
-        fast_fva,
-        fast_inner_ball,
-        fast_remove_redundant_facets,
-    )
-except ImportError as e:
-    pass
+from dingo.pyoptinterface_based_impl import fba,fva,inner_ball,remove_redundant_facets
 
 from volestipy import HPolytope
 
@@ -53,14 +44,8 @@ class PolytopeSampler:
         self._parameters["first_run_of_mmcs"] = True
         self._parameters["remove_redundant_facets"] = True
 
-        try:
-            import gurobipy
-
-            self._parameters["fast_computations"] = True
-            self._parameters["tol"] = 1e-06
-        except ImportError as e:
-            self._parameters["fast_computations"] = False
-            self._parameters["tol"] = 1e-03
+        self._parameters["tol"] = 1e-06
+        self._parameters["solver"] = None
 
     def get_polytope(self):
         """A member function to derive the corresponding full dimensional polytope
@@ -82,24 +67,18 @@ class PolytopeSampler:
             ) = self._metabolic_network.fba()
 
             if (
-                self._parameters["fast_computations"]
-                and self._parameters["remove_redundant_facets"]
+                self._parameters["remove_redundant_facets"]
             ):
 
-                A, b, Aeq, beq = fast_remove_redundant_facets(
+                A, b, Aeq, beq = remove_redundant_facets(
                     self._metabolic_network.lb,
                     self._metabolic_network.ub,
                     self._metabolic_network.S,
                     self._metabolic_network.objective_function,
                     self._parameters["opt_percentage"],
+                    self._parameters["solver"],
                 )
             else:
-                if (not self._parameters["fast_computations"]) and self._parameters[
-                    "remove_redundant_facets"
-                ]:
-                    warnings.warn(
-                        "We continue without redundancy removal (slow mode is ON)"
-                    )
 
                 (
                     min_fluxes,
@@ -162,14 +141,9 @@ class PolytopeSampler:
 
         P = HPolytope(self._A, self._b)
 
-        if self._parameters["fast_computations"]:
-            self._A, self._b, Tr, Tr_shift, samples = P.fast_mmcs(
-                ess, psrf, parallel_mmcs, num_threads
-            )
-        else:
-            self._A, self._b, Tr, Tr_shift, samples = P.slow_mmcs(
-                ess, psrf, parallel_mmcs, num_threads
-            )
+        self._A, self._b, Tr, Tr_shift, samples = P.mmcs(
+            ess, psrf, parallel_mmcs, num_threads, self._parameters["solver"]
+        )
 
         if self._parameters["first_run_of_mmcs"]:
             steady_states = map_samples_to_steady_states(
@@ -207,7 +181,7 @@ class PolytopeSampler:
         else:
             bias_vector = bias_vector.astype('float64')
 
-        samples = P.generate_samples(method, n, burn_in, thinning, self._parameters["fast_computations"], variance, bias_vector)
+        samples = P.generate_samples(method, n, burn_in, thinning, variance, bias_vector, self._parameters["solver"])
         samples_T = samples.T
 
         steady_states = map_samples_to_steady_states(
@@ -218,7 +192,7 @@ class PolytopeSampler:
 
     @staticmethod
     def sample_from_polytope(
-        A, b, ess=1000, psrf=False, parallel_mmcs=False, num_threads=1
+        A, b, ess=1000, psrf=False, parallel_mmcs=False, num_threads=1, solver=None
     ):
         """A static function to sample from a full dimensional polytope.
 
@@ -233,22 +207,16 @@ class PolytopeSampler:
 
         P = HPolytope(A, b)
 
-        try:
-            import gurobipy
+        A, b, Tr, Tr_shift, samples = P.mmcs(
+            ess, psrf, parallel_mmcs, num_threads, solver
+        )
 
-            A, b, Tr, Tr_shift, samples = P.fast_mmcs(
-                ess, psrf, parallel_mmcs, num_threads
-            )
-        except ImportError as e:
-            A, b, Tr, Tr_shift, samples = P.slow_mmcs(
-                ess, psrf, parallel_mmcs, num_threads
-            )
 
         return samples
     
     @staticmethod
     def sample_from_polytope_no_multiphase(
-        A, b, method = 'billiard_walk', n=1000, burn_in=0, thinning=1, variance=1.0, bias_vector=None
+        A, b, method = 'billiard_walk', n=1000, burn_in=0, thinning=1, variance=1.0, bias_vector=None, solver=None
     ):
         """A static function to sample from a full dimensional polytope with an MCMC method.
 
@@ -267,25 +235,17 @@ class PolytopeSampler:
             
         P = HPolytope(A, b)
 
-        try:
-            import gurobipy
-            samples = P.generate_samples(method, n, burn_in, thinning, True, variance, bias_vector)
-        except ImportError as e:
-            samples = P.generate_samples(method, n, burn_in, thinning, False, variance, bias_vector)
+        samples = P.generate_samples(method, n, burn_in, thinning, variance, bias_vector, solver)
 
         samples_T = samples.T
         return samples_T
 
     @staticmethod
     def round_polytope(
-        A, b, method = "john_position"
+        A, b, method = "john_position", solver = None
     ):
         P = HPolytope(A, b)
-        try:
-            import gurobipy
-            A, b, Tr, Tr_shift, round_value = P.rounding(method, True)
-        except ImportError as e:
-            A, b, Tr, Tr_shift, round_value = P.rounding(method, False)
+        A, b, Tr, Tr_shift, round_value = P.rounding(method, solver)
         
         return A, b, Tr, Tr_shift
 
@@ -301,6 +261,7 @@ class PolytopeSampler:
         psrf=False,
         parallel_mmcs=False,
         num_threads=1,
+        solver = None
     ):
         """A static function to sample steady states when the output of FVA is given.
 
@@ -335,16 +296,9 @@ class PolytopeSampler:
 
         P = HPolytope(A, b)
 
-        try:
-            import gurobipy
-
-            A, b, Tr, Tr_shift, samples = P.fast_mmcs(
-                ess, psrf, parallel_mmcs, num_threads
-            )
-        except ImportError as e:
-            A, b, Tr, Tr_shift, samples = P.slow_mmcs(
-                ess, psrf, parallel_mmcs, num_threads
-            )
+        A, b, Tr, Tr_shift, samples = P.mmcs(
+            ess, psrf, parallel_mmcs, num_threads, solver
+        )
 
         steady_states = map_samples_to_steady_states(samples, N, N_shift)
 
@@ -381,20 +335,8 @@ class PolytopeSampler:
     def facet_redundancy_removal(self, value):
         self._parameters["remove_redundant_facets"] = value
 
-        if (not self._parameters["fast_computations"]) and value:
-            warnings.warn(
-                "Since you are in slow mode the redundancy removal step is skipped (dingo does not currently support this functionality in slow mode)"
-            )
-
-    def set_fast_mode(self):
-
-        self._parameters["fast_computations"] = True
-        self._parameters["tol"] = 1e-06
-
-    def set_slow_mode(self):
-
-        self._parameters["fast_computations"] = False
-        self._parameters["tol"] = 1e-03
+    def set_solver(self, solver):
+        self._parameters["solver"] = solver
 
     def set_distribution(self, value):
 

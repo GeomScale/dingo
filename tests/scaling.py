@@ -8,10 +8,12 @@
 
 import unittest
 import os
+import sys
 import scipy
 import numpy as np
 from dingo import MetabolicNetwork
 from dingo.scaling import gmscale
+from dingo.pyoptinterface_based_impl import set_default_solver
 
 
 class TestScaling(unittest.TestCase):
@@ -51,4 +53,7 @@ class TestScaling(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        set_default_solver(sys.argv[1])
+        sys.argv.pop(1)
     unittest.main()

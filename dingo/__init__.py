@@ -9,10 +9,7 @@ import numpy as np
 import sys
 import os
 import pickle
-from dingo.fva import slow_fva
-from dingo.fba import slow_fba
 from dingo.loading_models import read_json_file
-from dingo.inner_ball import slow_inner_ball
 from dingo.nullspace import nullspace_dense, nullspace_sparse
 from dingo.scaling import gmscale
 from dingo.utils import (
@@ -30,11 +27,7 @@ from dingo.parser import dingo_args
 from dingo.MetabolicNetwork import MetabolicNetwork
 from dingo.PolytopeSampler import PolytopeSampler
 
-try:
-    import gurobipy
-    from dingo.gurobi_based_implementations import fast_fba, fast_fva, fast_inner_ball
-except ImportError as e:
-    pass
+from dingo.pyoptinterface_based_impl import fba, fva, inner_ball, remove_redundant_facets, set_default_solver
 
 from volestipy import HPolytope
 
@@ -82,6 +75,8 @@ def dingo_main():
 
     # Move to the output directory
     os.chdir(output_path_dir)
+    
+    set_default_solver(args.solver)
 
     if args.model_name is None:
         if args.metabolic_network is not None:
@@ -130,15 +125,6 @@ def dingo_main():
 
     elif args.fva:
 
-        if args.solver == "gurobi":
-            try:
-                import gurobipy
-            except ImportError as error:
-                raise error.with_traceback(sys.exc_info()[2])
-
-        if args.solver != "gurobi" and args.solver != "scipy":
-            raise Exception("An unknown solver requested.")
-
         if args.metabolic_network[-4:] == "json":
             model = MetabolicNetwork.fom_json(args.metabolic_network)
         elif args.metabolic_network[-3:] == "mat":
@@ -146,6 +132,8 @@ def dingo_main():
         else:
             raise Exception("An unknown format file given.")
 
+        model.set_solver(args.solver)
+        
         result_obj = model.fva()
 
         with open("dingo_fva_" + name + ".pckl", "wb") as dingo_fva_file:
@@ -153,21 +141,14 @@ def dingo_main():
 
     elif args.fba:
 
-        if args.solver == "gurobi":
-            try:
-                import gurobipy
-            except ImportError as error:
-                raise error.with_traceback(sys.exc_info()[2])
-
-        if args.solver != "gurobi" and args.solver != "scipy":
-            raise Exception("An unknown solver requested.")
-
         if args.metabolic_network[-4:] == "json":
             model = MetabolicNetwork.fom_json(args.metabolic_network)
         elif args.metabolic_network[-3:] == "mat":
             model = MetabolicNetwork.fom_mat(args.metabolic_network)
         else:
             raise Exception("An unknown format file given.")
+        
+        model.set_solver(args.solver)
 
         result_obj = model.fba()
 
