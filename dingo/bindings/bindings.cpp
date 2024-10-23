@@ -44,7 +44,7 @@ HPolytopeCPP::HPolytopeCPP(double *A_np, double *b_np, int n_hyperplanes, int n_
 HPolytopeCPP::~HPolytopeCPP(){}
 
 //////////          Start of "compute_volume"          //////////
-double HPolytopeCPP::compute_volume(char* vol_method, char* walk_method, 
+double HPolytopeCPP::compute_volume(char* vol_method, char* walk_method,
                                     int walk_len, double epsilon, int seed) const {
 
    double volume;
@@ -84,92 +84,101 @@ double HPolytopeCPP::compute_volume(char* vol_method, char* walk_method,
 
 //////////         Start of "generate_samples()"          //////////
 double HPolytopeCPP::apply_sampling(int walk_len,
-                                    int number_of_points, 
+                                    int number_of_points,
                                     int number_of_points_to_burn,
-                                    int method,
-                                    double* inner_point, 
+                                    char* method,
+                                    double* inner_point,
                                     double radius,
                                     double* samples,
                                     double variance_value,
-                                    double* bias_vector_){ 
-                                                                    
+                                    double* bias_vector_,
+                                    int ess){
+
    RNGType rng(HP.dimension());
    HP.normalize();
    int d = HP.dimension();
-   Point starting_point; 
+   Point starting_point;
    VT inner_vec(d);
 
    for (int i = 0; i < d; i++){
       inner_vec(i) = inner_point[i];
    }
-   
-   Point inner_point2(inner_vec); 
+
+   Point inner_point2(inner_vec);
    CheBall = std::pair<Point, NT>(inner_point2, radius);
    HP.set_InnerBall(CheBall);
    starting_point = inner_point2;
    std::list<Point> rand_points;
-   
+
    NT variance = variance_value;
 
-   if (method == 1) { // cdhr
+   if (strcmp(method, "cdhr")) { // cdhr
       uniform_sampling<CDHRWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                  starting_point, number_of_points_to_burn);
-   } else if (method == 2) { // rdhr
-      uniform_sampling<RDHRWalk>(rand_points, HP, rng, walk_len, number_of_points, 
+   } else if (strcmp(method, "rdhr")) { // rdhr
+      uniform_sampling<RDHRWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                  starting_point, number_of_points_to_burn);
-   } else if (method == 3) { // accelerated_billiard
-      uniform_sampling<AcceleratedBilliardWalk>(rand_points, HP, rng, walk_len, 
-                                                number_of_points, starting_point, 
+   } else if (strcmp(method, "billiard_walk")) { // accelerated_billiard
+      uniform_sampling<AcceleratedBilliardWalk>(rand_points, HP, rng, walk_len,
+                                                number_of_points, starting_point,
                                                 number_of_points_to_burn);
-   } else if (method == 4) { // ball walk
-      uniform_sampling<BallWalk>(rand_points, HP, rng, walk_len, number_of_points, 
+   } else if (strcmp(method, "ball_walk")) { // ball walk
+      uniform_sampling<BallWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                  starting_point, number_of_points_to_burn);
-   } else if (method == 5) { // dikin walk
+   } else if (strcmp(method, "dikin_walk")) { // dikin walk
       uniform_sampling<DikinWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                   starting_point, number_of_points_to_burn);
-   } else if (method == 6) { // john walk
+   } else if (strcmp(method, "john_walk")) { // john walk
       uniform_sampling<JohnWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                  starting_point, number_of_points_to_burn);
-   } else if (method == 7) { // vaidya walk
+   } else if (strcmp(method, "vaidya_walk")) { // vaidya walk
       uniform_sampling<VaidyaWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                    starting_point, number_of_points_to_burn);
-   } else if (method == 8) { // Gaussian sampling with exact HMC walk
+   } else if (strcmp(method, "mmcs")) { // vaidya walk
+      MT S;
+      int total_ess;
+      //TODO: avoid passing polytopes as non-const references
+      const Hpolytope HP_const = HP;
+      mmcs(HP_const, ess, S, total_ess, walk_len, rng);
+      samples = S.data();
+   } else if (strcmp(method, "gaussian_hmc_walk")) { // Gaussian sampling with exact HMC walk
       NT a = NT(1)/(NT(2)*variance);
       gaussian_sampling<GaussianHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, a,
                                    starting_point, number_of_points_to_burn);
-   } else if (method == 9) { // exponential sampling with exact HMC walk
+   } else if (strcmp(method, "exponential_hmc_walk")) { // exponential sampling with exact HMC walk
       VT c(d);
       for (int i = 0; i < d; i++){
          c(i) = bias_vector_[i];
       }
-      Point bias_vector(c);       
+      Point bias_vector(c);
       exponential_sampling<ExponentialHamiltonianMonteCarloExactWalk>(rand_points, HP, rng, walk_len, number_of_points, bias_vector, variance,
-                                   starting_point, number_of_points_to_burn);                                
-   } else if (method == 10) { // HMC with Gaussian distribution         
-      rand_points = hmc_leapfrog_gaussian(walk_len, number_of_points, number_of_points_to_burn, variance, starting_point, HP);                             
-   } else if (method == 11) { // HMC with exponential distribution   
+                                   starting_point, number_of_points_to_burn);
+   } else if (strcmp(method, "hmc_leapfrog_gaussian")) { // HMC with Gaussian distribution
+      rand_points = hmc_leapfrog_gaussian(walk_len, number_of_points, number_of_points_to_burn, variance, starting_point, HP);
+   } else if (strcmp(method, "hmc_leapfrog_exponential")) { // HMC with exponential distribution
       VT c(d);
       for (int i = 0; i < d; i++) {
          c(i) = bias_vector_[i];
       }
       Point bias_vector(c);
-         
-      rand_points = hmc_leapfrog_exponential(walk_len, number_of_points, number_of_points_to_burn, variance, bias_vector, starting_point, HP); 
-                                  
+
+      rand_points = hmc_leapfrog_exponential(walk_len, number_of_points, number_of_points_to_burn, variance, bias_vector, starting_point, HP);
+
    }
-     
+
    else {
       throw std::runtime_error("This function must not be called.");
    }
 
-   // The following block of code allows us to copy the sampled points
-   auto n_si=0;
-   for (auto it_s = rand_points.cbegin(); it_s != rand_points.cend(); it_s++){
-      for (auto i = 0; i != it_s->dimension(); i++){
-         samples[n_si++] = (*it_s)[i];
-      }
+   if (!strcmp(method, "mmcs")) {
+    // The following block of code allows us to copy the sampled points
+    auto n_si=0;
+    for (auto it_s = rand_points.cbegin(); it_s != rand_points.cend(); it_s++){
+        for (auto i = 0; i != it_s->dimension(); i++){
+            samples[n_si++] = (*it_s)[i];
+        }
+    }
    }
-
    return 0.0;
 }
 //////////         End of "generate_samples()"          //////////
@@ -187,7 +196,7 @@ void HPolytopeCPP::get_polytope_as_matrices(double* new_A, double* new_b) const 
          new_A[n_si++] = A_to_copy(i, j);
       }
    }
-   
+
    // create the new_b vector
    VT new_b_temp = HP.get_vec();
    for (int i=0; i < n_hyperplanes; i++){
@@ -205,35 +214,35 @@ void HPolytopeCPP::mmcs_initialize(int d, int ess, bool psrf_check, bool paralle
 
 
 double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
-   
+
    HP.normalize();
    int d = HP.dimension();
 
    VT inner_vec(d);
    NT max_s;
-   
+
    for (int i = 0; i < d; i++){
       inner_vec(i) = inner_point[i];
    }
-   
-   Point inner_point2(inner_vec);   
-   CheBall = std::pair<Point, NT>(inner_point2, radius);   
-      
-   HP.set_InnerBall(CheBall);   
+
+   Point inner_point2(inner_vec);
+   CheBall = std::pair<Point, NT>(inner_point2, radius);
+
+   HP.set_InnerBall(CheBall);
 
    RNGType rng(d);
 
-   
-   if (mmcs_set_of_parameters.request_rounding && mmcs_set_of_parameters.rounding_completed) 
+
+   if (mmcs_set_of_parameters.request_rounding && mmcs_set_of_parameters.rounding_completed)
    {
       mmcs_set_of_parameters.req_round_temp = false;
    }
 
-   if (mmcs_set_of_parameters.req_round_temp) 
+   if (mmcs_set_of_parameters.req_round_temp)
    {
       mmcs_set_of_parameters.nburns = mmcs_set_of_parameters.num_rounding_steps / mmcs_set_of_parameters.window + 1;
-   } 
-   else 
+   }
+   else
    {
       mmcs_set_of_parameters.nburns = mmcs_set_of_parameters.max_num_samples / mmcs_set_of_parameters.window + 1;
    }
@@ -245,21 +254,21 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
    MT TotalRandPoints;
    if (mmcs_set_of_parameters.parallelism)
    {
-      mmcs_set_of_parameters.complete = perform_parallel_mmcs_step<AcceleratedBilliardWalkParallel>(HP, rng, mmcs_set_of_parameters.walk_length, 
-                                                                                                    mmcs_set_of_parameters.Neff, 
-                                                                                                    mmcs_set_of_parameters.max_num_samples, 
-                                                                                                    mmcs_set_of_parameters.window, 
-                                                                                                    Neff_sampled, mmcs_set_of_parameters.total_samples, 
-                                                                                                    mmcs_set_of_parameters.num_rounding_steps, 
-                                                                                                    TotalRandPoints, CheBall.first, mmcs_set_of_parameters.nburns, 
-                                                                                                    mmcs_set_of_parameters.num_threads, 
+      mmcs_set_of_parameters.complete = perform_parallel_mmcs_step<AcceleratedBilliardWalkParallel>(HP, rng, mmcs_set_of_parameters.walk_length,
+                                                                                                    mmcs_set_of_parameters.Neff,
+                                                                                                    mmcs_set_of_parameters.max_num_samples,
+                                                                                                    mmcs_set_of_parameters.window,
+                                                                                                    Neff_sampled, mmcs_set_of_parameters.total_samples,
+                                                                                                    mmcs_set_of_parameters.num_rounding_steps,
+                                                                                                    TotalRandPoints, CheBall.first, mmcs_set_of_parameters.nburns,
+                                                                                                    mmcs_set_of_parameters.num_threads,
                                                                                                     mmcs_set_of_parameters.req_round_temp, L);
    }
    else
    {
       mmcs_set_of_parameters.complete = perform_mmcs_step(HP, rng, mmcs_set_of_parameters.walk_length, mmcs_set_of_parameters.Neff,
                                                           mmcs_set_of_parameters.max_num_samples, mmcs_set_of_parameters.window,
-                                                          Neff_sampled, mmcs_set_of_parameters.total_samples, 
+                                                          Neff_sampled, mmcs_set_of_parameters.total_samples,
                                                           mmcs_set_of_parameters.num_rounding_steps, TotalRandPoints, CheBall.first,
                                                           mmcs_set_of_parameters.nburns, mmcs_set_of_parameters.req_round_temp, WalkType);
    }
@@ -270,29 +279,29 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
    mmcs_set_of_parameters.Neff -= Neff_sampled;
    std::cout << "phase " << mmcs_set_of_parameters.phase << ": number of correlated samples = " << mmcs_set_of_parameters.total_samples << ", effective sample size = " << Neff_sampled;
    mmcs_set_of_parameters.total_neff += Neff_sampled;
-   
+
    mmcs_set_of_parameters.samples.conservativeResize(d, mmcs_set_of_parameters.total_number_of_samples_in_P0 + mmcs_set_of_parameters.total_samples);
    for (int i = 0; i < mmcs_set_of_parameters.total_samples; i++)
    {
-      mmcs_set_of_parameters.samples.col(i + mmcs_set_of_parameters.total_number_of_samples_in_P0) = 
+      mmcs_set_of_parameters.samples.col(i + mmcs_set_of_parameters.total_number_of_samples_in_P0) =
                               mmcs_set_of_parameters.T * TotalRandPoints.row(i).transpose() + mmcs_set_of_parameters.T_shift;
    }
 
-   N = mmcs_set_of_parameters.total_number_of_samples_in_P0 + mmcs_set_of_parameters.total_samples;   
+   N = mmcs_set_of_parameters.total_number_of_samples_in_P0 + mmcs_set_of_parameters.total_samples;
    mmcs_set_of_parameters.total_number_of_samples_in_P0 += mmcs_set_of_parameters.total_samples;
 
-   if (!mmcs_set_of_parameters.complete) 
+   if (!mmcs_set_of_parameters.complete)
    {
-      if (mmcs_set_of_parameters.request_rounding && !mmcs_set_of_parameters.rounding_completed) 
+      if (mmcs_set_of_parameters.request_rounding && !mmcs_set_of_parameters.rounding_completed)
       {
          VT shift(d), s(d);
          MT V(d, d), S(d, d), round_mat;
-         for (int i = 0; i < d; ++i) 
+         for (int i = 0; i < d; ++i)
          {
             shift(i) = TotalRandPoints.col(i).mean();
          }
 
-         for (int i = 0; i < mmcs_set_of_parameters.total_samples; ++i) 
+         for (int i = 0; i < mmcs_set_of_parameters.total_samples; ++i)
          {
             TotalRandPoints.row(i) = TotalRandPoints.row(i) - shift.transpose();
          }
@@ -300,18 +309,18 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
          Eigen::BDCSVD<MT> svd(TotalRandPoints, Eigen::ComputeFullV);
          s = svd.singularValues() / svd.singularValues().minCoeff();
 
-         if (s.maxCoeff() >= 2.0) 
+         if (s.maxCoeff() >= 2.0)
          {
-            for (int i = 0; i < s.size(); ++i) 
+            for (int i = 0; i < s.size(); ++i)
             {
-               if (s(i) < 2.0) 
+               if (s(i) < 2.0)
                {
                   s(i) = 1.0;
                }
             }
             V = svd.matrixV();
-         } 
-         else 
+         }
+         else
          {
             s = VT::Ones(d);
             V = MT::Identity(d, d);
@@ -328,16 +337,16 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
 
          std::cout << ", ratio of the maximum singilar value over the minimum singular value = " << max_s << std::endl;
 
-         if (max_s <= mmcs_set_of_parameters.s_cutoff || mmcs_set_of_parameters.round_it > mmcs_set_of_parameters.num_its) 
+         if (max_s <= mmcs_set_of_parameters.s_cutoff || mmcs_set_of_parameters.round_it > mmcs_set_of_parameters.num_its)
          {
             mmcs_set_of_parameters.rounding_completed = true;
          }
       }
-      else 
+      else
       {
          std::cout<<"\n";
       }
-   } 
+   }
    else if (!mmcs_set_of_parameters.psrf_check)
    {
       NT max_psrf = univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff();
@@ -346,7 +355,7 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
       std::cout<<"\n\n";
       return 1.5;
    }
-   else 
+   else
    {
       TotalRandPoints.resize(0, 0);
       NT max_psrf = univariate_psrf<NT, VT>(mmcs_set_of_parameters.samples).maxCoeff();
@@ -360,7 +369,7 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
       std::cerr << "\n [1]maximum marginal PSRF: " <<  max_psrf << std::endl;
 
       while (max_psrf > 1.1 && mmcs_set_of_parameters.total_neff >= mmcs_set_of_parameters.fixed_Neff) {
-         
+
          mmcs_set_of_parameters.Neff += mmcs_set_of_parameters.store_ess(mmcs_set_of_parameters.skip_phase);
          mmcs_set_of_parameters.total_neff -= mmcs_set_of_parameters.store_ess(mmcs_set_of_parameters.skip_phase);
 
@@ -369,7 +378,7 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
 
          MT S = mmcs_set_of_parameters.samples;
          mmcs_set_of_parameters.samples.resize(d, mmcs_set_of_parameters.total_number_of_samples_in_P0);
-         mmcs_set_of_parameters.samples = 
+         mmcs_set_of_parameters.samples =
                      S.block(0, mmcs_set_of_parameters.store_nsamples(mmcs_set_of_parameters.skip_phase), d, mmcs_set_of_parameters.total_number_of_samples_in_P0);
 
          mmcs_set_of_parameters.skip_phase++;
@@ -392,7 +401,6 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
    return 0.0;
 }
 
-
 void HPolytopeCPP::get_mmcs_samples(double* T_matrix, double* T_shift, double* samples) {
 
    int n_variables = HP.dimension();
@@ -403,7 +411,7 @@ void HPolytopeCPP::get_mmcs_samples(double* T_matrix, double* T_shift, double* s
          T_matrix[t_mat_index++] = mmcs_set_of_parameters.T(i, j);
       }
    }
-   
+
    // create the shift vector
    for (int i = 0; i < n_variables; i++){
       T_shift[i] = mmcs_set_of_parameters.T_shift[i];
@@ -430,13 +438,13 @@ void HPolytopeCPP::apply_rounding(int rounding_method, double* new_A, double* ne
    auto P(HP);
    RNGType rng(P.dimension());
    P.normalize();
-   
-   
-      
+
+
+
    // read the inner point provided by the user and the radius
    int d = P.dimension();
    VT inner_vec(d);
-      
+
    for (int i = 0; i < d; i++){
       inner_vec(i) = inner_point[i];
    }
@@ -444,7 +452,7 @@ void HPolytopeCPP::apply_rounding(int rounding_method, double* new_A, double* ne
    Point inner_point2(inner_vec);
    CheBall = std::pair<Point, NT>(inner_point2, radius);
    P.set_InnerBall(CheBall);
-   
+
    // set the output variable of the rounding step
    round_result round_res;
 
@@ -453,8 +461,8 @@ void HPolytopeCPP::apply_rounding(int rounding_method, double* new_A, double* ne
 
    // run the rounding method
    if (rounding_method == 1) { // max ellipsoid
-      round_res = max_inscribed_ellipsoid_rounding<MT, VT, NT>(P, CheBall.first);
-      
+      round_res = inscribed_ellipsoid_rounding<MT, VT, NT>(P, CheBall.first);
+
    } else if (rounding_method == 2) { // isotropization
       round_res = svd_rounding<AcceleratedBilliardWalk, MT, VT>(P, CheBall, 1, rng);
    } else if (rounding_method == 3) { // min ellipsoid

@@ -38,7 +38,7 @@
 // for rounding
 #include "preprocess/min_sampling_covering_ellipsoid_rounding.hpp"
 #include "preprocess/svd_rounding.hpp"
-#include "preprocess/max_inscribed_ellipsoid_rounding.hpp"
+#include "preprocess/inscribed_ellipsoid_rounding.hpp"
 
 typedef double NT;
 typedef Cartesian<NT>    Kernel;
@@ -140,7 +140,8 @@ class HPolytopeCPP{
 
       // the apply_sampling() function
       double apply_sampling(int walk_len, int number_of_points, int number_of_points_to_burn,
-                            int method, double* inner_point, double radius, double* samples, double variance_value, double* bias_vector);
+                            char* method, double* inner_point, double radius, double* samples,
+                            double variance_value, double* bias_vector, int ess);
 
       void mmcs_initialize(int d, int ess, bool psrf_check, bool parallelism, int num_threads);
 

@@ -23,7 +23,7 @@ else:
 
         # gcc arguments hack: enable optimizations
         os.environ["CFLAGS"] = [
-            "-std=c++11",
+            "-std=c++17",
             "-O3",
             "-DBOOST_NO_AUTO_PTR",
             "-ldl",

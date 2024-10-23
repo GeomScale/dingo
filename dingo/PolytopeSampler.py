@@ -159,9 +159,9 @@ class PolytopeSampler:
         self._T_shift = np.add(self._T_shift, Tr_shift)
 
         return steady_states
-    
+
     def generate_steady_states_no_multiphase(
-        self, method = 'billiard_walk', n=1000, burn_in=0, thinning=1, variance=1.0, bias_vector=None
+        self, method = 'billiard_walk', n=1000, burn_in=0, thinning=1, variance=1.0, bias_vector=None, ess=1000
     ):
         """A member function to sample steady states.
 
@@ -171,17 +171,17 @@ class PolytopeSampler:
         burn_in -- the number of points to burn before sampling
         thinning -- the walk length of the chain
         """
-        	
+
         self.get_polytope()
 
         P = HPolytope(self._A, self._b)
-        
+
         if bias_vector is None:
             bias_vector = np.ones(self._A.shape[1], dtype=np.float64)
         else:
             bias_vector = bias_vector.astype('float64')
 
-        samples = P.generate_samples(method, n, burn_in, thinning, variance, bias_vector, self._parameters["solver"])
+        samples = P.generate_samples(method.encode('utf-8'), n, burn_in, thinning, variance, bias_vector, self._parameters["solver"], ess)
         samples_T = samples.T
 
         steady_states = map_samples_to_steady_states(
@@ -213,10 +213,10 @@ class PolytopeSampler:
 
 
         return samples
-    
+
     @staticmethod
     def sample_from_polytope_no_multiphase(
-        A, b, method = 'billiard_walk', n=1000, burn_in=0, thinning=1, variance=1.0, bias_vector=None, solver=None
+        A, b, method = 'billiard_walk', n=1000, burn_in=0, thinning=1, variance=1.0, bias_vector=None, solver=None, ess=1000
     ):
         """A static function to sample from a full dimensional polytope with an MCMC method.
 
@@ -232,10 +232,10 @@ class PolytopeSampler:
             bias_vector = np.ones(A.shape[1], dtype=np.float64)
         else:
             bias_vector = bias_vector.astype('float64')
-            
+
         P = HPolytope(A, b)
 
-        samples = P.generate_samples(method, n, burn_in, thinning, variance, bias_vector, solver)
+        samples = P.generate_samples(method.encode('utf-8'), n, burn_in, thinning, variance, bias_vector, solver, ess)
 
         samples_T = samples.T
         return samples_T
@@ -246,7 +246,7 @@ class PolytopeSampler:
     ):
         P = HPolytope(A, b)
         A, b, Tr, Tr_shift, round_value = P.rounding(method, solver)
-        
+
         return A, b, Tr, Tr_shift
 
     @staticmethod
