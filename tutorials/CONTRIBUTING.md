@@ -53,7 +53,7 @@ To do so, you need to run
 
 Now get the `boost` library:
 
-    wget -O boost_1_76_0.tar.bz2 https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2 
+    wget -O boost_1_76_0.tar.bz2 https://archives.boost.io/release/1.76.0/source/boost_1_76_0.tar.bz2
     tar xjf boost_1_76_0.tar.bz2
     rm boost_1_76_0.tar.bz2
 
