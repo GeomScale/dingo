@@ -18,7 +18,7 @@ from dingo.scaling import gmscale
 
 
 class TestMaxBall(unittest.TestCase):
-    
+
     def test_simple(self):
         m = 2
         n = 5

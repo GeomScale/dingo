@@ -32,7 +32,7 @@ def plot_copula(data_flux1, data_flux2, n = 5, width = 900 , height = 600, expor
     fig = go.Figure(
             data   = [go.Surface(z=copula)],
             layout = go.Layout(
-                height = height, 
+                height = height,
                 width  = width,
             )
         )
@@ -48,7 +48,7 @@ def plot_copula(data_flux1, data_flux2, n = 5, width = 900 , height = 600, expor
             margin=dict(r=30, b=30, l=30, t=50))
 
     fig.layout.template = None
-    
+
     fig.show()
     fig_name = data_flux1[1] + "_" + data_flux2[1] + "_copula." + export_format
 
@@ -97,7 +97,7 @@ def plot_corr_matrix(corr_matrix, reactions, removed_reactions=[], format="svg")
     removed_reactions -- A list with the removed reactions in case of a preprocess.
                          If provided removed reactions are not plotted.
     """
-    
+
     sns_colormap = [[0.0, '#3f7f93'],
                     [0.1, '#6397a7'],
                     [0.2, '#88b1bd'],
@@ -109,26 +109,26 @@ def plot_corr_matrix(corr_matrix, reactions, removed_reactions=[], format="svg")
                     [0.8, '#e8848b'],
                     [0.9, '#e15e68'],
                     [1.0, '#da3b46']]
-    
+
     if removed_reactions != 0:
         for reaction in reactions:
             index = reactions.index(reaction)
             if reaction in removed_reactions:
                reactions[index] = None
- 
-    fig = px.imshow(corr_matrix, 
+
+    fig = px.imshow(corr_matrix,
                     color_continuous_scale = sns_colormap,
                     x = reactions, y = reactions, origin="upper")
-    
+
     fig.update_layout(
     xaxis=dict(tickfont=dict(size=5)),
     yaxis=dict(tickfont=dict(size=5)),
     width=900, height=900, plot_bgcolor="rgba(0,0,0,0)")
-    
+
     fig.update_traces(xgap=1, ygap=1,   hoverongaps=False)
-    
+
     fig.show()
-    
+
     fig_name = "CorrelationMatrix." + format
     pio.write_image(fig, fig_name, scale=2)
 
@@ -141,18 +141,18 @@ def plot_dendrogram(dissimilarity_matrix, reactions , plot_labels=False, t=2.0, 
     dissimilarity_matrix -- A matrix produced from the "cluster_corr_reactions" function
     reactions -- A list with the model's reactions
     plot_labels -- A boolean variable that if True plots the reactions labels in the dendrogram
-    t -- A threshold that defines a threshold that cuts the dendrogram 
+    t -- A threshold that defines a threshold that cuts the dendrogram
          at a specific height and colors the occuring clusters accordingly
-    linkage -- linkage defines the type of linkage. 
+    linkage -- linkage defines the type of linkage.
                Available linkage types are: single, average, complete, ward.
     """
 
     fig = ff.create_dendrogram(dissimilarity_matrix,
                                labels=reactions,
-                               linkagefun=lambda x: hierarchy.linkage(x, linkage),                           
+                               linkagefun=lambda x: hierarchy.linkage(x, linkage),
                                color_threshold=t)
     fig.update_layout(width=800, height=800)
-    
+
     if plot_labels == False:
         fig.update_layout(
             xaxis=dict(
@@ -166,9 +166,9 @@ def plot_dendrogram(dissimilarity_matrix, reactions , plot_labels=False, t=2.0, 
         yaxis=dict(
             title_font=dict(size=10),
             tickfont=dict(size=8) ) )
-        
+
     fig.show()
-    
+
 
 
 def plot_graph(G, pos):
@@ -184,24 +184,24 @@ def plot_graph(G, pos):
     for u, v, data in G.edges(data=True):
         x0, y0 = pos[u]
         x1, y1 = pos[v]
-        
+
         edge_color = 'blue' if data['weight'] > 0 else 'red'
-        
-        fig.add_trace(go.Scatter(x=[x0, x1], y=[y0, y1], mode='lines', 
-                                    line=dict(width=abs(data['weight']) * 1, 
+
+        fig.add_trace(go.Scatter(x=[x0, x1], y=[y0, y1], mode='lines',
+                                    line=dict(width=abs(data['weight']) * 1,
                                     color=edge_color), hoverinfo='none',
                                     showlegend=False))
 
     for node in G.nodes():
         x, y = pos[node]
         node_name = G.nodes[node].get('name', f'Node {node}')
-  
-        fig.add_trace(go.Scatter(x=[x], y=[y], mode='markers', 
+
+        fig.add_trace(go.Scatter(x=[x], y=[y], mode='markers',
                                     marker=dict(size=10),
                                     text=[node_name],
                                     textposition='top center',
                                     name = node_name,
                                     showlegend=False))
-        
+
     fig.update_layout(width=800, height=800)
     fig.show()

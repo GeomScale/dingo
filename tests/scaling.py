@@ -17,7 +17,7 @@ from dingo.pyoptinterface_based_impl import set_default_solver
 
 
 class TestScaling(unittest.TestCase):
-    
+
     def test_scale_json(self):
 
         input_file_json = os.getcwd() + "/ext_data/e_coli_core.json"

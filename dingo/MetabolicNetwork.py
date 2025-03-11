@@ -250,18 +250,18 @@ class MetabolicNetwork:
         # Turn off reactions not present in media
         for rxn_id in exchange_rxns - frozen_media_rxns:
             """
-            is_export for us, needs to check on the S 
-            order reactions to their lb and ub 
+            is_export for us, needs to check on the S
+            order reactions to their lb and ub
             """
             # is_export = rxn.reactants and not rxn.products
             reac_index = self._reactions.index(rxn_id)
-            products = np.any(self._S[:,reac_index] > 0) 
+            products = np.any(self._S[:,reac_index] > 0)
             reactants_exist = np.any(self._S[:,reac_index] < 0)
             is_export = True if not products and reactants_exist else False
             set_active_bound(
                 rxn_id, reac_index, min(0.0, -self._lb[reac_index] if is_export else self._ub[reac_index])
             )
-    
+
     def set_solver(self, solver: str):
         self._parameters["solver"] = solver
 

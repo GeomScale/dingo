@@ -1,27 +1,29 @@
 [tool.poetry]
-name = "dingo"
-version = "0.1.0"
-description = "A python library for metabolic networks sampling and analysis. dingo is part of GeomScale project"
-authors = ["Apostolos Chalkis <tolis.chal@gmail.com>"]
+name = "dingo-walk"
+version = "0.1.6"
+description = "High dimensional polytope sampling in Python with a set of tools for metabolic network sampling and analysis."
+authors = ["Apostolos Chalkis <tolis.chal@gmail.com>", "Vissarion Fisikopoulos <fisikop@gmail.com>", "Elias Tsigaridas <elias.tsigaridas@inria.fr>", "Haris Zafeiropoulos <haris.zafeiropoulos@kuleuven.be>"]
 build = 'build.py'
+packages = [{ include = "dingo" }]
+readme = "README.md"
+
 
 [tool.poetry.dependencies]
 python = "^3.8"
-sparseqr = {git = "https://github.com/yig/PySPQR.git"}
+sparseqr = "^1.2.1"
 simplejson = "^3.17.2"
 Cython = "^0.29.22"
-numpy = "^1.20.1"
 scipy = "^1.6.1"
 argparse = "^1.4.0"
 matplotlib = "^3.4.1"
-cobra = "^0.26.0"
 plotly = "^5.11.0"
 kaleido = "0.2.1"
 pyoptinterface = {version = "^0.2.7", extras = ["highs"]}
 networkx = "3.1"
+cobra = "^0.29.1"
 
 [tool.poetry.dev-dependencies]
 
 [build-system]
-requires = ["poetry-core>=1.0.0", "cython", "numpy==1.20.1"]
+requires = ["poetry-core>=1.0.0", "cython", "numpy==1.23.2"]
 build-backend = "poetry.core.masonry.api"
