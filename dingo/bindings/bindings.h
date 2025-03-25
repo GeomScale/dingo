@@ -48,84 +48,12 @@ typedef typename Hpolytope::MT    MT;
 typedef typename Hpolytope::VT    VT;
 typedef BoostRandomNumberGenerator<boost::mt19937, double>    RNGType;
 
-
-template <typename NT, typename MT, typename VT>
-struct mmcs_parameters
-{
-public:
-
-   mmcs_parameters() {}
-
-   mmcs_parameters(int d, int ess, bool _psrf_check, bool _parallelism, int _num_threads)
-         :  T(MT::Identity(d,d))
-         ,  T_shift(VT::Zero(d))
-         ,  store_ess(VT::Zero(50))
-         ,  store_nsamples(VT::Zero(50))
-         ,  skip_phase(0)
-         ,  num_rounding_steps(20*d)
-         ,  walk_length(1)
-         ,  num_its(20)
-         ,  Neff(ess)
-         ,  fixed_Neff(ess)
-         ,  phase(0)
-         ,  window(100)
-         ,  max_num_samples(100 * d)
-         ,  round_it(1)
-         ,  total_number_of_samples_in_P0(0)
-         ,  total_neff(0)
-         ,  num_threads(_num_threads)
-         ,  psrf_check(_psrf_check)
-         ,  parallelism(_parallelism)
-         ,  complete(false)
-         ,  request_rounding(true)
-         ,  rounding_completed(false)
-         ,  s_cutoff(NT(3))
-   {
-      req_round_temp = request_rounding;
-   }
-
-   MT T;
-   MT samples;
-   VT T_shift;
-   VT store_ess;
-   VT store_nsamples;
-   unsigned int skip_phase;
-   unsigned int num_rounding_steps;
-   unsigned int walk_length;
-   unsigned int num_its;
-   int Neff;
-   int fixed_Neff;
-   unsigned int phase;
-   unsigned int window;
-   unsigned int max_num_samples;
-   unsigned int total_samples;
-   unsigned int nburns;
-   unsigned int round_it;
-   unsigned int total_number_of_samples_in_P0;
-   unsigned int total_neff;
-   unsigned int num_threads;
-   bool psrf_check;
-   bool parallelism;
-   bool complete;
-   bool request_rounding;
-   bool rounding_completed;
-   bool req_round_temp;
-   NT s_cutoff;
-};
-
-
 // This is the HPolytopeCPP class; the main volesti class that is running the compute_volume(), rounding() and sampling() methods
 class HPolytopeCPP{
 
    public:
 
       std::pair<Point,NT> CheBall;
-
-      // regarding the rounding step
-      typedef std::tuple<MT, VT, NT>    round_result;
-      typedef mmcs_parameters<NT, MT, VT> mmcs_params;
-
-      mmcs_params mmcs_set_of_parameters;
 
       // The class and its main specs
       HPolytopeCPP();
@@ -143,19 +71,7 @@ class HPolytopeCPP{
                             char* method, double* inner_point, double radius, double* samples,
                             double variance_value, double* bias_vector, int ess);
 
-      void mmcs_initialize(int d, int ess, bool psrf_check, bool parallelism, int num_threads);
-
-      double mmcs_step(double* inner_point_for_c, double radius, int &N);
-
-      void get_mmcs_samples(double* T_matrix, double* T_shift, double* samples);
-
       void get_polytope_as_matrices(double* new_A, double* new_b) const;
-
-      // the rounding() function
-      void apply_rounding(int rounding_method, double* new_A, double* new_b, double* T_matrix,
-                          double* shift, double &round_value, double* inner_point, double radius);
-
 };
-
 
 #endif
