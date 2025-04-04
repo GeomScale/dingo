@@ -15,7 +15,7 @@ import numpy as np
 from dingo import MetabolicNetwork, PolytopeSampler
 from dingo.pyoptinterface_based_impl import set_default_solver
 
-def test_rounding(self, method_str):
+def rounding_test(self, method_str):
 
         input_file_json = os.getcwd() + "/ext_data/e_coli_core.json"
         model = MetabolicNetwork.from_json( input_file_json )
@@ -59,10 +59,10 @@ def test_rounding(self, method_str):
 class TestSampling(unittest.TestCase):
 
     def test_rounding_min_ellipsoid(self):
-        test_rounding(self, "min_ellipsoid")
+       rounding_test(self, "min_ellipsoid")
 
     def test_rounding_john_position(self):
-        test_rounding(self, "john_position")
+        rounding_test(self, "john_position")
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

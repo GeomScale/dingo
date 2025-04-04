@@ -46,17 +46,25 @@ jobs:
         source $(poetry env info --path)/bin/activate
         poetry install;
         pip3 install numpy scipy;
-    - name: Run tests
+        pip3 install pytest pytest-cov codecov;
+    - name: Run tests with coverage
       run: |
+        # Legacy way - keep for compatibility
         poetry run python3 tests/fba.py;
         poetry run python3 tests/full_dimensional.py;
         poetry run python3 tests/max_ball.py;
         poetry run python3 tests/scaling.py;
         poetry run python3 tests/sampling.py;
         poetry run python3 tests/sampling_no_multiphase.py;
-        # currently we do not test with gurobi
-        # python3 tests/fast_implementation_test.py;
-
-        #run all tests
-        #python -m unittest discover test
-        #TODO: use pytest
+        
+        # New way - using pytest with coverage
+        poetry run pytest --cov=dingo --cov-report=xml --cov-report=term
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: python
+        fail_ci_if_error: false
+        name: codecov-umbrella
+        verbose: true
