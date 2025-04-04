@@ -14,8 +14,7 @@ metabolic network, namely Flux Balance Analysis and Flux Variability Analysis.
 [![unit-tests](https://github.com/GeomScale/dingo/workflows/dingo-ubuntu/badge.svg)](https://github.com/GeomScale/dingo/actions?query=workflow%3Adingo-ubuntu)
 [![Tutorial In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/GeomScale/dingo/blob/develop/tutorials/dingo_tutorial.ipynb)
 [![Chat](https://badges.gitter.im/geomscale.png)](https://gitter.im/GeomScale/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link)
-
-
+[![codecov](https://codecov.io/gh/GeomScale/dingo/branch/develop/graph/badge.svg)](https://codecov.io/gh/GeomScale/dingo)
 ## Installation
 
 **Note:** Python version should be 3.8.x. You can check this by running the following command in your terminal:
