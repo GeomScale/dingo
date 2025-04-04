@@ -50,12 +50,12 @@ jobs:
     - name: Run tests with coverage
       run: |
         # Legacy way - keep for compatibility
-        poetry run python3 tests/fba.py;
-        poetry run python3 tests/full_dimensional.py;
-        poetry run python3 tests/max_ball.py;
-        poetry run python3 tests/scaling.py;
-        poetry run python3 tests/sampling.py;
-        poetry run python3 tests/sampling_no_multiphase.py;
+        poetry run python3 tests/test_fba.py;
+        poetry run python3 tests/test_full_dimensional.py;
+        poetry run python3 tests/test_max_ball.py;
+        poetry run python3 tests/test_scaling.py;
+        poetry run python3 tests/test_sampling.py;
+        poetry run python3 tests/test_sampling_no_multiphase.py;
         
         # New way - using pytest with coverage
         poetry run pytest --cov=dingo --cov-report=xml --cov-report=term
