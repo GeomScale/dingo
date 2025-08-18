@@ -34,6 +34,7 @@
 #include <chrono>
 #include "sampling/sampling.hpp"
 #include "ode_solvers/ode_solvers.hpp"
+#include "preprocess/feasible_point.hpp"
 
 // for rounding
 #include "preprocess/min_sampling_covering_ellipsoid_rounding.hpp"
