@@ -134,10 +134,14 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    } else if (strcmp(method, "vaidya_walk")) { // vaidya walk
       uniform_sampling<VaidyaWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                    starting_point, number_of_points_to_burn);
-   } else if (strcmp(method, "shake_and_bake_walk") == 0) { // shake and bake walk
-      auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<FT>(1e-4));
+   } else if (strcmp(method, "shake_and_bake") == 0) { // shake and bake walk
+      auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<FT>(1e-10));
       shakeandbake_sampling<ShakeAndBakeWalk>(rand_points,HP, rng, walk_len,number_of_points,
                                             boundary_pt,number_of_points_to_burn, facet_idx);
+   } else if (strcmp(method, "billiard_shake_and_bake") == 0) { // billiard shake and bake walk
+      auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<FT>(1e-10));
+      billiard_shakeandbake_sampling<BilliardShakeAndBakeWalk>(randPoints, P, rng, walkL,nreflections, numpoints, 
+                                                               StartingPoint, nburns, facet_index);
    } else if (strcmp(method, "mmcs")) { // vaidya walk
       MT S;
       int total_ess;

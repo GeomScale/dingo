@@ -53,12 +53,12 @@ class PolytopeSampler:
         """
 
         if (
-            self._A == []
-            or self._b == []
-            or self._N == []
-            or self._N_shift == []
-            or self._T == []
-            or self._T_shift == []
+            self._A is None
+            or self._b is None
+            or self._N is None
+            or self._N_shift is None
+            or self._T is None
+            or self._T_shift is None
         ):
 
             (
@@ -166,7 +166,7 @@ class PolytopeSampler:
         """A member function to sample steady states.
 
         Keyword arguments:
-        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk', 'gaussian_hmc_walk', 'exponential_hmc_walk', 'hmc_leapfrog_gaussian', 'hmc_leapfrog_exponential'}
+        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk', 'gaussian_hmc_walk', 'exponential_hmc_walk', 'hmc_leapfrog_gaussian', 'hmc_leapfrog_exponential', 'shake_and_bake', 'billiard_shake_and_bake'}
         n -- the number of steady states to sample
         burn_in -- the number of points to burn before sampling
         thinning -- the walk length of the chain
@@ -223,7 +223,7 @@ class PolytopeSampler:
         Keyword arguments:
         A -- an mxn matrix that contains the normal vectors of the facets of the polytope row-wise
         b -- a m-dimensional vector, s.t. A*x <= b
-        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk', 'gaussian_hmc_walk', 'exponential_hmc_walk', 'hmc_leapfrog_gaussian', 'hmc_leapfrog_exponential'}
+        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk', 'gaussian_hmc_walk', 'exponential_hmc_walk', 'hmc_leapfrog_gaussian', 'hmc_leapfrog_exponential', 'shake_and_bake', 'billiard_shake_and_bake'}
         n -- the number of steady states to sample
         burn_in -- the number of points to burn before sampling
         thinning -- the walk length of the chain
