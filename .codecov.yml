@@ -1,0 +1,32 @@
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
+
+coverage:
+  status:
+    project:
+      default:
+        # basic
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        # basic
+        target: auto
+        threshold: 1%
+
+# Separate flags for C++ and Python coverage
+flags:
+  cpp:
+    paths:
+      - volesti/
+    carryforward: true
+  python:
+    paths:
+      - dingo/
+      - tests/
+    carryforward: true
