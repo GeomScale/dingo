@@ -462,14 +462,20 @@ void HPolytopeCPP::apply_rounding(int rounding_method, double* new_A, double* ne
    // run the rounding method
    if (rounding_method == 1) { // max ellipsoid
       round_res = inscribed_ellipsoid_rounding<MT, VT, NT>(P, CheBall.first);
-
    } else if (rounding_method == 2) { // isotropization
       round_res = svd_rounding<AcceleratedBilliardWalk, MT, VT>(P, CheBall, 1, rng);
    } else if (rounding_method == 3) { // min ellipsoid
-      round_res = min_sampling_covering_ellipsoid_rounding<AcceleratedBilliardWalk, MT, VT>(P,
-                                                                                            CheBall,
-                                                                                            walk_len,
-                                                                                            rng);
+      round_res = min_sampling_covering_ellipsoid_rounding
+            <AcceleratedBilliardWalk, MT, VT>(P, CheBall, walk_len, rng);
+   } else if (rounding_method == 4) { // log barrier
+      round_res = inscribed_ellipsoid_rounding
+            <MT, VT, NT, decltype(P), decltype(CheBall.first), 2>(P, CheBall.first);
+   } else if (rounding_method == 5) { // Vaidya barrier
+      round_res = inscribed_ellipsoid_rounding
+            <MT, VT, NT, decltype(P), decltype(CheBall.first), 3>(P, CheBall.first);
+   } else if (rounding_method == 6) { // volumetric barrier
+      round_res = inscribed_ellipsoid_rounding
+            <MT, VT, NT, decltype(P), decltype(CheBall.first), 4>(P, CheBall.first);
    } else {
       throw std::runtime_error("Unknown rounding method.");
    }

@@ -64,8 +64,18 @@ class TestSampling(unittest.TestCase):
     def test_rounding_john_position(self):
         test_rounding(self, "john_position")
 
+    def test_rounding_log_barrier(self):
+        test_rounding(self, "log_barrier")
+
+    def test_rounding_vaidya_barrier(self):
+        test_rounding(self, "vaidya_barrier")
+
+    def test_rounding_volumetric_barrier(self):
+        test_rounding(self, "volumetric_barrier")
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         set_default_solver(sys.argv[1])
         sys.argv.pop(1)
     unittest.main()
+

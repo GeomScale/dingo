@@ -162,6 +162,12 @@ cdef class HPolytope:
          int_method = 2
       elif rounding_method == 'min_ellipsoid':
          int_method = 3
+      elif rounding_method == 'log_barrier':
+         int_method = 4
+      elif rounding_method == 'vaidya_barrier':
+         int_method = 5
+      elif rounding_method == 'volumetric_barrier':
+         int_method = 6
       else:
          raise RuntimeError("Uknown rounding method")
 
