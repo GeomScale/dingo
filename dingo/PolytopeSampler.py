@@ -6,6 +6,7 @@
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
+# Contributed and/or modified by Iva Janković, as part of Google Summer of Code 2025 program.
 
 import numpy as np
 import warnings
@@ -29,12 +30,12 @@ class PolytopeSampler:
             raise Exception("An unknown input object given for initialization.")
 
         self._metabolic_network = metabol_net
-        self._A = []
-        self._b = []
-        self._N = []
-        self._N_shift = []
-        self._T = []
-        self._T_shift = []
+        self._A = None
+        self._b = None
+        self._N = None
+        self._N_shift = None
+        self._T = None
+        self._T_shift = None
         self._parameters = {}
         self._parameters["nullspace_method"] = "sparseQR"
         self._parameters["opt_percentage"] = self.metabolic_network.parameters[
@@ -53,13 +54,14 @@ class PolytopeSampler:
         """
 
         if (
-            self._A == []
-            or self._b == []
-            or self._N == []
-            or self._N_shift == []
-            or self._T == []
-            or self._T_shift == []
+            self._A is None
+            or self._b is None
+            or self._N is None
+            or self._N_shift is None
+            or self._T is None
+            or self._T_shift is None
         ):
+
 
             (
                 max_flux_vector,
@@ -190,6 +192,40 @@ class PolytopeSampler:
 
         return steady_states
 
+    def generate_steady_states_sb_once(self,n=1000,burn_in=0,thinning=1,variance=1.0,bias_vector=None,ess=0):
+        """
+        One Shake and Bake phase: samples n points, returns (steady_states, diagnostics)
+        diagnostics = {'minESS':..., 'maxPSRF':..., 'N':..., 'phases': 1, 'seconds': ...}.
+        """
+        self.get_polytope()
+        P = HPolytope(self._A, self._b)
+
+        if bias_vector is None:
+            bias_vector = np.ones(self._A.shape[1], dtype=np.float64)
+        else:
+            bias_vector = np.asarray(bias_vector, dtype=np.float64)
+            if bias_vector.shape[0] != self._A.shape[1]:
+                raise ValueError(f"bias_vector length {bias_vector.shape[0]} != {self._A.shape[1]}")
+
+        samples = P.generate_samples(b"shake_and_bake",int(n),int(burn_in),int(thinning),float(variance), bias_vector,self._parameters["solver"],int(ess),)  
+        diag_buf = np.empty(5, dtype=np.float64)  
+        minESS = maxPSRF = seconds = np.nan
+        Ncpp = phases = 0
+
+        P.get_sb_diagnostics(np.ascontiguousarray(diag_buf))
+        minESS, maxPSRF, Ncpp, phases, seconds = diag_buf
+
+        steady_states = map_samples_to_steady_states(samples.T, self._N, self._N_shift)
+
+        diagnostics = {
+            "minESS": float(minESS),
+            "maxPSRF": float(maxPSRF),
+            "N": int(Ncpp),
+            "phases": int(phases),
+            "seconds": float(seconds) if np.isfinite(seconds) else None,
+        }
+        return steady_states, diagnostics
+
     @staticmethod
     def sample_from_polytope(
         A, b, ess=1000, psrf=False, parallel_mmcs=False, num_threads=1, solver=None
@@ -239,6 +275,36 @@ class PolytopeSampler:
 
         samples_T = samples.T
         return samples_T
+    
+    @staticmethod
+    def sample_from_polytope_sb_once(
+        A, b, n=1000, burn_in=0, thinning=1, variance=1.0, bias_vector=None, solver=None, ess=0
+    ):
+        """
+        One Shake and Bake phase for polytope defined by A,b.
+        Returns (samples_T_d_by_N, diagnostics_dict).
+        """
+        if bias_vector is None:
+            bias_vector = np.ones(A.shape[1], dtype=np.float64)
+        else:
+            bias_vector = bias_vector.astype("float64")
+
+        P = HPolytope(A, b)
+        samples = P.generate_samples(b"shake_and_bake",n,burn_in,thinning,variance,bias_vector,solver,ess)
+
+        diag = np.zeros(5, dtype=np.float64)
+        P.get_sb_diagnostics(diag)
+        minESS, maxPSRF, Ncpp, phases, seconds = diag
+
+        diagnostics = {
+            "minESS": float(minESS),
+            "maxPSRF": float(maxPSRF),
+            "N": int(Ncpp),
+            "phases": int(phases),
+            "seconds": float(seconds) if not np.isnan(seconds) else None,
+        }
+        return samples.T, diagnostics
+
 
     @staticmethod
     def round_polytope(

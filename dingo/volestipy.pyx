@@ -9,6 +9,8 @@
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
+# Contributed and/or modified by Iva Janković, as part of Google Summer of Code 2025 program.
+
 #!python
 #cython: language_level=3
 #cython: boundscheck=False
@@ -71,6 +73,9 @@ cdef extern from "bindings.h":
       # Rounding H-Polytope
       void apply_rounding(int rounding_method, double* new_A, double* new_b, double* T_matrix, \
                           double* shift, double &round_value, double* inner_point, double radius);
+
+      void get_sb_diagnostics(double* out5) const
+      void get_sb_samples(double* samples) const
 
    # The lowDimPolytopeCPP class along with its functions
    cdef cppclass lowDimHPolytopeCPP:
@@ -135,6 +140,33 @@ cdef class HPolytope:
                                        method, &inner_point_for_c[0], radius, &samples[0,0], \
                                        variance_value, &bias_vector_[0], ess)
       return np.asarray(samples)
+
+   def get_sb_diagnostics(self, out):
+      """
+      out: np.ndarray float64, shape (5,), redosled:
+            [minESS, maxPSRF, N, phases, seconds]
+      """
+      cdef double[::1] buf = np.ascontiguousarray(out, dtype=np.float64)
+      if buf.shape[0] < 5:
+         raise ValueError("out must have length >= 5")
+      self.polytope_cpp.get_sb_diagnostics(&buf[0])
+      return np.asarray(buf)
+
+   def get_sb_samples(self):
+      """
+      Return d x N numpy matrix of samples from Shake and Bake sampling
+      """
+      cdef int d = self._A.shape[1]
+
+      cdef double[::1] tmp = np.zeros(5, dtype=np.float64, order="C")
+      self.polytope_cpp.get_sb_diagnostics(&tmp[0])
+      cdef Py_ssize_t N = <Py_ssize_t> tmp[2]
+      if N <= 0:
+         return np.zeros((d, 0), dtype=np.float64)
+
+      cdef double[:,::1] S = np.zeros((d, N), dtype=np.float64, order="C")
+      self.polytope_cpp.get_sb_samples(&S[0,0])
+      return np.asarray(S)
 
 
    # The rounding() function; as in compute_volume, more than one method is available for this step

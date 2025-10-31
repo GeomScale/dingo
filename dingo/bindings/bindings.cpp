@@ -6,6 +6,7 @@
 
 // Contributed and/or modified by Haris Zafeiropoulos
 // Contributed and/or modified by Pedro Zuidberg Dos Martires
+// Contributed and/or modified by Iva Janković, as part of Google Summer of Code 2025 program.
 
 // Licensed under GNU LGPL.3, see LICENCE file
 
@@ -14,7 +15,7 @@
 #include <stdexcept>
 #include "bindings.h"
 #include "hmc_sampling.h"
-
+#include "random_walks/shake_and_bake_walk.hpp"
 
 using namespace std;
 
@@ -134,14 +135,43 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    } else if (strcmp(method, "vaidya_walk") == 0) { // vaidya walk
       uniform_sampling<VaidyaWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                    starting_point, number_of_points_to_burn);
-   } else if (strcmp(method, "shake_and_bake") == 0) { // shake and bake walk
-      auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<FT>(1e-10));
-      shakeandbake_sampling<ShakeAndBakeWalk>(rand_points,HP, rng, walk_len,number_of_points,
-                                            boundary_pt,number_of_points_to_burn, facet_idx);
-   } else if (strcmp(method, "billiard_shake_and_bake") == 0) { // billiard shake and bake walk
-      auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<FT>(1e-10));
-      billiard_shakeandbake_sampling<BilliardShakeAndBakeWalk>(randPoints, P, rng, walkL,nreflections, numpoints, 
-                                                               StartingPoint, nburns, facet_index);
+   } else if (strcmp(method, "shake_and_bake") == 0) {
+      using clock = std::chrono::high_resolution_clock;
+      auto t0 = clock::now();
+
+      auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<NT>(1e-8));
+
+      const int d = HP.dimension();
+      const int n_phase = number_of_points;
+      int nburn = number_of_points_to_burn;
+
+      std::list<Point> batch;
+      shakeandbake_sampling<ShakeAndBakeWalk>(batch, HP, rng, walk_len, n_phase, boundary_pt, nburn, facet_idx);
+      rand_points.swap(batch);
+      const int N = static_cast<int>(rand_points.size());
+      MT S(d, N);
+      int c = 0;
+      for (auto it = rand_points.cbegin(); it != rand_points.cend(); ++it, ++c)
+         for (int j = 0; j < d; ++j)
+               S(j, c) = (*it)[j];
+
+      unsigned int min_ess_u = 0;
+      VT ess_vec  = effective_sample_size<NT, VT, MT>(S, min_ess_u);
+      NT min_ess  = ess_vec.minCoeff();
+
+      VT rhat_vec = univariate_psrf<NT, VT, MT>(S);
+      NT max_psrf = rhat_vec.maxCoeff();
+
+      auto t1 = clock::now();
+      double secs = std::chrono::duration<double>(t1 - t0).count();
+      sb_samples_      = S;                       // d x N
+      sb_diag_.minESS  = static_cast<double>(min_ess);
+      sb_diag_.maxPSRF = static_cast<double>(max_psrf);
+      sb_diag_.N       = N;
+      sb_diag_.phases  = 1;
+      sb_diag_.seconds = secs;
+
+
    } else if (strcmp(method, "mmcs") == 0) { // vaidya walk
       MT S;
       int total_ess;
@@ -175,7 +205,7 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    }
 
    else {
-      throw std::runtime_error("This function must not be called.");
+      throw std::runtime_error(method + std::string(" is not recognized as a valid sampling method."));
    }
 
    if (strcmp(method, "mmcs") != 0) {
@@ -434,6 +464,23 @@ void HPolytopeCPP::get_mmcs_samples(double* T_matrix, double* T_shift, double* s
       }
    }
    mmcs_set_of_parameters.samples.resize(0,0);
+}
+
+void HPolytopeCPP::get_sb_samples(double* samples) const {
+    const int d = sb_samples_.rows();
+    const int N = sb_samples_.cols();
+    int t = 0;
+    for (int i = 0; i < d; ++i)
+        for (int j = 0; j < N; ++j)
+            samples[t++] = sb_samples_(i, j);
+}
+
+void HPolytopeCPP::get_sb_diagnostics(double* out5) const {
+    out5[0] = sb_diag_.minESS;
+    out5[1] = sb_diag_.maxPSRF;
+    out5[2] = static_cast<double>(sb_diag_.N);
+    out5[3] = static_cast<double>(sb_diag_.phases);
+    out5[4] = sb_diag_.seconds;
 }
 
 

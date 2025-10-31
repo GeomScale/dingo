@@ -5,7 +5,8 @@
 // Copyright (c) 2018-2021 Apostolos Chalkis
 
 // Contributed and/or modified by Haris Zafeiropoulos
-// Contributed and/or modified by Pedro Zuidberg Dos Martires
+// Contributed and/or modified by Pedro Zuidberg Dos
+// Contributed and/or modified by Iva Janković, as part of Google Summer of Code 2025 program.
 
 // Licensed under GNU LGPL.3, see LICENCE file
 
@@ -29,9 +30,11 @@
 #include "sampling/mmcs.hpp"
 #include "sampling/parallel_mmcs.hpp"
 #include "diagnostics/univariate_psrf.hpp"
+#include "diagnostics/effective_sample_size.hpp"
 
 //from generate_samples, some extra headers not already included
 #include <chrono>
+#include <limits>
 #include "sampling/sampling.hpp"
 #include "ode_solvers/ode_solvers.hpp"
 #include "preprocess/feasible_point.hpp"
@@ -40,6 +43,7 @@
 #include "preprocess/min_sampling_covering_ellipsoid_rounding.hpp"
 #include "preprocess/svd_rounding.hpp"
 #include "preprocess/inscribed_ellipsoid_rounding.hpp"
+#include "preprocess/feasible_point.hpp"
 
 typedef double NT;
 typedef Cartesian<NT>    Kernel;
@@ -49,6 +53,13 @@ typedef typename Hpolytope::MT    MT;
 typedef typename Hpolytope::VT    VT;
 typedef BoostRandomNumberGenerator<boost::mt19937, double>    RNGType;
 
+struct Diagnostics {
+    double minESS  = 0.0;
+    double maxPSRF = 0.0;
+    long long N  = 0;
+    int   phases = 0;
+    double seconds = 0.0;
+};
 
 template <typename NT, typename MT, typename VT>
 struct mmcs_parameters
@@ -155,6 +166,16 @@ class HPolytopeCPP{
       // the rounding() function
       void apply_rounding(int rounding_method, double* new_A, double* new_b, double* T_matrix,
                           double* shift, double &round_value, double* inner_point, double radius);
+
+      // Shake and Bake one-phase sampling methods
+      inline const Diagnostics& sb_diagnostics() const { return sb_diag_; }
+      inline const MT& sb_samples()  const { return sb_samples_; }
+      void get_sb_samples(double* samples) const;
+      void get_sb_diagnostics(double* out5) const;
+
+   private:
+      Diagnostics sb_diag_;
+      MT  sb_samples_;   
 
 };
 
