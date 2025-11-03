@@ -16,6 +16,8 @@
 #include "bindings.h"
 #include "hmc_sampling.h"
 #include "random_walks/shake_and_bake_walk.hpp"
+#include "random_walks/billiard_shake_and_bake_walk.hpp"
+#include "diagnostics/scaling_ratio.hpp" 
 
 using namespace std;
 
@@ -93,7 +95,8 @@ double HPolytopeCPP::apply_sampling(int walk_len,
                                     double* samples,
                                     double variance_value,
                                     double* bias_vector_,
-                                    int ess){
+                                    int ess,
+                                    int nreflections) {
 
    RNGType rng(HP.dimension());
    HP.normalize();
@@ -142,11 +145,9 @@ double HPolytopeCPP::apply_sampling(int walk_len,
       auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<NT>(1e-8));
 
       const int d = HP.dimension();
-      const int n_phase = number_of_points;
-      int nburn = number_of_points_to_burn;
 
       std::list<Point> batch;
-      shakeandbake_sampling<ShakeAndBakeWalk>(batch, HP, rng, walk_len, n_phase, boundary_pt, nburn, facet_idx);
+      shakeandbake_sampling<ShakeAndBakeWalk>(batch, HP, rng, walk_len, number_of_points, boundary_pt, number_of_points_to_burn, facet_idx);
       rand_points.swap(batch);
       const int N = static_cast<int>(rand_points.size());
       MT S(d, N);
@@ -164,13 +165,44 @@ double HPolytopeCPP::apply_sampling(int walk_len,
 
       auto t1 = clock::now();
       double secs = std::chrono::duration<double>(t1 - t0).count();
-      sb_samples_      = S;                       // d x N
+      sb_samples_ = S;                       // d x N
       sb_diag_.minESS  = static_cast<double>(min_ess);
       sb_diag_.maxPSRF = static_cast<double>(max_psrf);
-      sb_diag_.N       = N;
+      sb_diag_.N  = N;
       sb_diag_.phases  = 1;
       sb_diag_.seconds = secs;
+   } else if (strcmp(method, "billiard_shake_and_bake") == 0) { // billiard shake and bake walk
+      using clock = std::chrono::high_resolution_clock;
+      auto t0 = clock::now();
+      auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<NT>(1e-8));
+      const int d = HP.dimension();
+      std::list<Point> batch;
+      billiard_shakeandbake_sampling<BilliardShakeAndBakeWalk>(batch, HP, rng, walk_len, nreflections, number_of_points,
+                                                                boundary_pt, number_of_points_to_burn, facet_idx);
 
+      rand_points.swap(batch);
+      const int N = static_cast<int>(rand_points.size());
+      MT S(d, N);
+      int c = 0;
+      for (auto it = rand_points.cbegin(); it != rand_points.cend(); ++it, ++c)
+         for (int j = 0; j < d; ++j)
+               S(j, c) = (*it)[j];
+
+      unsigned int min_ess_u = 0;
+      VT ess_vec  = effective_sample_size<NT, VT, MT>(S, min_ess_u);
+      NT min_ess  = ess_vec.minCoeff();
+
+      VT rhat_vec = univariate_psrf<NT, VT, MT>(S);
+      NT max_psrf = rhat_vec.maxCoeff();
+
+      auto t1 = clock::now();
+      double secs = std::chrono::duration<double>(t1 - t0).count();
+      sb_samples_ = S;                       // d x N
+      sb_diag_.minESS  = static_cast<double>(min_ess);
+      sb_diag_.maxPSRF = static_cast<double>(max_psrf);
+      sb_diag_.N  = N;
+      sb_diag_.phases  = 1;
+      sb_diag_.seconds = secs;
 
    } else if (strcmp(method, "mmcs") == 0) { // vaidya walk
       MT S;
@@ -438,6 +470,47 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
 
    return 0.0;
 }
+
+void HPolytopeCPP::get_sb_scaling_ratio(double tol,
+                                        double min_ratio,
+                                        double* scale_out,
+                                        double* coverage_out,
+                                        double* maxdev_out,
+                                        double* avgdev_out) const
+{
+    const int d = sb_samples_.rows();
+    const int N = sb_samples_.cols();
+    if (d == 0 || N == 0) {
+        throw std::runtime_error("get_sb_scaling_ratio: no SB/BSB samples available. "
+                                 "Call a SB/BSB sampler first.");
+    }
+
+    auto result = scaling_ratio_boundary_test<Hpolytope>(HP, sb_samples_,
+                                                         static_cast<NT>(tol),
+                                                         static_cast<NT>(min_ratio));
+
+    const auto& scale    = std::get<0>(result);  // VT (K)
+    const auto& coverage = std::get<1>(result);  // MT (m x K)
+    const auto& max_dev  = std::get<2>(result);  // VT (m)
+    const auto& avg_dev  = std::get<3>(result);  // VT (m)
+
+    const int K    = static_cast<int>(scale.size());
+    const int m    = coverage.rows();
+    const int Kcov = coverage.cols();
+
+    for (int k = 0; k < K; ++k) scale_out[k] = static_cast<double>(scale[k]);
+
+    for (int i = 0; i < m; ++i)
+        for (int k = 0; k < Kcov; ++k)
+            coverage_out[i * Kcov + k] = static_cast<double>(coverage(i, k));
+
+    for (int i = 0; i < m; ++i) {
+        maxdev_out[i] = static_cast<double>(max_dev[i]);
+        avgdev_out[i] = static_cast<double>(avg_dev[i]);
+    }
+}
+
+
 
 void HPolytopeCPP::get_mmcs_samples(double* T_matrix, double* T_shift, double* samples) {
 

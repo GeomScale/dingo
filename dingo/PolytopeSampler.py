@@ -47,6 +47,7 @@ class PolytopeSampler:
 
         self._parameters["tol"] = 1e-06
         self._parameters["solver"] = None
+        self._last_hpoly = None
 
     def get_polytope(self):
         """A member function to derive the corresponding full dimensional polytope
@@ -168,7 +169,7 @@ class PolytopeSampler:
         """A member function to sample steady states.
 
         Keyword arguments:
-        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk', 'gaussian_hmc_walk', 'exponential_hmc_walk', 'hmc_leapfrog_gaussian', 'hmc_leapfrog_exponential', 'shake_and_bake', 'billiard_shake_and_bake'}
+        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk', 'gaussian_hmc_walk', 'exponential_hmc_walk', 'hmc_leapfrog_gaussian', 'hmc_leapfrog_exponential}
         n -- the number of steady states to sample
         burn_in -- the number of points to burn before sampling
         thinning -- the walk length of the chain
@@ -192,39 +193,106 @@ class PolytopeSampler:
 
         return steady_states
 
-    def generate_steady_states_sb_once(self,n=1000,burn_in=0,thinning=1,variance=1.0,bias_vector=None,ess=0):
+    def generate_steady_states_sb_once(self, n=1000, burn_in=0, sampler="sb", nreflections=None):
         """
-        One Shake and Bake phase: samples n points, returns (steady_states, diagnostics)
-        diagnostics = {'minESS':..., 'maxPSRF':..., 'N':..., 'phases': 1, 'seconds': ...}.
+        Single-phase boundary sampler.
+        - sampler: "sb"/"shake_and_bake" or "bsb"/"billiard_shake_and_bake"
+        - nreflections: only for BSB; defaults to ceil(sqrt(d)) if None
         """
+        import numpy as np
+
+        # Build H-polytope from current A, b
         self.get_polytope()
         P = HPolytope(self._A, self._b)
 
-        if bias_vector is None:
-            bias_vector = np.ones(self._A.shape[1], dtype=np.float64)
+        # Normalize sampler keyword
+        s = (sampler or "sb").lower()
+        if s in ("sb", "shake_and_bake"):
+            method = b"shake_and_bake"
+            use_bsb = False
+        elif s in ("bsb", "billiard_shake_and_bake"):
+            method = b"billiard_shake_and_bake"
+            use_bsb = True
         else:
-            bias_vector = np.asarray(bias_vector, dtype=np.float64)
-            if bias_vector.shape[0] != self._A.shape[1]:
-                raise ValueError(f"bias_vector length {bias_vector.shape[0]} != {self._A.shape[1]}")
+            raise ValueError(f"Unknown sampler '{sampler}'")
 
-        samples = P.generate_samples(b"shake_and_bake",int(n),int(burn_in),int(thinning),float(variance), bias_vector,self._parameters["solver"],int(ess),)  
-        diag_buf = np.empty(5, dtype=np.float64)  
-        minESS = maxPSRF = seconds = np.nan
-        Ncpp = phases = 0
+        d = int(self._A.shape[1])
 
-        P.get_sb_diagnostics(np.ascontiguousarray(diag_buf))
-        minESS, maxPSRF, Ncpp, phases, seconds = diag_buf
+        # IMPORTANT: walk_len must be modest; too large often causes poor mixing or NaNs.
+        # A robust default is O(sqrt(d)) with a small lower bound.
+        walk_len = max(5, int(np.sqrt(d)))
 
-        steady_states = map_samples_to_steady_states(samples.T, self._N, self._N_shift)
+        # bias_vector must be a 1D array (never None)
+        bias_vec = np.ones(d, dtype=np.float64)
 
+        # Reflections for BSB (if not provided, use ceil(sqrt(d)))
+        if use_bsb:
+            nref = int(nreflections) if nreflections is not None else int(np.ceil(np.sqrt(d)))
+        else:
+            nref = 0
+
+        # Call into Cython in the exact argument order it expects:
+        # (method, number_of_points, number_of_points_to_burn, walk_len,
+        #  variance_value, bias_vector, solver=None, ess=1000, nreflections)
+        samples = P.generate_samples(
+            method,
+            int(n),
+            int(burn_in),
+            int(walk_len),
+            1.0,
+            bias_vec,
+            self._parameters.get("solver"),
+            0,
+            int(nref),
+        )
+
+        # Pull diagnostics from C++ (could contain NaN if samples had NaNs)
+        self._last_hpoly = P
+
+        diag_buf = np.empty(5, dtype=np.float64)
+        P.get_sb_diagnostics(diag_buf)
+        minESS, maxPSRF, Ncpp_reported, phases, seconds = diag_buf
+
+        # Cython returns samples as (N, d); convert to (d, N)
+        S = samples.T  # shape (d, N)
+
+        # Sanitize columns: drop any column with NaN/Inf to avoid propagating NaNs
+        finite_cols = np.isfinite(S).all(axis=0)
+        if not finite_cols.all():
+            S = S[:, finite_cols]
+
+        N_kept = S.shape[1]
+        if N_kept == 0:
+            raise RuntimeError(
+                "All generated samples are NaN/Inf; check walk_len, inner ball, and constraints."
+            )
+
+        # Map to full steady-state space
+        steady_states = map_samples_to_steady_states(S, self._N, self._N_shift)
+
+        # Diagnostics: report actual kept N; guard PSRF if NaN
         diagnostics = {
             "minESS": float(minESS),
-            "maxPSRF": float(maxPSRF),
-            "N": int(Ncpp),
+            "maxPSRF": float(maxPSRF) if np.isfinite(maxPSRF) else 1.0,
+            "N": int(N_kept),
             "phases": int(phases),
             "seconds": float(seconds) if np.isfinite(seconds) else None,
         }
+
         return steady_states, diagnostics
+
+    def sb_scaling_ratio(self, tol=1e-10, min_ratio=0.01):
+        """
+        Prosleđuje na C++ get_sb_scaling_ratio preko POSLEDNJEG HPolytope
+        koji je generisao SB/BSB uzorke. Moraš prethodno pozvati
+        generate_steady_states_sb_once(...).
+        """
+        if self._last_hpoly is None:
+            raise RuntimeError("sb_scaling_ratio: nema keširanog HPolytope sa SB/BSB uzorcima; pozovi sampler prvo.")
+        # ovo zove Cython metodu koja pakuje numpy bafer-e i zove C++ get_sb_scaling_ratio(...)
+        return self._last_hpoly.sb_scaling_ratio(tol=tol, min_ratio=min_ratio)
+
+
 
     @staticmethod
     def sample_from_polytope(
@@ -278,20 +346,24 @@ class PolytopeSampler:
     
     @staticmethod
     def sample_from_polytope_sb_once(
-        A, b, n=1000, burn_in=0, thinning=1, variance=1.0, bias_vector=None, solver=None, ess=0
+        A, b, n=1000, burn_in=0, solver=None, sampler="sb"
     ):
         """
-        One Shake and Bake phase for polytope defined by A,b.
+        One boundary-sampling phase for polytope A,b using SB or BSB.
         Returns (samples_T_d_by_N, diagnostics_dict).
         """
-        if bias_vector is None:
-            bias_vector = np.ones(A.shape[1], dtype=np.float64)
-        else:
-            bias_vector = bias_vector.astype("float64")
-
         P = HPolytope(A, b)
-        samples = P.generate_samples(b"shake_and_bake",n,burn_in,thinning,variance,bias_vector,solver,ess)
 
+        # choose method inline, no extra vars
+        method = b"billiard_shake_and_bake" if sampler == "bsb" else b"shake_and_bake"
+
+        # call binding with or without solver depending on signature
+        try:
+            samples = P.generate_samples(method, int(n), int(burn_in), solver)
+        except TypeError:
+            samples = P.generate_samples(method, int(n), int(burn_in))
+
+        # shared diagnostics for SB/BSB
         diag = np.zeros(5, dtype=np.float64)
         P.get_sb_diagnostics(diag)
         minESS, maxPSRF, Ncpp, phases, seconds = diag
@@ -304,6 +376,7 @@ class PolytopeSampler:
             "seconds": float(seconds) if not np.isnan(seconds) else None,
         }
         return samples.T, diagnostics
+
 
 
     @staticmethod

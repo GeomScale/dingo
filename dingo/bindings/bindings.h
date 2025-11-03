@@ -153,7 +153,7 @@ class HPolytopeCPP{
       // the apply_sampling() function
       double apply_sampling(int walk_len, int number_of_points, int number_of_points_to_burn,
                             char* method, double* inner_point, double radius, double* samples,
-                            double variance_value, double* bias_vector, int ess);
+                            double variance_value, double* bias_vector, int ess, int nreflections);
 
       void mmcs_initialize(int d, int ess, bool psrf_check, bool parallelism, int num_threads);
 
@@ -172,6 +172,7 @@ class HPolytopeCPP{
       inline const MT& sb_samples()  const { return sb_samples_; }
       void get_sb_samples(double* samples) const;
       void get_sb_diagnostics(double* out5) const;
+      void get_sb_scaling_ratio(double tol, double min_ratio,double* scale_out,double* coverage_out,double* maxdev_out,double* avgdev_out) const;
 
    private:
       Diagnostics sb_diag_;

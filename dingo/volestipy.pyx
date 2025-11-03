@@ -57,7 +57,7 @@ cdef extern from "bindings.h":
       # Random sampling
       double apply_sampling(int walk_len, int number_of_points, int number_of_points_to_burn, \
                             char* method, double* inner_point, double radius, double* samples, \
-                            double variance_value, double* bias_vector, int ess)
+                            double variance_value, double* bias_vector, int ess,int nreflections)
 
       # Initialize the parameters for the (m)ultiphase (m)onte (c)arlo (s)ampling algorithm
       void mmcs_initialize(unsigned int d, int ess, int psrf_check, int parallelism, int num_threads);
@@ -76,6 +76,12 @@ cdef extern from "bindings.h":
 
       void get_sb_diagnostics(double* out5) const
       void get_sb_samples(double* samples) const
+      void get_sb_scaling_ratio(double tol, double min_ratio,
+                                  double* scale_out,
+                                  double* coverage_out,
+                                  double* maxdev_out,
+                                  double* avgdev_out) const
+
 
    # The lowDimPolytopeCPP class along with its functions
    cdef cppclass lowDimHPolytopeCPP:
@@ -124,7 +130,7 @@ cdef class HPolytope:
 
    # Likewise, the generate_samples() function
    def generate_samples(self, method, number_of_points, number_of_points_to_burn, walk_len,
-                        variance_value, bias_vector, solver = None, ess = 1000):
+                        variance_value, bias_vector, solver = None, ess = 1000, nreflections=None):
 
       n_variables = self._A.shape[1]
       cdef double[:,::1] samples = np.zeros((number_of_points, n_variables), dtype = np.float64, order = "C")
@@ -138,7 +144,7 @@ cdef class HPolytope:
 
       self.polytope_cpp.apply_sampling(walk_len, number_of_points, number_of_points_to_burn, \
                                        method, &inner_point_for_c[0], radius, &samples[0,0], \
-                                       variance_value, &bias_vector_[0], ess)
+                                       variance_value, &bias_vector_[0], ess, nreflections)
       return np.asarray(samples)
 
    def get_sb_diagnostics(self, out):
@@ -167,6 +173,49 @@ cdef class HPolytope:
       cdef double[:,::1] S = np.zeros((d, N), dtype=np.float64, order="C")
       self.polytope_cpp.get_sb_samples(&S[0,0])
       return np.asarray(S)
+
+   def sb_scaling_ratio(self, tol=1e-10, min_ratio=0.01):
+      """
+      Vraća: (scale, coverage, max_dev, avg_dev)
+         - scale:     (K,)   [tipično K=10]
+         - coverage:  (m,K)  [m = broj hiper-ravnina = self._A.shape[0]]
+         - max_dev:   (m,)
+         - avg_dev:   (m,)
+      Potrebno: prethodno pozvati SB/BSB da bi postojali sb_samples_ u C++.
+      """
+      cdef int m = <int> self._A.shape[0]
+      # Trenutna C++ implementacija pravi tačno 10 skala; ostavi 10 ovde.
+      cdef int K = 10
+
+      # Alokacije kao C-kontigvne matrice
+      cdef np.ndarray[np.float64_t, ndim=1, mode="c"] scale_np    = np.empty((K,),     dtype=np.float64, order="C")
+      cdef np.ndarray[np.float64_t, ndim=2, mode="c"] coverage_np = np.empty((m, K),   dtype=np.float64, order="C")
+      cdef np.ndarray[np.float64_t, ndim=1, mode="c"] maxdev_np   = np.empty((m,),     dtype=np.float64, order="C")
+      cdef np.ndarray[np.float64_t, ndim=1, mode="c"] avgdev_np   = np.empty((m,),     dtype=np.float64, order="C")
+
+      # Typed memoryview-ovi nad C-kontigvnim baferima
+      cdef double[::1]    scale_mv    = scale_np
+      cdef double[:,::1]  coverage_mv = coverage_np
+      cdef double[::1]    maxdev_mv   = maxdev_np
+      cdef double[::1]    avgdev_mv   = avgdev_np
+
+      # Poziv C++ wrappera – prosleđuju se sirove adrese bafera
+      try:
+         self.polytope_cpp.get_sb_scaling_ratio(
+               <double> tol,
+               <double> min_ratio,
+               &scale_mv[0],
+               &coverage_mv[0, 0],   # (m,K) row-major: i*K + k
+               &maxdev_mv[0],
+               &avgdev_mv[0]
+         )
+      except RuntimeError as e:
+         # C++ baca kada nema SB/BSB uzoraka; prebaci poruku dalje.
+         raise RuntimeError(str(e))
+
+      # Vrati NumPy objekte (već su odgovarajućih dimenzija)
+      return scale_np, coverage_np, maxdev_np, avgdev_np
+
 
 
    # The rounding() function; as in compute_volume, more than one method is available for this step
