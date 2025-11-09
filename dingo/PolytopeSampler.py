@@ -10,7 +10,9 @@
 
 import numpy as np
 import warnings
+from typing import Optional
 import math
+import time
 from dingo.MetabolicNetwork import MetabolicNetwork
 from dingo.utils import (
     map_samples_to_steady_states,
@@ -193,104 +195,47 @@ class PolytopeSampler:
 
         return steady_states
 
-    def generate_steady_states_sb_once(self, n=1000, burn_in=0, sampler="sb", nreflections=None):
+    def generate_steady_states_sb_once(self, n=1000, burn_in=0, sampler="sb", nreflections=None, walk_len=None):
         """
-        Single-phase boundary sampler.
+        Single-phase boundary sampler with clear separation of concerns.
         - sampler: "sb"/"shake_and_bake" or "bsb"/"billiard_shake_and_bake"
-        - nreflections: only for BSB; defaults to ceil(sqrt(d)) if None
+        - walk_len: default ceil(sqrt(d)) with a minimum of 5
+        - nreflections: only used for BSB; defaults to ceil(sqrt(d))
         """
-        import numpy as np
 
-        # Build H-polytope from current A, b
         self.get_polytope()
         P = HPolytope(self._A, self._b)
-
-        # Normalize sampler keyword
-        s = (sampler or "sb").lower()
-        if s in ("sb", "shake_and_bake"):
-            method = b"shake_and_bake"
-            use_bsb = False
-        elif s in ("bsb", "billiard_shake_and_bake"):
-            method = b"billiard_shake_and_bake"
-            use_bsb = True
-        else:
-            raise ValueError(f"Unknown sampler '{sampler}'")
-
         d = int(self._A.shape[1])
 
-        # IMPORTANT: walk_len must be modest; too large often causes poor mixing or NaNs.
-        # A robust default is O(sqrt(d)) with a small lower bound.
-        walk_len = max(5, int(np.sqrt(d)))
-
-        # bias_vector must be a 1D array (never None)
-        bias_vec = np.ones(d, dtype=np.float64)
-
-        # Reflections for BSB (if not provided, use ceil(sqrt(d)))
-        if use_bsb:
-            nref = int(nreflections) if nreflections is not None else int(np.ceil(np.sqrt(d)))
-        else:
-            nref = 0
-
-        # Call into Cython in the exact argument order it expects:
-        # (method, number_of_points, number_of_points_to_burn, walk_len,
-        #  variance_value, bias_vector, solver=None, ess=1000, nreflections)
-        samples = P.generate_samples(
-            method,
-            int(n),
-            int(burn_in),
-            int(walk_len),
-            1.0,
-            bias_vec,
-            self._parameters.get("solver"),
-            0,
-            int(nref),
+        wl = int(walk_len) if walk_len is not None else max(5, int(np.sqrt(d)))
+        use_bsb = str(sampler).lower() in ("bsb", "billiard_shake_and_bake")
+        nref = (
+            int(nreflections)
+            if nreflections is not None
+            else (int(np.ceil(np.sqrt(d))) if use_bsb else 0)
         )
 
-        # Pull diagnostics from C++ (could contain NaN if samples had NaNs)
-        self._last_hpoly = P
+        S = P.boundary_sample(
+            sampler="bsb" if use_bsb else "sb",
+            number_of_points=int(n),
+            number_of_points_to_burn=int(burn_in),
+            walk_len=int(wl),
+            nreflections=int(nref),
+        )
 
-        diag_buf = np.empty(5, dtype=np.float64)
-        P.get_sb_diagnostics(diag_buf)
-        minESS, maxPSRF, Ncpp_reported, phases, seconds = diag_buf
-
-        # Cython returns samples as (N, d); convert to (d, N)
-        S = samples.T  # shape (d, N)
-
-        # Sanitize columns: drop any column with NaN/Inf to avoid propagating NaNs
         finite_cols = np.isfinite(S).all(axis=0)
         if not finite_cols.all():
             S = S[:, finite_cols]
-
-        N_kept = S.shape[1]
-        if N_kept == 0:
+        if S.shape[1] == 0:
             raise RuntimeError(
-                "All generated samples are NaN/Inf; check walk_len, inner ball, and constraints."
+                "All sample columns contain NaN/Inf; check walk_len, nreflections, or polytope constraints."
             )
 
-        # Map to full steady-state space
         steady_states = map_samples_to_steady_states(S, self._N, self._N_shift)
 
-        # Diagnostics: report actual kept N; guard PSRF if NaN
-        diagnostics = {
-            "minESS": float(minESS),
-            "maxPSRF": float(maxPSRF) if np.isfinite(maxPSRF) else 1.0,
-            "N": int(N_kept),
-            "phases": int(phases),
-            "seconds": float(seconds) if np.isfinite(seconds) else None,
-        }
+        self._last_hpoly = P  # cache if needed later
+        return steady_states
 
-        return steady_states, diagnostics
-
-    def sb_scaling_ratio(self, tol=1e-10, min_ratio=0.01):
-        """
-        Prosleđuje na C++ get_sb_scaling_ratio preko POSLEDNJEG HPolytope
-        koji je generisao SB/BSB uzorke. Moraš prethodno pozvati
-        generate_steady_states_sb_once(...).
-        """
-        if self._last_hpoly is None:
-            raise RuntimeError("sb_scaling_ratio: nema keširanog HPolytope sa SB/BSB uzorcima; pozovi sampler prvo.")
-        # ovo zove Cython metodu koja pakuje numpy bafer-e i zove C++ get_sb_scaling_ratio(...)
-        return self._last_hpoly.sb_scaling_ratio(tol=tol, min_ratio=min_ratio)
 
 
 
@@ -346,36 +291,60 @@ class PolytopeSampler:
     
     @staticmethod
     def sample_from_polytope_sb_once(
-        A, b, n=1000, burn_in=0, solver=None, sampler="sb"
+        A,
+        b,
+        n: int = 1000,
+        burn_in: int = 0,
+        sampler: str = "sb",
+        walk_len: Optional[int] = None,
+        nreflections: Optional[int] = None,
     ):
         """
-        One boundary-sampling phase for polytope A,b using SB or BSB.
-        Returns (samples_T_d_by_N, diagnostics_dict).
+        Perform a single boundary-sampling phase on Ax <= b using SB or BSB.
+        Returns only the sample matrix (d x N). No timing or diagnostics inside.
         """
+
+        import numpy as np
+
+        A = np.ascontiguousarray(A, dtype=np.float64)
+        b = np.ascontiguousarray(b, dtype=np.float64)
         P = HPolytope(A, b)
+        d = int(A.shape[1])
+        wl = int(walk_len) if walk_len is not None else max(5, int(np.sqrt(d)))
+        use_bsb = str(sampler).lower() in ("bsb", "billiard_shake_and_bake")
+        nref = (
+            int(nreflections)
+            if nreflections is not None
+            else (int(np.ceil(np.sqrt(d))) if use_bsb else 0)
+        )
 
-        # choose method inline, no extra vars
-        method = b"billiard_shake_and_bake" if sampler == "bsb" else b"shake_and_bake"
+        S = P.boundary_sample(
+            sampler="bsb" if use_bsb else "sb",
+            number_of_points=int(n),
+            number_of_points_to_burn=int(burn_in),
+            walk_len=int(wl),
+            nreflections=int(nref),
+        )
 
-        # call binding with or without solver depending on signature
-        try:
-            samples = P.generate_samples(method, int(n), int(burn_in), solver)
-        except TypeError:
-            samples = P.generate_samples(method, int(n), int(burn_in))
+        finite_cols = np.isfinite(S).all(axis=0)
+        if not finite_cols.all():
+            S = S[:, finite_cols]
+        if S.shape[1] == 0:
+            raise RuntimeError(
+                "All sample columns contain NaN/Inf; adjust walk_len, nreflections, or check constraints."
+            )
 
-        # shared diagnostics for SB/BSB
-        diag = np.zeros(5, dtype=np.float64)
-        P.get_sb_diagnostics(diag)
-        minESS, maxPSRF, Ncpp, phases, seconds = diag
+        return S
 
-        diagnostics = {
-            "minESS": float(minESS),
-            "maxPSRF": float(maxPSRF),
-            "N": int(Ncpp),
-            "phases": int(phases),
-            "seconds": float(seconds) if not np.isnan(seconds) else None,
-        }
-        return samples.T, diagnostics
+    def boundary_diagnostics(self, S):
+        """
+        Compute diagnostics (minESS, maxPSRF, N) for a given sample matrix S
+        using the current polytope stored in this sampler instance.
+        """
+        S = np.ascontiguousarray(S, dtype=np.float64)
+        P = HPolytope(self._A, self._b)
+        diag = P.boundary_diag(S)
+        return diag
 
 
 

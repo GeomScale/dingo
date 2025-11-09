@@ -44,6 +44,11 @@ def get_time_seed():
 # Get classes from the bindings.h file
 cdef extern from "bindings.h":
 
+   cdef struct SBDiagnostics:
+        double minESS
+        double maxPSRF
+        long long N
+
    # The HPolytopeCPP class along with its functions
    cdef cppclass HPolytopeCPP:
 
@@ -74,13 +79,19 @@ cdef extern from "bindings.h":
       void apply_rounding(int rounding_method, double* new_A, double* new_b, double* T_matrix, \
                           double* shift, double &round_value, double* inner_point, double radius);
 
-      void get_sb_diagnostics(double* out5) const
-      void get_sb_samples(double* samples) const
-      void get_sb_scaling_ratio(double tol, double min_ratio,
-                                  double* scale_out,
-                                  double* coverage_out,
-                                  double* maxdev_out,
-                                  double* avgdev_out) const
+      int apply_boundary_sampling(int walk_len,
+                                  int number_of_points,
+                                  int number_of_points_to_burn,
+                                  const char* sampler,
+                                  int nreflections,
+                                  double* samples)
+
+      void set_sb_state_from_buffer(int d, int N, const double* samples, SBDiagnostics diag)
+      void get_sb_samples(double* out)
+      void get_sb_diagnostics(double* out5)
+
+      @staticmethod
+      SBDiagnostics sb_diagnostics(int d, int N, const double* samples)
 
 
    # The lowDimPolytopeCPP class along with its functions
@@ -147,75 +158,66 @@ cdef class HPolytope:
                                        variance_value, &bias_vector_[0], ess, nreflections)
       return np.asarray(samples)
 
+   def boundary_sample(self, sampler="sb", number_of_points=10000,number_of_points_to_burn=0, walk_len=1, nreflections=0):
+      cdef int d = <int> self._A.shape[1]           
+      cdef int N   = <int> number_of_points
+      cdef int burn = <int> number_of_points_to_burn
+      cdef int wl   = <int> walk_len
+      cdef int nref = <int> nreflections
+      cdef bytes sampler_b = sampler.encode("UTF-8")
+
+      cdef np.ndarray[np.float64_t, ndim=2, mode="fortran"] S = \
+         np.zeros((d, N), dtype=np.float64, order="F")
+
+      cdef int made = self.polytope_cpp.apply_boundary_sampling(wl, N, burn, sampler_b, nref, &S[0,0])
+      if made < 0:
+         raise RuntimeError("apply_boundary_sampling failed")
+
+      cdef SBDiagnostics diag = HPolytopeCPP.sb_diagnostics(d, made, <const double*> &S[0,0])
+      self.polytope_cpp.set_sb_state_from_buffer(d, made, <const double*> &S[0,0], diag)
+
+      return np.asarray(S)[:, :made]
+   
    def get_sb_diagnostics(self, out):
       """
-      out: np.ndarray float64, shape (5,), redosled:
-            [minESS, maxPSRF, N, phases, seconds]
+      out: np.ndarray float64, shape (>=3,), order:
+            [minESS, maxPSRF, N]
       """
-      cdef double[::1] buf = np.ascontiguousarray(out, dtype=np.float64)
-      if buf.shape[0] < 5:
-         raise ValueError("out must have length >= 5")
-      self.polytope_cpp.get_sb_diagnostics(&buf[0])
-      return np.asarray(buf)
+      cdef np.ndarray[np.float64_t, ndim=1] out_arr = np.ascontiguousarray(out, dtype=np.float64)
+      if out_arr.shape[0] < 3:
+         raise ValueError("out must have length >= 3")
+      self.polytope_cpp.get_sb_diagnostics(<double*> &out_arr[0])
+      return np.asarray(out_arr)
+
 
    def get_sb_samples(self):
       """
-      Return d x N numpy matrix of samples from Shake and Bake sampling
+      Returns a d x N matrix from the internal C++ sample buffer.
       """
-      cdef int d = self._A.shape[1]
+      cdef int d
+      cdef long long Nll
+      cdef np.ndarray[np.float64_t, ndim=1] tmp = np.zeros(3, dtype=np.float64)
+      # Retrieve N from diagnostics (tmp = [minESS, maxPSRF, N])
+      self.polytope_cpp.get_sb_diagnostics(<double*> &tmp[0])
+      Nll = <long long> tmp[2]
+      d = <int> self._A.shape[1]
 
-      cdef double[::1] tmp = np.zeros(5, dtype=np.float64, order="C")
-      self.polytope_cpp.get_sb_diagnostics(&tmp[0])
-      cdef Py_ssize_t N = <Py_ssize_t> tmp[2]
-      if N <= 0:
-         return np.zeros((d, 0), dtype=np.float64)
-
-      cdef double[:,::1] S = np.zeros((d, N), dtype=np.float64, order="C")
+      cdef np.ndarray[np.float64_t, ndim=2, mode="fortran"] S = \
+         np.zeros((d, Nll), dtype=np.float64, order="F")
       self.polytope_cpp.get_sb_samples(&S[0,0])
       return np.asarray(S)
 
-   def sb_scaling_ratio(self, tol=1e-10, min_ratio=0.01):
+
+   def boundary_diag(self, S):
       """
-      Vraća: (scale, coverage, max_dev, avg_dev)
-         - scale:     (K,)   [tipično K=10]
-         - coverage:  (m,K)  [m = broj hiper-ravnina = self._A.shape[0]]
-         - max_dev:   (m,)
-         - avg_dev:   (m,)
-      Potrebno: prethodno pozvati SB/BSB da bi postojali sb_samples_ u C++.
+      Compute diagnostics directly from a given sample matrix S.
+      Returns a Python dictionary with keys: minESS, maxPSRF, and N.
       """
-      cdef int m = <int> self._A.shape[0]
-      # Trenutna C++ implementacija pravi tačno 10 skala; ostavi 10 ovde.
-      cdef int K = 10
-
-      # Alokacije kao C-kontigvne matrice
-      cdef np.ndarray[np.float64_t, ndim=1, mode="c"] scale_np    = np.empty((K,),     dtype=np.float64, order="C")
-      cdef np.ndarray[np.float64_t, ndim=2, mode="c"] coverage_np = np.empty((m, K),   dtype=np.float64, order="C")
-      cdef np.ndarray[np.float64_t, ndim=1, mode="c"] maxdev_np   = np.empty((m,),     dtype=np.float64, order="C")
-      cdef np.ndarray[np.float64_t, ndim=1, mode="c"] avgdev_np   = np.empty((m,),     dtype=np.float64, order="C")
-
-      # Typed memoryview-ovi nad C-kontigvnim baferima
-      cdef double[::1]    scale_mv    = scale_np
-      cdef double[:,::1]  coverage_mv = coverage_np
-      cdef double[::1]    maxdev_mv   = maxdev_np
-      cdef double[::1]    avgdev_mv   = avgdev_np
-
-      # Poziv C++ wrappera – prosleđuju se sirove adrese bafera
-      try:
-         self.polytope_cpp.get_sb_scaling_ratio(
-               <double> tol,
-               <double> min_ratio,
-               &scale_mv[0],
-               &coverage_mv[0, 0],   # (m,K) row-major: i*K + k
-               &maxdev_mv[0],
-               &avgdev_mv[0]
-         )
-      except RuntimeError as e:
-         # C++ baca kada nema SB/BSB uzoraka; prebaci poruku dalje.
-         raise RuntimeError(str(e))
-
-      # Vrati NumPy objekte (već su odgovarajućih dimenzija)
-      return scale_np, coverage_np, maxdev_np, avgdev_np
-
+      cdef np.ndarray[np.float64_t, ndim=2] Snp = np.ascontiguousarray(S, dtype=np.float64)
+      cdef int d = <int> Snp.shape[0]
+      cdef int N = <int> Snp.shape[1]
+      cdef SBDiagnostics diag = HPolytopeCPP.sb_diagnostics(d, N, <const double*> &Snp[0,0])
+      return {"minESS": diag.minESS, "maxPSRF": diag.maxPSRF, "N": diag.N}
 
 
    # The rounding() function; as in compute_volume, more than one method is available for this step

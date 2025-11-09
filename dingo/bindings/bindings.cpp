@@ -138,72 +138,6 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    } else if (strcmp(method, "vaidya_walk") == 0) { // vaidya walk
       uniform_sampling<VaidyaWalk>(rand_points, HP, rng, walk_len, number_of_points,
                                    starting_point, number_of_points_to_burn);
-   } else if (strcmp(method, "shake_and_bake") == 0) {
-      using clock = std::chrono::high_resolution_clock;
-      auto t0 = clock::now();
-
-      auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<NT>(1e-8));
-
-      const int d = HP.dimension();
-
-      std::list<Point> batch;
-      shakeandbake_sampling<ShakeAndBakeWalk>(batch, HP, rng, walk_len, number_of_points, boundary_pt, number_of_points_to_burn, facet_idx);
-      rand_points.swap(batch);
-      const int N = static_cast<int>(rand_points.size());
-      MT S(d, N);
-      int c = 0;
-      for (auto it = rand_points.cbegin(); it != rand_points.cend(); ++it, ++c)
-         for (int j = 0; j < d; ++j)
-               S(j, c) = (*it)[j];
-
-      unsigned int min_ess_u = 0;
-      VT ess_vec  = effective_sample_size<NT, VT, MT>(S, min_ess_u);
-      NT min_ess  = ess_vec.minCoeff();
-
-      VT rhat_vec = univariate_psrf<NT, VT, MT>(S);
-      NT max_psrf = rhat_vec.maxCoeff();
-
-      auto t1 = clock::now();
-      double secs = std::chrono::duration<double>(t1 - t0).count();
-      sb_samples_ = S;                       // d x N
-      sb_diag_.minESS  = static_cast<double>(min_ess);
-      sb_diag_.maxPSRF = static_cast<double>(max_psrf);
-      sb_diag_.N  = N;
-      sb_diag_.phases  = 1;
-      sb_diag_.seconds = secs;
-   } else if (strcmp(method, "billiard_shake_and_bake") == 0) { // billiard shake and bake walk
-      using clock = std::chrono::high_resolution_clock;
-      auto t0 = clock::now();
-      auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<NT>(1e-8));
-      const int d = HP.dimension();
-      std::list<Point> batch;
-      billiard_shakeandbake_sampling<BilliardShakeAndBakeWalk>(batch, HP, rng, walk_len, nreflections, number_of_points,
-                                                                boundary_pt, number_of_points_to_burn, facet_idx);
-
-      rand_points.swap(batch);
-      const int N = static_cast<int>(rand_points.size());
-      MT S(d, N);
-      int c = 0;
-      for (auto it = rand_points.cbegin(); it != rand_points.cend(); ++it, ++c)
-         for (int j = 0; j < d; ++j)
-               S(j, c) = (*it)[j];
-
-      unsigned int min_ess_u = 0;
-      VT ess_vec  = effective_sample_size<NT, VT, MT>(S, min_ess_u);
-      NT min_ess  = ess_vec.minCoeff();
-
-      VT rhat_vec = univariate_psrf<NT, VT, MT>(S);
-      NT max_psrf = rhat_vec.maxCoeff();
-
-      auto t1 = clock::now();
-      double secs = std::chrono::duration<double>(t1 - t0).count();
-      sb_samples_ = S;                       // d x N
-      sb_diag_.minESS  = static_cast<double>(min_ess);
-      sb_diag_.maxPSRF = static_cast<double>(max_psrf);
-      sb_diag_.N  = N;
-      sb_diag_.phases  = 1;
-      sb_diag_.seconds = secs;
-
    } else if (strcmp(method, "mmcs") == 0) { // vaidya walk
       MT S;
       int total_ess;
@@ -251,7 +185,67 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    }
    return 0.0;
 }
+
+// Boundary sampling: shakre-and-bake and billiard shake-and-bake
+int HPolytopeCPP::apply_boundary_sampling(int walk_len,
+                                          int number_of_points,
+                                          int number_of_points_to_burn,
+                                          const char* sampler,
+                                          int nreflections,
+                                          double* samples) {
+    RNGType rng(HP.dimension());
+    HP.normalize();
+
+    auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<NT>(1e-8));
+
+    const int d = HP.dimension();
+    std::list<Point> batch;
+
+    if (strcmp(sampler, "shake_and_bake") == 0 || strcmp(sampler, "sb") == 0) {
+        shakeandbake_sampling<ShakeAndBakeWalk>(batch, HP, rng, walk_len, number_of_points, boundary_pt, number_of_points_to_burn, facet_idx);
+    
+    } else if (strcmp(sampler, "billiard_shake_and_bake") == 0 || strcmp(sampler, "bsb") == 0) {
+        billiard_shakeandbake_sampling<BilliardShakeAndBakeWalk>(batch, HP, rng, walk_len,nreflections, number_of_points,boundary_pt, number_of_points_to_burn,facet_idx);
+
+    } else {
+        throw std::runtime_error(std::string(sampler) + " is not a boundary sampler.");
+    }
+
+    int n_si = 0;
+    for (auto it = batch.cbegin(); it != batch.cend(); ++it)
+        for (int j = 0; j < d; ++j)
+            samples[n_si++] = (*it)[j];
+
+    return static_cast<int>(batch.size());
+}
+
 //////////         End of "generate_samples()"          //////////
+SBDiagnostics HPolytopeCPP::sb_diagnostics(int d, int N, const double* samples) {
+    MT S(d, N);
+    for (int c = 0; c < N; ++c)
+        for (int r = 0; r < d; ++r)
+            S(r, c) = samples[c*d + r];
+
+    unsigned int min_ess_u = 0;
+    VT ess_vec  = effective_sample_size<NT, VT, MT>(S, min_ess_u);
+    VT rhat_vec = univariate_psrf<NT, VT, MT>(S);
+
+    SBDiagnostics out;
+    out.minESS  = static_cast<double>(ess_vec.minCoeff());
+    out.maxPSRF = static_cast<double>(rhat_vec.maxCoeff());
+    out.N       = N;
+    return out;
+}
+
+void HPolytopeCPP::set_sb_state_from_buffer(int d, int N, const double* samples, const SBDiagnostics& diag) {
+    sb_samples_.resize(d, N);
+    for (int j = 0; j < N; ++j)
+        for (int i = 0; i < d; ++i)
+            sb_samples_(i, j) = samples[i + j * d];
+
+    sb_diag_ = diag; 
+}
+
 
 
 void HPolytopeCPP::get_polytope_as_matrices(double* new_A, double* new_b) const {
@@ -471,47 +465,6 @@ double HPolytopeCPP::mmcs_step(double* inner_point, double radius, int &N) {
    return 0.0;
 }
 
-void HPolytopeCPP::get_sb_scaling_ratio(double tol,
-                                        double min_ratio,
-                                        double* scale_out,
-                                        double* coverage_out,
-                                        double* maxdev_out,
-                                        double* avgdev_out) const
-{
-    const int d = sb_samples_.rows();
-    const int N = sb_samples_.cols();
-    if (d == 0 || N == 0) {
-        throw std::runtime_error("get_sb_scaling_ratio: no SB/BSB samples available. "
-                                 "Call a SB/BSB sampler first.");
-    }
-
-    auto result = scaling_ratio_boundary_test<Hpolytope>(HP, sb_samples_,
-                                                         static_cast<NT>(tol),
-                                                         static_cast<NT>(min_ratio));
-
-    const auto& scale    = std::get<0>(result);  // VT (K)
-    const auto& coverage = std::get<1>(result);  // MT (m x K)
-    const auto& max_dev  = std::get<2>(result);  // VT (m)
-    const auto& avg_dev  = std::get<3>(result);  // VT (m)
-
-    const int K    = static_cast<int>(scale.size());
-    const int m    = coverage.rows();
-    const int Kcov = coverage.cols();
-
-    for (int k = 0; k < K; ++k) scale_out[k] = static_cast<double>(scale[k]);
-
-    for (int i = 0; i < m; ++i)
-        for (int k = 0; k < Kcov; ++k)
-            coverage_out[i * Kcov + k] = static_cast<double>(coverage(i, k));
-
-    for (int i = 0; i < m; ++i) {
-        maxdev_out[i] = static_cast<double>(max_dev[i]);
-        avgdev_out[i] = static_cast<double>(avg_dev[i]);
-    }
-}
-
-
-
 void HPolytopeCPP::get_mmcs_samples(double* T_matrix, double* T_shift, double* samples) {
 
    int n_variables = HP.dimension();
@@ -539,21 +492,19 @@ void HPolytopeCPP::get_mmcs_samples(double* T_matrix, double* T_shift, double* s
    mmcs_set_of_parameters.samples.resize(0,0);
 }
 
-void HPolytopeCPP::get_sb_samples(double* samples) const {
-    const int d = sb_samples_.rows();
-    const int N = sb_samples_.cols();
-    int t = 0;
-    for (int i = 0; i < d; ++i)
-        for (int j = 0; j < N; ++j)
-            samples[t++] = sb_samples_(i, j);
+void HPolytopeCPP::get_sb_samples(double* out) const {
+    const int d = static_cast<int>(sb_samples_.rows());
+    const int N = static_cast<int>(sb_samples_.cols());
+    for (int j = 0; j < N; ++j)
+        for (int i = 0; i < d; ++i)
+            out[i + j * d] = sb_samples_(i, j);
 }
 
-void HPolytopeCPP::get_sb_diagnostics(double* out5) const {
-    out5[0] = sb_diag_.minESS;
-    out5[1] = sb_diag_.maxPSRF;
-    out5[2] = static_cast<double>(sb_diag_.N);
-    out5[3] = static_cast<double>(sb_diag_.phases);
-    out5[4] = sb_diag_.seconds;
+void HPolytopeCPP::get_sb_diagnostics(double* out3) const {
+    out3[0] = sb_diag_.minESS;
+    out3[1] = sb_diag_.maxPSRF;
+    out3[2] = static_cast<double>(sb_diag_.N);
+
 }
 
 

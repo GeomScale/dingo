@@ -53,12 +53,10 @@ typedef typename Hpolytope::MT    MT;
 typedef typename Hpolytope::VT    VT;
 typedef BoostRandomNumberGenerator<boost::mt19937, double>    RNGType;
 
-struct Diagnostics {
-    double minESS  = 0.0;
-    double maxPSRF = 0.0;
-    long long N  = 0;
-    int   phases = 0;
-    double seconds = 0.0;
+struct SBDiagnostics {
+    double minESS;
+    double maxPSRF;
+    long long N;
 };
 
 template <typename NT, typename MT, typename VT>
@@ -167,15 +165,34 @@ class HPolytopeCPP{
       void apply_rounding(int rounding_method, double* new_A, double* new_b, double* T_matrix,
                           double* shift, double &round_value, double* inner_point, double radius);
 
-      // Shake and Bake one-phase sampling methods
-      inline const Diagnostics& sb_diagnostics() const { return sb_diag_; }
-      inline const MT& sb_samples()  const { return sb_samples_; }
-      void get_sb_samples(double* samples) const;
-      void get_sb_diagnostics(double* out5) const;
-      void get_sb_scaling_ratio(double tol, double min_ratio,double* scale_out,double* coverage_out,double* maxdev_out,double* avgdev_out) const;
+      // the boundary sampling function: shake and bake, billiard shake and bake
+      int apply_boundary_sampling(int walk_len,int number_of_points,int number_of_points_to_burn, const char* sampler, int nreflections, double* samples);
+
+      // Compute diagnostics (minESS, maxPSRF, N, phases, seconds) for a given sample buffer.
+      // This is a static utility function and does not depend on the internal state.
+      static SBDiagnostics sb_diagnostics(int d, int N, const double* samples);
+
+      // Return a reference to the last stored diagnostics object (legacy internal storage).
+      // Used for backward compatibility; modern code should call get_sb_diagnostics().
+      inline const SBDiagnostics& sb_diagnostics_legacy() const { return sb_diag_; }
+
+      // Return a reference to the last stored samples matrix (legacy internal storage).
+      inline const MT& sb_samples_legacy()  const { return sb_samples_; }
+
+      // Set the internal Shake-and-Bake state from an external buffer.
+      // Copies samples (d x N) and diagnostic values into internal members.
+      void set_sb_state_from_buffer(int d, int N, const double* samples, const SBDiagnostics& diag);
+
+      // Copy the internally stored sample matrix (sb_samples_) into a provided output buffer.
+      // The output pointer must have enough space for d * N doubles.
+      void get_sb_samples(double* out) const;   
+
+      // Copy the current diagnostics (sb_diag_) into a provided 3-element double buffer.
+      // Order: [minESS, maxPSRF, N].
+      void get_sb_diagnostics(double* out3) const;
 
    private:
-      Diagnostics sb_diag_;
+      SBDiagnostics sb_diag_;
       MT  sb_samples_;   
 
 };
