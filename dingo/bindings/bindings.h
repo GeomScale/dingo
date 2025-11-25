@@ -31,6 +31,7 @@
 #include "sampling/parallel_mmcs.hpp"
 #include "diagnostics/univariate_psrf.hpp"
 #include "diagnostics/effective_sample_size.hpp"
+#include "diagnostics/scaling_ratio.hpp"
 
 //from generate_samples, some extra headers not already included
 #include <chrono>
@@ -44,6 +45,9 @@
 #include "preprocess/svd_rounding.hpp"
 #include "preprocess/inscribed_ellipsoid_rounding.hpp"
 #include "preprocess/feasible_point.hpp"
+
+// for creating H polytopes 
+#include "generators/known_polytope_generators.h"
 
 typedef double NT;
 typedef Cartesian<NT>    Kernel;
@@ -191,11 +195,28 @@ class HPolytopeCPP{
       // Order: [minESS, maxPSRF, N].
       void get_sb_diagnostics(double* out3) const;
 
+      // Compute boundary scaling-ratio diagnostics for a given sample buffer.
+      // - scale_out: length K (currently 10) scaling factors
+      // - coverage_out: m x K coverage matrix, stored row-major (facet-major)
+      // - max_dev_out: length m, maximum deviation per facet (in %)
+      // - avg_dev_out: length m, average deviation per facet (in %)
+      void boundary_scaling_ratio(int d,int N,const double* samples,double tol,double min_ratio,double* scale_out,double* coverage_out,double* max_dev_out,double* avg_dev_out) const;
+
    private:
       SBDiagnostics sb_diag_;
       MT  sb_samples_;   
 
 };
+
+// Known H-polytopes generators
+
+void generate_cube_H(int dim, double scale, double* A_out, double* b_out);
+void generate_cross_H(int dim, double* A_out, double* b_out);
+void generate_simplex_H(int dim, double* A_out, double* b_out);
+void generate_prod_simplex_H(int dim, double* A_out, double* b_out);
+void generate_skinny_cube_H(int dim, double* A_out, double* b_out);
+void generate_birkhoff_H(int n, double* A_out, double* b_out);
+
 
 
 #endif

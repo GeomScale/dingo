@@ -507,6 +507,44 @@ void HPolytopeCPP::get_sb_diagnostics(double* out3) const {
 
 }
 
+void HPolytopeCPP::boundary_scaling_ratio(int d,int N,const double* samples,double tol,double min_ratio,double* scale_out,double* coverage_out,double* max_dev_out,double* avg_dev_out) const
+{
+    MT S(d, N);
+    for (int j = 0; j < N; ++j)
+    {
+        for (int i = 0; i < d; ++i)
+        {
+            S(i, j) = samples[i + j * d];
+        }
+    }
+
+    auto result = scaling_ratio_boundary_test(HP, S, tol, min_ratio);
+    const VT& scale = std::get<0>(result);
+    const MT& coverage = std::get<1>(result);
+    const VT& max_dev = std::get<2>(result);
+    const VT& avg_dev = std::get<3>(result);
+
+    const int K = static_cast<int>(scale.size());
+    const int m = static_cast<int>(coverage.rows());
+
+    for (int k = 0; k < K; ++k)
+    {
+        scale_out[k] = static_cast<double>(scale[k]);
+    }
+
+    for (int f = 0; f < m; ++f)
+    {
+        max_dev_out[f] = static_cast<double>(max_dev[f]);
+        avg_dev_out[f] = static_cast<double>(avg_dev[f]);
+
+        for (int k = 0; k < K; ++k)
+        {
+            coverage_out[f * K + k] = static_cast<double>(coverage(f, k));
+        }
+    }
+}
+
+
 
 //////////         Start of "rounding()"          //////////
 void HPolytopeCPP::apply_rounding(int rounding_method, double* new_A, double* new_b,
@@ -591,3 +629,109 @@ void HPolytopeCPP::apply_rounding(int rounding_method, double* new_A, double* ne
 
 }
 //////////         End of "rounding()"          //////////
+
+////////// Known H-polytope generators wrappers //////////
+
+void generate_cube_H(int dim, double scale, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_cube<Hpolytope>(static_cast<unsigned int>(dim),
+                                           false,  // Vpoly = false 
+                                           scale);
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+    const int m = static_cast<int>(A.rows());
+    const int n = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < n; ++j) {
+            A_out[i * n + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+
+void generate_cross_H(int dim, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_cross<Hpolytope>(static_cast<unsigned int>(dim),false);
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+
+    const int m = static_cast<int>(A.rows());
+    const int n = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < n; ++j) {
+            A_out[i * n + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+
+void generate_simplex_H(int dim, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_simplex<Hpolytope>(static_cast<unsigned int>(dim),false); 
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+
+    const int m = static_cast<int>(A.rows());
+    const int n = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < n; ++j) {
+            A_out[i * n + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+
+void generate_prod_simplex_H(int dim, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_prod_simplex<Hpolytope>(static_cast<unsigned int>(dim),false);
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+
+    const int m = static_cast<int>(A.rows());
+    const int n = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < n; ++j) {
+            A_out[i * n + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+
+void generate_skinny_cube_H(int dim, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_skinny_cube<Hpolytope>(static_cast<unsigned int>(dim),false);
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+
+    const int m = static_cast<int>(A.rows());
+    const int n = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < n; ++j) {
+            A_out[i * n + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+
+void generate_birkhoff_H(int n, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_birkhoff<Hpolytope>(static_cast<unsigned int>(n));
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+
+    const int m = static_cast<int>(A.rows());
+    const int d = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < d; ++j) {
+            A_out[i * d + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+////////// Ending of known H-polytope generators wrappers //////////
