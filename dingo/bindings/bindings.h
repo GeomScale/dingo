@@ -5,7 +5,8 @@
 // Copyright (c) 2018-2021 Apostolos Chalkis
 
 // Contributed and/or modified by Haris Zafeiropoulos
-// Contributed and/or modified by Pedro Zuidberg Dos Martires
+// Contributed and/or modified by Pedro Zuidberg Dos
+// Contributed and/or modified by Iva Janković, as part of Google Summer of Code 2025 program.
 
 // Licensed under GNU LGPL.3, see LICENCE file
 
@@ -29,16 +30,24 @@
 #include "sampling/mmcs.hpp"
 #include "sampling/parallel_mmcs.hpp"
 #include "diagnostics/univariate_psrf.hpp"
+#include "diagnostics/effective_sample_size.hpp"
+#include "diagnostics/scaling_ratio.hpp"
 
 //from generate_samples, some extra headers not already included
 #include <chrono>
+#include <limits>
 #include "sampling/sampling.hpp"
 #include "ode_solvers/ode_solvers.hpp"
+#include "preprocess/feasible_point.hpp"
 
 // for rounding
 #include "preprocess/min_sampling_covering_ellipsoid_rounding.hpp"
 #include "preprocess/svd_rounding.hpp"
 #include "preprocess/inscribed_ellipsoid_rounding.hpp"
+#include "preprocess/feasible_point.hpp"
+
+// for creating H polytopes 
+#include "generators/known_polytope_generators.h"
 
 typedef double NT;
 typedef Cartesian<NT>    Kernel;
@@ -48,6 +57,11 @@ typedef typename Hpolytope::MT    MT;
 typedef typename Hpolytope::VT    VT;
 typedef BoostRandomNumberGenerator<boost::mt19937, double>    RNGType;
 
+struct SBDiagnostics {
+    double minESS;
+    double maxPSRF;
+    long long N;
+};
 
 template <typename NT, typename MT, typename VT>
 struct mmcs_parameters
@@ -141,7 +155,7 @@ class HPolytopeCPP{
       // the apply_sampling() function
       double apply_sampling(int walk_len, int number_of_points, int number_of_points_to_burn,
                             char* method, double* inner_point, double radius, double* samples,
-                            double variance_value, double* bias_vector, int ess);
+                            double variance_value, double* bias_vector, int ess, int nreflections);
 
       void mmcs_initialize(int d, int ess, bool psrf_check, bool parallelism, int num_threads);
 
@@ -155,7 +169,54 @@ class HPolytopeCPP{
       void apply_rounding(int rounding_method, double* new_A, double* new_b, double* T_matrix,
                           double* shift, double &round_value, double* inner_point, double radius);
 
+      // the boundary sampling function: shake and bake, billiard shake and bake
+      int apply_boundary_sampling(int walk_len,int number_of_points,int number_of_points_to_burn, const char* sampler, int nreflections, double* samples);
+
+      // Compute diagnostics (minESS, maxPSRF, N, phases, seconds) for a given sample buffer.
+      // This is a static utility function and does not depend on the internal state.
+      static SBDiagnostics sb_diagnostics(int d, int N, const double* samples);
+
+      // Return a reference to the last stored diagnostics object (legacy internal storage).
+      // Used for backward compatibility; modern code should call get_sb_diagnostics().
+      inline const SBDiagnostics& sb_diagnostics_legacy() const { return sb_diag_; }
+
+      // Return a reference to the last stored samples matrix (legacy internal storage).
+      inline const MT& sb_samples_legacy()  const { return sb_samples_; }
+
+      // Set the internal Shake-and-Bake state from an external buffer.
+      // Copies samples (d x N) and diagnostic values into internal members.
+      void set_sb_state_from_buffer(int d, int N, const double* samples, const SBDiagnostics& diag);
+
+      // Copy the internally stored sample matrix (sb_samples_) into a provided output buffer.
+      // The output pointer must have enough space for d * N doubles.
+      void get_sb_samples(double* out) const;   
+
+      // Copy the current diagnostics (sb_diag_) into a provided 3-element double buffer.
+      // Order: [minESS, maxPSRF, N].
+      void get_sb_diagnostics(double* out3) const;
+
+      // Compute boundary scaling-ratio diagnostics for a given sample buffer.
+      // - scale_out: length K (currently 10) scaling factors
+      // - coverage_out: m x K coverage matrix, stored row-major (facet-major)
+      // - max_dev_out: length m, maximum deviation per facet (in %)
+      // - avg_dev_out: length m, average deviation per facet (in %)
+      void boundary_scaling_ratio(int d,int N,const double* samples,double tol,double min_ratio,double* scale_out,double* coverage_out,double* max_dev_out,double* avg_dev_out) const;
+
+   private:
+      SBDiagnostics sb_diag_;
+      MT  sb_samples_;   
+
 };
+
+// Known H-polytopes generators
+
+void generate_cube_H(int dim, double scale, double* A_out, double* b_out);
+void generate_cross_H(int dim, double* A_out, double* b_out);
+void generate_simplex_H(int dim, double* A_out, double* b_out);
+void generate_prod_simplex_H(int dim, double* A_out, double* b_out);
+void generate_skinny_cube_H(int dim, double* A_out, double* b_out);
+void generate_birkhoff_H(int n, double* A_out, double* b_out);
+
 
 
 #endif

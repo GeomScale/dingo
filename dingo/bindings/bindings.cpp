@@ -6,6 +6,7 @@
 
 // Contributed and/or modified by Haris Zafeiropoulos
 // Contributed and/or modified by Pedro Zuidberg Dos Martires
+// Contributed and/or modified by Iva Janković, as part of Google Summer of Code 2025 program.
 
 // Licensed under GNU LGPL.3, see LICENCE file
 
@@ -14,7 +15,9 @@
 #include <stdexcept>
 #include "bindings.h"
 #include "hmc_sampling.h"
-
+#include "random_walks/shake_and_bake_walk.hpp"
+#include "random_walks/billiard_shake_and_bake_walk.hpp"
+#include "diagnostics/scaling_ratio.hpp" 
 
 using namespace std;
 
@@ -92,7 +95,8 @@ double HPolytopeCPP::apply_sampling(int walk_len,
                                     double* samples,
                                     double variance_value,
                                     double* bias_vector_,
-                                    int ess){
+                                    int ess,
+                                    int nreflections) {
 
    RNGType rng(HP.dimension());
    HP.normalize();
@@ -167,7 +171,7 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    }
 
    else {
-      throw std::runtime_error("This function must not be called.");
+      throw std::runtime_error(method + std::string(" is not recognized as a valid sampling method."));
    }
 
    if (strcmp(method, "mmcs") != 0) {
@@ -181,7 +185,67 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    }
    return 0.0;
 }
+
+// Boundary sampling: shakre-and-bake and billiard shake-and-bake
+int HPolytopeCPP::apply_boundary_sampling(int walk_len,
+                                          int number_of_points,
+                                          int number_of_points_to_burn,
+                                          const char* sampler,
+                                          int nreflections,
+                                          double* samples) {
+    RNGType rng(HP.dimension());
+    HP.normalize();
+
+    auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<NT>(1e-8));
+
+    const int d = HP.dimension();
+    std::list<Point> batch;
+
+    if (strcmp(sampler, "shake_and_bake") == 0 || strcmp(sampler, "sb") == 0) {
+        shakeandbake_sampling<ShakeAndBakeWalk>(batch, HP, rng, walk_len, number_of_points, boundary_pt, number_of_points_to_burn, facet_idx);
+    
+    } else if (strcmp(sampler, "billiard_shake_and_bake") == 0 || strcmp(sampler, "bsb") == 0) {
+        billiard_shakeandbake_sampling<BilliardShakeAndBakeWalk>(batch, HP, rng, walk_len,nreflections, number_of_points,boundary_pt, number_of_points_to_burn,facet_idx);
+
+    } else {
+        throw std::runtime_error(std::string(sampler) + " is not a boundary sampler.");
+    }
+
+    int n_si = 0;
+    for (auto it = batch.cbegin(); it != batch.cend(); ++it)
+        for (int j = 0; j < d; ++j)
+            samples[n_si++] = (*it)[j];
+
+    return static_cast<int>(batch.size());
+}
+
 //////////         End of "generate_samples()"          //////////
+SBDiagnostics HPolytopeCPP::sb_diagnostics(int d, int N, const double* samples) {
+    MT S(d, N);
+    for (int c = 0; c < N; ++c)
+        for (int r = 0; r < d; ++r)
+            S(r, c) = samples[c*d + r];
+
+    unsigned int min_ess_u = 0;
+    VT ess_vec  = effective_sample_size<NT, VT, MT>(S, min_ess_u);
+    VT rhat_vec = univariate_psrf<NT, VT, MT>(S);
+
+    SBDiagnostics out;
+    out.minESS  = static_cast<double>(ess_vec.minCoeff());
+    out.maxPSRF = static_cast<double>(rhat_vec.maxCoeff());
+    out.N       = N;
+    return out;
+}
+
+void HPolytopeCPP::set_sb_state_from_buffer(int d, int N, const double* samples, const SBDiagnostics& diag) {
+    sb_samples_.resize(d, N);
+    for (int j = 0; j < N; ++j)
+        for (int i = 0; i < d; ++i)
+            sb_samples_(i, j) = samples[i + j * d];
+
+    sb_diag_ = diag; 
+}
+
 
 
 void HPolytopeCPP::get_polytope_as_matrices(double* new_A, double* new_b) const {
@@ -428,6 +492,59 @@ void HPolytopeCPP::get_mmcs_samples(double* T_matrix, double* T_shift, double* s
    mmcs_set_of_parameters.samples.resize(0,0);
 }
 
+void HPolytopeCPP::get_sb_samples(double* out) const {
+    const int d = static_cast<int>(sb_samples_.rows());
+    const int N = static_cast<int>(sb_samples_.cols());
+    for (int j = 0; j < N; ++j)
+        for (int i = 0; i < d; ++i)
+            out[i + j * d] = sb_samples_(i, j);
+}
+
+void HPolytopeCPP::get_sb_diagnostics(double* out3) const {
+    out3[0] = sb_diag_.minESS;
+    out3[1] = sb_diag_.maxPSRF;
+    out3[2] = static_cast<double>(sb_diag_.N);
+
+}
+
+void HPolytopeCPP::boundary_scaling_ratio(int d,int N,const double* samples,double tol,double min_ratio,double* scale_out,double* coverage_out,double* max_dev_out,double* avg_dev_out) const
+{
+    MT S(d, N);
+    for (int j = 0; j < N; ++j)
+    {
+        for (int i = 0; i < d; ++i)
+        {
+            S(i, j) = samples[i + j * d];
+        }
+    }
+
+    auto result = scaling_ratio_boundary_test(HP, S, tol, min_ratio);
+    const VT& scale = std::get<0>(result);
+    const MT& coverage = std::get<1>(result);
+    const VT& max_dev = std::get<2>(result);
+    const VT& avg_dev = std::get<3>(result);
+
+    const int K = static_cast<int>(scale.size());
+    const int m = static_cast<int>(coverage.rows());
+
+    for (int k = 0; k < K; ++k)
+    {
+        scale_out[k] = static_cast<double>(scale[k]);
+    }
+
+    for (int f = 0; f < m; ++f)
+    {
+        max_dev_out[f] = static_cast<double>(max_dev[f]);
+        avg_dev_out[f] = static_cast<double>(avg_dev[f]);
+
+        for (int k = 0; k < K; ++k)
+        {
+            coverage_out[f * K + k] = static_cast<double>(coverage(f, k));
+        }
+    }
+}
+
+
 
 //////////         Start of "rounding()"          //////////
 void HPolytopeCPP::apply_rounding(int rounding_method, double* new_A, double* new_b,
@@ -512,3 +629,109 @@ void HPolytopeCPP::apply_rounding(int rounding_method, double* new_A, double* ne
 
 }
 //////////         End of "rounding()"          //////////
+
+////////// Known H-polytope generators wrappers //////////
+
+void generate_cube_H(int dim, double scale, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_cube<Hpolytope>(static_cast<unsigned int>(dim),
+                                           false,  // Vpoly = false 
+                                           scale);
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+    const int m = static_cast<int>(A.rows());
+    const int n = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < n; ++j) {
+            A_out[i * n + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+
+void generate_cross_H(int dim, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_cross<Hpolytope>(static_cast<unsigned int>(dim),false);
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+
+    const int m = static_cast<int>(A.rows());
+    const int n = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < n; ++j) {
+            A_out[i * n + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+
+void generate_simplex_H(int dim, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_simplex<Hpolytope>(static_cast<unsigned int>(dim),false); 
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+
+    const int m = static_cast<int>(A.rows());
+    const int n = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < n; ++j) {
+            A_out[i * n + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+
+void generate_prod_simplex_H(int dim, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_prod_simplex<Hpolytope>(static_cast<unsigned int>(dim),false);
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+
+    const int m = static_cast<int>(A.rows());
+    const int n = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < n; ++j) {
+            A_out[i * n + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+
+void generate_skinny_cube_H(int dim, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_skinny_cube<Hpolytope>(static_cast<unsigned int>(dim),false);
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+
+    const int m = static_cast<int>(A.rows());
+    const int n = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < n; ++j) {
+            A_out[i * n + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+
+void generate_birkhoff_H(int n, double* A_out, double* b_out)
+{
+    Hpolytope P = generate_birkhoff<Hpolytope>(static_cast<unsigned int>(n));
+    const MT& A = P.get_mat();
+    const VT& b = P.get_vec();
+
+    const int m = static_cast<int>(A.rows());
+    const int d = static_cast<int>(A.cols());
+
+    for (int i = 0; i < m; ++i) {
+        b_out[i] = static_cast<double>(b[i]);
+        for (int j = 0; j < d; ++j) {
+            A_out[i * d + j] = static_cast<double>(A(i, j));
+        }
+    }
+}
+////////// Ending of known H-polytope generators wrappers //////////

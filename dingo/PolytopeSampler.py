@@ -6,10 +6,13 @@
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
+# Contributed and/or modified by Iva Janković, as part of Google Summer of Code 2025 program.
 
 import numpy as np
 import warnings
+from typing import Optional
 import math
+import time
 from dingo.MetabolicNetwork import MetabolicNetwork
 from dingo.utils import (
     map_samples_to_steady_states,
@@ -29,12 +32,12 @@ class PolytopeSampler:
             raise Exception("An unknown input object given for initialization.")
 
         self._metabolic_network = metabol_net
-        self._A = []
-        self._b = []
-        self._N = []
-        self._N_shift = []
-        self._T = []
-        self._T_shift = []
+        self._A = None
+        self._b = None
+        self._N = None
+        self._N_shift = None
+        self._T = None
+        self._T_shift = None
         self._parameters = {}
         self._parameters["nullspace_method"] = "sparseQR"
         self._parameters["opt_percentage"] = self.metabolic_network.parameters[
@@ -46,6 +49,7 @@ class PolytopeSampler:
 
         self._parameters["tol"] = 1e-06
         self._parameters["solver"] = None
+        self._last_hpoly = None
 
     def get_polytope(self):
         """A member function to derive the corresponding full dimensional polytope
@@ -53,13 +57,14 @@ class PolytopeSampler:
         """
 
         if (
-            self._A == []
-            or self._b == []
-            or self._N == []
-            or self._N_shift == []
-            or self._T == []
-            or self._T_shift == []
+            self._A is None
+            or self._b is None
+            or self._N is None
+            or self._N_shift is None
+            or self._T is None
+            or self._T_shift is None
         ):
+
 
             (
                 max_flux_vector,
@@ -166,7 +171,7 @@ class PolytopeSampler:
         """A member function to sample steady states.
 
         Keyword arguments:
-        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk', 'gaussian_hmc_walk', 'exponential_hmc_walk', 'hmc_leapfrog_gaussian', 'hmc_leapfrog_exponential'}
+        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk', 'gaussian_hmc_walk', 'exponential_hmc_walk', 'hmc_leapfrog_gaussian', 'hmc_leapfrog_exponential}
         n -- the number of steady states to sample
         burn_in -- the number of points to burn before sampling
         thinning -- the walk length of the chain
@@ -189,6 +194,50 @@ class PolytopeSampler:
             )
 
         return steady_states
+
+    def generate_steady_states_sb_once(self, n=1000, burn_in=0, sampler="sb", nreflections=None, walk_len=None):
+        """
+        Single-phase boundary sampler with clear separation of concerns.
+        - sampler: "sb"/"shake_and_bake" or "bsb"/"billiard_shake_and_bake"
+        - walk_len: default ceil(sqrt(d)) with a minimum of 5
+        - nreflections: only used for BSB; defaults to ceil(sqrt(d))
+        """
+
+        self.get_polytope()
+        P = HPolytope(self._A, self._b)
+        d = int(self._A.shape[1])
+
+        wl = int(walk_len) if walk_len is not None else max(5, int(np.sqrt(d)))
+        use_bsb = str(sampler).lower() in ("bsb", "billiard_shake_and_bake")
+        nref = (
+            int(nreflections)
+            if nreflections is not None
+            else (int(np.ceil(np.sqrt(d))) if use_bsb else 0)
+        )
+
+        S = P.boundary_sample(
+            sampler="bsb" if use_bsb else "sb",
+            number_of_points=int(n),
+            number_of_points_to_burn=int(burn_in),
+            walk_len=int(wl),
+            nreflections=int(nref),
+        )
+
+        finite_cols = np.isfinite(S).all(axis=0)
+        if not finite_cols.all():
+            S = S[:, finite_cols]
+        if S.shape[1] == 0:
+            raise RuntimeError(
+                "All sample columns contain NaN/Inf; check walk_len, nreflections, or polytope constraints."
+            )
+
+        steady_states = map_samples_to_steady_states(S, self._N, self._N_shift)
+
+        self._last_hpoly = P  # cache if needed later
+        return steady_states
+
+
+
 
     @staticmethod
     def sample_from_polytope(
@@ -223,7 +272,7 @@ class PolytopeSampler:
         Keyword arguments:
         A -- an mxn matrix that contains the normal vectors of the facets of the polytope row-wise
         b -- a m-dimensional vector, s.t. A*x <= b
-        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk', 'gaussian_hmc_walk', 'exponential_hmc_walk', 'hmc_leapfrog_gaussian', 'hmc_leapfrog_exponential'}
+        method -- An MCMC method to sample, i.e. {'billiard_walk', 'cdhr', 'rdhr', 'ball_walk', 'dikin_walk', 'john_walk', 'vaidya_walk', 'gaussian_hmc_walk', 'exponential_hmc_walk', 'hmc_leapfrog_gaussian', 'hmc_leapfrog_exponential', 'shake_and_bake', 'billiard_shake_and_bake'}
         n -- the number of steady states to sample
         burn_in -- the number of points to burn before sampling
         thinning -- the walk length of the chain
@@ -239,6 +288,65 @@ class PolytopeSampler:
 
         samples_T = samples.T
         return samples_T
+    
+    @staticmethod
+    def sample_from_polytope_sb_once(
+        A,
+        b,
+        n: int = 1000,
+        burn_in: int = 0,
+        sampler: str = "sb",
+        walk_len: Optional[int] = None,
+        nreflections: Optional[int] = None,
+    ):
+        """
+        Perform a single boundary-sampling phase on Ax <= b using SB or BSB.
+        Returns only the sample matrix (d x N). No timing or diagnostics inside.
+        """
+
+        import numpy as np
+
+        A = np.ascontiguousarray(A, dtype=np.float64)
+        b = np.ascontiguousarray(b, dtype=np.float64)
+        P = HPolytope(A, b)
+        d = int(A.shape[1])
+        wl = int(walk_len) if walk_len is not None else max(5, int(np.sqrt(d)))
+        use_bsb = str(sampler).lower() in ("bsb", "billiard_shake_and_bake")
+        nref = (
+            int(nreflections)
+            if nreflections is not None
+            else (int(np.ceil(np.sqrt(d))) if use_bsb else 0)
+        )
+
+        S = P.boundary_sample(
+            sampler="bsb" if use_bsb else "sb",
+            number_of_points=int(n),
+            number_of_points_to_burn=int(burn_in),
+            walk_len=int(wl),
+            nreflections=int(nref),
+        )
+
+        finite_cols = np.isfinite(S).all(axis=0)
+        if not finite_cols.all():
+            S = S[:, finite_cols]
+        if S.shape[1] == 0:
+            raise RuntimeError(
+                "All sample columns contain NaN/Inf; adjust walk_len, nreflections, or check constraints."
+            )
+
+        return S
+
+    def boundary_diagnostics(self, S):
+        """
+        Compute diagnostics (minESS, maxPSRF, N) for a given sample matrix S
+        using the current polytope stored in this sampler instance.
+        """
+        S = np.ascontiguousarray(S, dtype=np.float64)
+        P = HPolytope(self._A, self._b)
+        diag = P.boundary_diag(S)
+        return diag
+
+
 
     @staticmethod
     def round_polytope(
