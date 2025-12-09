@@ -141,7 +141,7 @@ class HPolytopeCPP{
       // the apply_sampling() function
       double apply_sampling(int walk_len, int number_of_points, int number_of_points_to_burn,
                             char* method, double* inner_point, double radius, double* samples,
-                            double variance_value, double* bias_vector, int ess);
+                            double variance_value, double* bias_vector);
 
       void mmcs_initialize(int d, int ess, bool psrf_check, bool parallelism, int num_threads);
 
