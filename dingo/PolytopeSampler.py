@@ -53,12 +53,12 @@ class PolytopeSampler:
         """
 
         if (
-            self._A == []
-            or self._b == []
-            or self._N == []
-            or self._N_shift == []
-            or self._T == []
-            or self._T_shift == []
+            len(self._A) == 0
+            or len(self._b) == 0
+            or len(self._N) == 0
+            or len(self._N_shift) == 0
+            or len(self._T) == 0
+            or len(self._T_shift) == 0
         ):
 
             (
