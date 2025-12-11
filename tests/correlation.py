@@ -7,13 +7,13 @@ import unittest
 class TestCorrelation(unittest.TestCase):
 
     def test_correlation(self):
-        
+
         dingo_model = MetabolicNetwork.from_json('ext_data/e_coli_core.json')
         reactions = dingo_model.reactions
 
         sampler = PolytopeSampler(dingo_model)
         steady_states = sampler.generate_steady_states()
-        
+
         # calculate correlation matrix with filtering from copula indicator
         corr_matrix, indicator_dict = correlated_reactions(steady_states,
                                         reactions = reactions,
@@ -27,16 +27,16 @@ class TestCorrelation(unittest.TestCase):
         # rows and columns must be equal to model reactions
         self.assertTrue(corr_matrix.shape[0] == len(reactions))
         self.assertTrue(corr_matrix.shape[1] == len(reactions))
-                
-        
+
+
         dingo_model = MetabolicNetwork.from_json('ext_data/e_coli_core.json')
         reactions = dingo_model.reactions
 
         sampler = PolytopeSampler(dingo_model)
         steady_states = sampler.generate_steady_states()
-        
+
         # calculate correlation matrix without filtering from copula indicator
-        corr_matrix = correlated_reactions(steady_states, 
+        corr_matrix = correlated_reactions(steady_states,
                                            indicator_cutoff = 0,
                                            pearson_cutoff = 0,
                                            lower_triangle = True,
@@ -47,7 +47,7 @@ class TestCorrelation(unittest.TestCase):
         # rows and columns must be equal to model reactions
         self.assertTrue(corr_matrix.shape[0] == len(reactions))
         self.assertTrue(corr_matrix.shape[1] == len(reactions))
-   
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -24,7 +24,7 @@ class TestFullDim(unittest.TestCase):
 
         self.assertEqual(sampler.A.shape[0], 175)
         self.assertEqual(sampler.A.shape[1], 24)
-        
+
         sampler = self.get_polytope_from_model_with_redundancy_removal(model)
 
         self.assertEqual(sampler.A.shape[0], 26)
@@ -52,7 +52,7 @@ class TestFullDim(unittest.TestCase):
 
         self.assertEqual(sampler.A.shape[0], 175)
         self.assertEqual(sampler.A.shape[1], 24)
-        
+
         sampler = self.get_polytope_from_model_with_redundancy_removal(model)
 
         self.assertEqual(sampler.A.shape[0], 26)
@@ -66,7 +66,7 @@ class TestFullDim(unittest.TestCase):
         sampler.get_polytope()
 
         return sampler
-    
+
     @staticmethod
     def get_polytope_from_model_with_redundancy_removal (met_model):
 

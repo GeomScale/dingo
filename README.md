@@ -1,4 +1,4 @@
-<p align="center"><img src="doc/logo/dingo.jpg" width="260" height="260"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/GeomScale/dingo/refs/heads/develop/doc/logo/dingo.jpg" width="260" height="260"></p>
 
 **dingo** is a Python package that analyzes metabolic networks.
 It relies on high dimensional sampling with Markov Chain Monte Carlo (MCMC)
@@ -290,7 +290,7 @@ plot_histogram(
 
 The default number of bins is 60. dingo uses the package `matplotlib` for plotting.
 
-![histogram](./doc/e_coli_aconta.png)
+![histogram](https://raw.githubusercontent.com/GeomScale/dingo/refs/heads/develop/doc/e_coli_aconta.png)
 
 ### Plot a copula between two fluxes
 
@@ -314,6 +314,6 @@ plot_copula(data_flux1, data_flux2, n=10)
 
 The default number of cells is 5x5=25. dingo uses the package `plotly` for plotting.
 
-![histogram](./doc/aconta_ppc_copula.png)
+![histogram](https://raw.githubusercontent.com/GeomScale/dingo/refs/heads/develop/doc/aconta_ppc_copula.png)
 
 

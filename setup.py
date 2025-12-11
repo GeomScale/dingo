@@ -15,15 +15,20 @@ from os.path import join
 import numpy
 import os
 
+# get ready to read the contents of your README file
+from pathlib import Path
+this_directory = Path(__file__).parent
+
 # information about the dingo library
-version = "0.1.0"
+version = "0.1.5"
 license = ("LGPL3",)
 packages = ["dingo"]
 description = "A python library for metabolic networks sampling and analysis"
-author = "Apostolos Chalkis"
-author_email = "tolis.chal@gmail.com"
+author = "Apostolos Chalkis, Vissarion Fisikopoulos, Elias Tsigaridas, Haris Zafeiropoulos"
+author_email = "fisikop@gmail.com"
 name = "dingo"
-
+long_description = (this_directory / "README.md").read_text()
+long_description_content_type='text/markdown'
 
 source_directory_list = ["dingo", join("dingo", "bindings")]
 

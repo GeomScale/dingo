@@ -23,7 +23,7 @@ def read_json_file(input_file):
     input_file -- a json file that contains the information about a mettabolic network, for example see http://bigg.ucsd.edu/models
     """
 
-    try: 
+    try:
         cobra.io.load_matlab_model( input_file )
     except:
         cobra_config = cobra.Configuration()
@@ -45,7 +45,7 @@ def read_mat_file(input_file):
     Keyword arguments:
     input_file -- a mat file that contains a MATLAB structure with the information about a mettabolic network, for example see http://bigg.ucsd.edu/models
     """
-    try: 
+    try:
         cobra.io.load_matlab_model( input_file )
     except:
         cobra_config = cobra.Configuration()
@@ -56,8 +56,8 @@ def read_mat_file(input_file):
     return (parse_cobra_model( model ))
 
 def read_sbml_file(input_file):
-    """A Python function, based on the cobra.io.read_sbml_model() function of cabrapy  
-    and the extract_polytope() function of PolyRound 
+    """A Python function, based on the cobra.io.read_sbml_model() function of cabrapy
+    and the extract_polytope() function of PolyRound
     (https://gitlab.com/csb.ethz/PolyRound/-/blob/master/PolyRound/static_classes/parse_sbml_stoichiometry.py)
     to read an SBML file (.xml) and return:
     (a) lower/upper flux bounds
@@ -68,10 +68,10 @@ def read_sbml_file(input_file):
     (f) the objective function to maximize the biomass pseudoreaction
 
     Keyword arguments:
-    input_file -- a xml file that contains an SBML  model with the information about a mettabolic network, for example see: 
+    input_file -- a xml file that contains an SBML  model with the information about a mettabolic network, for example see:
     https://github.com/VirtualMetabolicHuman/AGORA/blob/master/CurrentVersion/AGORA_1_03/AGORA_1_03_sbml/Abiotrophia_defectiva_ATCC_49176.xml
     """
-    try: 
+    try:
         cobra.io.read_sbml_model( input_file )
     except:
         cobra_config = cobra.Configuration()

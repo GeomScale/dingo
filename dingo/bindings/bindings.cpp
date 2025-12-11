@@ -461,7 +461,7 @@ void HPolytopeCPP::apply_rounding(int rounding_method, double* new_A, double* ne
 
    // run the rounding method
    if (rounding_method == 1) { // max ellipsoid
-      round_res = inscribed_ellipsoid_rounding<MT, VT, NT>(P, CheBall.first);
+      round_res = inscribed_ellipsoid_rounding<MT, VT, NT, decltype(P), Point, 2>(P, CheBall.first);
 
    } else if (rounding_method == 2) { // isotropization
       round_res = svd_rounding<AcceleratedBilliardWalk, MT, VT>(P, CheBall, 1, rng);
