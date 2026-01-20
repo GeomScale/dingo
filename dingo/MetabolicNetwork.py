@@ -10,7 +10,10 @@
 import numpy as np
 import sys
 from typing import Dict
-import cobra
+try:
+    import cobra
+except ImportError:  # pragma: no cover - optional dependency
+    cobra = None
 from dingo.loading_models import read_json_file, read_mat_file, read_sbml_file, parse_cobra_model
 from dingo.pyoptinterface_based_impl import fba,fva,inner_ball,remove_redundant_facets
 
@@ -84,6 +87,8 @@ class MetabolicNetwork:
 
     @classmethod
     def from_cobra_model(cls, arg):
+        if cobra is None:
+            raise ImportError("cobra is required to build a MetabolicNetwork from a cobra model.")
         if (not isinstance(arg, cobra.core.model.Model)):
             raise Exception(
                 "An unknown input format given to initialize a metabolic network object."

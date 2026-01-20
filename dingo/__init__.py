@@ -19,17 +19,28 @@ from dingo.utils import (
     get_matrices_of_low_dim_polytope,
     get_matrices_of_full_dim_polytope,
 )
-from dingo.illustrations import (
-    plot_copula,
-    plot_histogram,
-)
+try:
+    from dingo.illustrations import (
+        plot_copula,
+        plot_histogram,
+    )
+except ImportError:  # pragma: no cover - optional plotting deps
+    plot_copula = None
+    plot_histogram = None
 from dingo.parser import dingo_args
 from dingo.MetabolicNetwork import MetabolicNetwork
-from dingo.PolytopeSampler import PolytopeSampler
+try:
+    from dingo.PolytopeSampler import PolytopeSampler
+except ImportError:  # pragma: no cover - optional sampling deps
+    PolytopeSampler = None
+from dingo.dfba import DynamicFBA, DynamicFBAResult
 
 from dingo.pyoptinterface_based_impl import fba, fva, inner_ball, remove_redundant_facets, set_default_solver
 
-from volestipy import HPolytope
+try:
+    from volestipy import HPolytope
+except ImportError:  # pragma: no cover - optional sampling deps
+    HPolytope = None
 
 
 def get_name(args_network):
@@ -85,6 +96,11 @@ def dingo_main():
         name = args.model_name
 
     if args.histogram:
+
+        if plot_histogram is None:
+            raise ImportError(
+                "matplotlib and plotly are required to plot histograms."
+            )
 
         if args.steady_states is None:
             raise Exception(
@@ -163,6 +179,9 @@ def dingo_main():
             model = MetabolicNetwork.fom_mat(args.metabolic_network)
         else:
             raise Exception("An unknown format file given.")
+
+        if PolytopeSampler is None:
+            raise ImportError("volestipy is required to sample steady states.")
 
         sampler = PolytopeSampler(model)
 

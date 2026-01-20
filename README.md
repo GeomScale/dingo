@@ -144,6 +144,42 @@ The default option is to run the sequential [Multiphase Monte Carlo Sampling alg
 
 **Tip**: After the first run of MMCS algorithm the polytope stored in object `sampler` is usually more rounded than the initial one. Thus, the function `generate_steady_states()` becomes more efficient from run to run.
 
+## Dynamic Flux Balance Analysis (dFBA)
+
+Dynamic FBA often suffers from non-unique steady-state flux distributions when
+transitioning from one time step to the next (Mahadevan et al., 2002). The
+DFBAlab project (Sánchez et al., 2014) addresses this via lexicographic linear
+programming, while COMETS (Harcombe et al., 2014; Borenstein et al., 2021)
+combines optimization with dynamic resource tracking. `dingo` now provides a
+`DynamicFBA` helper that follows those ideas but resolves the non-uniqueness via
+sampling: at each step the simulator draws multiple optimal flux states,
+selects the one closest to the previous profile, and updates the extracellular
+medium according to the sampled exchange rates.
+
+```python
+from dingo import MetabolicNetwork, DynamicFBA
+
+model = MetabolicNetwork.from_json('path/to/model.json')
+simulator = DynamicFBA(
+    model,
+    time_step=0.25,
+    total_time=24.0,
+    initial_biomass=0.1,
+    initial_concentrations={"EX_glc__D_e": 5.0, "EX_o2_e": 10.0},
+    sample_size=64,
+)
+
+result = simulator.run()
+print(result.time)
+print(result.biomass)
+print(result.concentrations["EX_glc__D_e"])
+```
+
+`DynamicFBAResult` exposes the time grid, biomass trajectory, extracellular
+concentrations, and the flux vector picked at each step. Advanced users can
+adjust the sampling method and its hyper-parameters to explore different dFBA
+variants or couple multiple organisms (see also DOI:10.1371/journal.pcbi.1007786).
+
 
 #### Rounding the polytope
 
@@ -315,5 +351,4 @@ plot_copula(data_flux1, data_flux2, n=10)
 The default number of cells is 5x5=25. dingo uses the package `plotly` for plotting.
 
 ![histogram](./doc/aconta_ppc_copula.png)
-
 
