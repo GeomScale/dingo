@@ -138,6 +138,9 @@ class PolytopeSampler:
         """
 
         self.get_polytope()
+        
+        if ess < 10:
+            raise ValueError(f"Effective sample size (ess) must be at least 10 to avoid numerical instability. Got {ess}.")
 
         P = HPolytope(self._A, self._b)
 
