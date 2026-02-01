@@ -55,7 +55,7 @@ cdef extern from "bindings.h":
       # Random sampling
       double apply_sampling(int walk_len, int number_of_points, int number_of_points_to_burn, \
                             char* method, double* inner_point, double radius, double* samples, \
-                            double variance_value, double* bias_vector, int ess)
+                            double variance_value, double* bias_vector)
 
       # Initialize the parameters for the (m)ultiphase (m)onte (c)arlo (s)ampling algorithm
       void mmcs_initialize(unsigned int d, int ess, int psrf_check, int parallelism, int num_threads);
@@ -119,7 +119,7 @@ cdef class HPolytope:
 
    # Likewise, the generate_samples() function
    def generate_samples(self, method, number_of_points, number_of_points_to_burn, walk_len,
-                        variance_value, bias_vector, solver = None, ess = 1000):
+                        variance_value, bias_vector, solver = None):
 
       n_variables = self._A.shape[1]
       cdef double[:,::1] samples = np.zeros((number_of_points, n_variables), dtype = np.float64, order = "C")
@@ -133,7 +133,7 @@ cdef class HPolytope:
 
       self.polytope_cpp.apply_sampling(walk_len, number_of_points, number_of_points_to_burn, \
                                        method, &inner_point_for_c[0], radius, &samples[0,0], \
-                                       variance_value, &bias_vector_[0], ess)
+                                       variance_value, &bias_vector_[0])
       return np.asarray(samples)
 
 
