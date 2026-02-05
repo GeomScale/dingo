@@ -8,7 +8,18 @@
 
 import json
 import numpy as np
-import cobra
+
+try:
+    import cobra
+except ImportError:  # pragma: no cover - optional dependency
+    cobra = None
+
+
+def _require_cobra():
+    if cobra is None:
+        raise ImportError(
+            "cobra is required to read JSON/MAT/SBML metabolic network files."
+        )
 
 def read_json_file(input_file):
     """A Python function to Read a Bigg json file and returns,
@@ -22,6 +33,8 @@ def read_json_file(input_file):
     Keyword arguments:
     input_file -- a json file that contains the information about a mettabolic network, for example see http://bigg.ucsd.edu/models
     """
+
+    _require_cobra()
 
     try: 
         cobra.io.load_matlab_model( input_file )
@@ -45,6 +58,8 @@ def read_mat_file(input_file):
     Keyword arguments:
     input_file -- a mat file that contains a MATLAB structure with the information about a mettabolic network, for example see http://bigg.ucsd.edu/models
     """
+    _require_cobra()
+
     try: 
         cobra.io.load_matlab_model( input_file )
     except:
@@ -71,6 +86,8 @@ def read_sbml_file(input_file):
     input_file -- a xml file that contains an SBML  model with the information about a mettabolic network, for example see: 
     https://github.com/VirtualMetabolicHuman/AGORA/blob/master/CurrentVersion/AGORA_1_03/AGORA_1_03_sbml/Abiotrophia_defectiva_ATCC_49176.xml
     """
+    _require_cobra()
+
     try: 
         cobra.io.read_sbml_model( input_file )
     except:
@@ -82,6 +99,7 @@ def read_sbml_file(input_file):
     return (parse_cobra_model( model ))
 
 def parse_cobra_model(cobra_model):
+    _require_cobra()
 
     inf_bound=1e5
 
@@ -138,8 +156,6 @@ def parse_cobra_model(cobra_model):
 
 
     return lb, ub, S, metabolites, reactions, biomass_index, biomass_function, medium, inter_medium, exchanges
-
-
 
 
 

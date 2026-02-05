@@ -8,8 +8,13 @@
 
 import numpy as np
 from scipy import linalg
-import sparseqr
 import scipy.sparse.linalg
+import warnings
+
+try:
+    import sparseqr
+except ImportError:  # pragma: no cover - optional dependency
+    sparseqr = None
 
 
 # Build a Python function to compute the nullspace of the stoichiometric matrix and a shifting to the origin
@@ -41,6 +46,13 @@ def nullspace_sparse(Aeq, beq):
     Aeq -- the mxn augmented row-wise stoichiometric matrix
     beq -- a m-dimensional vector
     """
+
+    if sparseqr is None:
+        warnings.warn(
+            "sparseqr is not available; using the dense nullspace routine instead.",
+            RuntimeWarning,
+        )
+        return nullspace_dense(Aeq, beq)
 
     N_shift = np.linalg.lstsq(Aeq, beq, rcond=None)[0]
     Aeq = Aeq.T
