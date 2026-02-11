@@ -19,10 +19,11 @@
 #include <fstream>
 #include <iostream>
 #include "random_walks.hpp"
-#include "random.hpp"
-#include "random/uniform_int.hpp"
-#include "random/normal_distribution.hpp"
-#include "random/uniform_real_distribution.hpp"
+// #include "random.hpp"  // Not available in current volesti version
+#include "generators/boost_random_number_generator.hpp"
+// #include "random/uniform_int.hpp"  // Not available in current volesti version
+// #include "random/normal_distribution.hpp"  // Not available in current volesti version
+// #include "random/uniform_real_distribution.hpp"  // Not available in current volesti version
 #include "volume/volume_sequence_of_balls.hpp"
 #include "volume/volume_cooling_gaussians.hpp"
 #include "volume/volume_cooling_balls.hpp"
