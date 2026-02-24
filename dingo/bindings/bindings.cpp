@@ -21,7 +21,7 @@
 
 using namespace std;
 
-// >>> Main HPolytopeCPP class; compute_volume(), rounding() and generate_samples() volesti methods are included <<<
+// >>> Main HPolytopeCPP class; compute_volume(), rounding() and create_samples() volesti methods are included <<<
 
 // Here is the initialization of the HPolytopeCPP class
 HPolytopeCPP::HPolytopeCPP() {}
@@ -85,7 +85,7 @@ double HPolytopeCPP::compute_volume(char* vol_method, char* walk_method,
 //////////           End of "compute_volume()"            //////////
 
 
-//////////         Start of "generate_samples()"          //////////
+//////////         Start of "create_samples()"          //////////
 double HPolytopeCPP::apply_sampling(int walk_len,
                                     int number_of_points,
                                     int number_of_points_to_burn,
@@ -186,40 +186,139 @@ double HPolytopeCPP::apply_sampling(int walk_len,
    return 0.0;
 }
 
-// Boundary sampling: shakre-and-bake and billiard shake-and-bake
+
+static int detect_facet_from_x(const Hpolytope& HP, int d, const std::vector<double>& x, double tol)
+{
+    const auto A = HP.get_mat();
+    const auto b = HP.get_vec();
+
+    Eigen::VectorXd xv(d);
+    for (int j = 0; j < d; ++j) xv[j] = x[j];
+
+    Eigen::VectorXd Ax = A * xv;
+
+    int f = -1;
+    for (int i = 0; i < A.rows(); ++i) {
+        if (std::abs(Ax[i] - b[i]) < tol) { f = i; break; }
+    }
+
+    if (f < 0 && A.rows() > 0) {
+        int best = 0;
+        double bestv = std::numeric_limits<double>::infinity();
+        for (int i = 0; i < A.rows(); ++i) {
+            double v = std::abs(Ax[i] - b[i]);
+            if (v < bestv) { bestv = v; best = i; }
+        }
+        f = best;
+    }
+
+    return f;
+}
+
+
+// Boundary sampling: shake-and-bake and billiard shake-and-bake
 int HPolytopeCPP::apply_boundary_sampling(int walk_len,
-                                          int number_of_points,
-                                          int number_of_points_to_burn,
-                                          const char* sampler,
-                                          int nreflections,
-                                          double* samples) {
+                                         int number_of_points,
+                                         int number_of_points_to_burn,
+                                         const char* sampler,
+                                         int nreflections,
+                                         double* samples)
+{
     RNGType rng(HP.dimension());
-    HP.normalize();
-
-    auto [boundary_pt, facet_idx] = compute_boundary_point<Point>(HP, rng, static_cast<NT>(1e-8));
-
+    if (!is_normalized_) {
+            HP.normalize();
+         is_normalized_ = true;
+      }
     const int d = HP.dimension();
+
+    Point boundary_pt;
+    int facet_idx = -1;
+
+    // Continuous sampling
+    if (sb_has_state_ && static_cast<int>(sb_last_x_.size()) == d && sb_last_facet_ >= 0) {
+        Eigen::VectorXd x(d);
+        for (int j = 0; j < d; ++j) x[j] = sb_last_x_[j];
+        boundary_pt = Point(x);
+        facet_idx   = sb_last_facet_;
+    } else {
+        auto start = compute_boundary_point<Point>(HP, rng, static_cast<NT>(1e-8));
+        boundary_pt = start.first;
+        facet_idx   = start.second;
+    }
+
     std::list<Point> batch;
 
     if (strcmp(sampler, "shake_and_bake") == 0 || strcmp(sampler, "sb") == 0) {
-        shakeandbake_sampling<ShakeAndBakeWalk>(batch, HP, rng, walk_len, number_of_points, boundary_pt, number_of_points_to_burn, facet_idx);
-    
+        shakeandbake_sampling<ShakeAndBakeWalk>(
+            batch, HP, rng, walk_len, number_of_points, boundary_pt,
+            number_of_points_to_burn, facet_idx
+        );
     } else if (strcmp(sampler, "billiard_shake_and_bake") == 0 || strcmp(sampler, "bsb") == 0) {
-        billiard_shakeandbake_sampling<BilliardShakeAndBakeWalk>(batch, HP, rng, walk_len,nreflections, number_of_points,boundary_pt, number_of_points_to_burn,facet_idx);
-
+        billiard_shakeandbake_sampling<BilliardShakeAndBakeWalk>(
+            batch, HP, rng, walk_len, nreflections, number_of_points,
+            boundary_pt, number_of_points_to_burn, facet_idx
+        );
     } else {
         throw std::runtime_error(std::string(sampler) + " is not a boundary sampler.");
     }
 
-    int n_si = 0;
-    for (auto it = batch.cbegin(); it != batch.cend(); ++it)
-        for (int j = 0; j < d; ++j)
-            samples[n_si++] = (*it)[j];
+    int col = 0;
+    for (auto it = batch.cbegin(); it != batch.cend(); ++it, ++col) {
+        for (int j = 0; j < d; ++j) {
+            samples[j + col * d] = (*it)[j];
+        }
+    }
+
+    // Store last point + facet for continuity
+    if (!batch.empty()) {
+        sb_last_x_.assign(d, 0.0);
+        const Point& last = batch.back();
+        for (int j = 0; j < d; ++j) sb_last_x_[j] = last[j];
+
+        const double tol = 1e-8;  
+        sb_last_facet_ = detect_facet_from_x(HP, d, sb_last_x_, tol);
+        sb_has_state_  = (sb_last_facet_ >= 0);
+    } else {
+        clear_sb_state();
+    }
 
     return static_cast<int>(batch.size());
 }
 
-//////////         End of "generate_samples()"          //////////
+void HPolytopeCPP::clear_sb_state() {
+    sb_has_state_ = false;
+    sb_last_facet_ = -1;
+    sb_last_x_.clear();
+}
+
+void HPolytopeCPP::set_sb_state_from_buffer(int d, int N, const double* samples, const SBDiagnostics& diag)
+{
+    sb_samples_.resize(d, N);
+    for (int j = 0; j < N; ++j)
+        for (int i = 0; i < d; ++i)
+            sb_samples_(i, j) = samples[i + j * d];
+
+    sb_diag_ = diag;
+
+    if (samples == nullptr || N <= 0) {
+        clear_sb_state();
+        return;
+    }
+
+    // Store last point
+    sb_last_x_.assign(d, 0.0);
+    const int last_col = N - 1;
+    for (int j = 0; j < d; ++j) {
+        sb_last_x_[j] = samples[last_col * d + j];
+    }
+
+    // Compute facet for continuity 
+    const double tol = 1e-6;  // same tol as apply_boundary_sampling
+    sb_last_facet_ = detect_facet_from_x(HP, d, sb_last_x_, tol);
+    sb_has_state_  = (sb_last_facet_ >= 0);
+}
+
+//////////         End of "create_samples()"          //////////
 SBDiagnostics HPolytopeCPP::sb_diagnostics(int d, int N, const double* samples) {
     MT S(d, N);
     for (int c = 0; c < N; ++c)
@@ -236,16 +335,6 @@ SBDiagnostics HPolytopeCPP::sb_diagnostics(int d, int N, const double* samples) 
     out.N       = N;
     return out;
 }
-
-void HPolytopeCPP::set_sb_state_from_buffer(int d, int N, const double* samples, const SBDiagnostics& diag) {
-    sb_samples_.resize(d, N);
-    for (int j = 0; j < N; ++j)
-        for (int i = 0; i < d; ++i)
-            sb_samples_(i, j) = samples[i + j * d];
-
-    sb_diag_ = diag; 
-}
-
 
 
 void HPolytopeCPP::get_polytope_as_matrices(double* new_A, double* new_b) const {
@@ -507,7 +596,8 @@ void HPolytopeCPP::get_sb_diagnostics(double* out3) const {
 
 }
 
-void HPolytopeCPP::boundary_scaling_ratio(int d,int N,const double* samples,double tol,double min_ratio,double* scale_out,double* coverage_out,double* max_dev_out,double* avg_dev_out) const
+void HPolytopeCPP::boundary_scaling_ratio(int d,int N,const double* samples,double tol,double min_ratio,double* scale_out,double* coverage_out,double* max_dev_out,double* avg_dev_out,int* zero_count_out,double* zero_pct_out
+) const
 {
     MT S(d, N);
     for (int j = 0; j < N; ++j)
@@ -519,10 +609,17 @@ void HPolytopeCPP::boundary_scaling_ratio(int d,int N,const double* samples,doub
     }
 
     auto result = scaling_ratio_boundary_test(HP, S, tol, min_ratio);
-    const VT& scale = std::get<0>(result);
+
+    const VT& scale   = std::get<0>(result);
     const MT& coverage = std::get<1>(result);
     const VT& max_dev = std::get<2>(result);
     const VT& avg_dev = std::get<3>(result);
+
+    const int zero_count = std::get<4>(result);
+    const double zero_pct = std::get<5>(result);
+
+    if (zero_count_out) *zero_count_out = zero_count;
+    if (zero_pct_out)   *zero_pct_out   = zero_pct;
 
     const int K = static_cast<int>(scale.size());
     const int m = static_cast<int>(coverage.rows());
@@ -543,7 +640,6 @@ void HPolytopeCPP::boundary_scaling_ratio(int d,int N,const double* samples,doub
         }
     }
 }
-
 
 
 //////////         Start of "rounding()"          //////////
@@ -650,26 +746,9 @@ void generate_cube_H(int dim, double scale, double* A_out, double* b_out)
     }
 }
 
-void generate_cross_H(int dim, double* A_out, double* b_out)
-{
-    Hpolytope P = generate_cross<Hpolytope>(static_cast<unsigned int>(dim),false);
-    const MT& A = P.get_mat();
-    const VT& b = P.get_vec();
-
-    const int m = static_cast<int>(A.rows());
-    const int n = static_cast<int>(A.cols());
-
-    for (int i = 0; i < m; ++i) {
-        b_out[i] = static_cast<double>(b[i]);
-        for (int j = 0; j < n; ++j) {
-            A_out[i * n + j] = static_cast<double>(A(i, j));
-        }
-    }
-}
-
 void generate_simplex_H(int dim, double* A_out, double* b_out)
 {
-    Hpolytope P = generate_simplex<Hpolytope>(static_cast<unsigned int>(dim),false); 
+    Hpolytope P = generate_simplex<Hpolytope>(static_cast<unsigned int>(dim),false);
     const MT& A = P.get_mat();
     const VT& b = P.get_vec();
 
@@ -684,39 +763,6 @@ void generate_simplex_H(int dim, double* A_out, double* b_out)
     }
 }
 
-void generate_prod_simplex_H(int dim, double* A_out, double* b_out)
-{
-    Hpolytope P = generate_prod_simplex<Hpolytope>(static_cast<unsigned int>(dim),false);
-    const MT& A = P.get_mat();
-    const VT& b = P.get_vec();
-
-    const int m = static_cast<int>(A.rows());
-    const int n = static_cast<int>(A.cols());
-
-    for (int i = 0; i < m; ++i) {
-        b_out[i] = static_cast<double>(b[i]);
-        for (int j = 0; j < n; ++j) {
-            A_out[i * n + j] = static_cast<double>(A(i, j));
-        }
-    }
-}
-
-void generate_skinny_cube_H(int dim, double* A_out, double* b_out)
-{
-    Hpolytope P = generate_skinny_cube<Hpolytope>(static_cast<unsigned int>(dim),false);
-    const MT& A = P.get_mat();
-    const VT& b = P.get_vec();
-
-    const int m = static_cast<int>(A.rows());
-    const int n = static_cast<int>(A.cols());
-
-    for (int i = 0; i < m; ++i) {
-        b_out[i] = static_cast<double>(b[i]);
-        for (int j = 0; j < n; ++j) {
-            A_out[i * n + j] = static_cast<double>(A(i, j));
-        }
-    }
-}
 
 void generate_birkhoff_H(int n, double* A_out, double* b_out)
 {

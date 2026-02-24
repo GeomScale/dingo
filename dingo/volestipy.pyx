@@ -43,13 +43,9 @@ def get_time_seed():
 
 # Get classes from the bindings.h file
 cdef extern from "bindings.h":
-
-   void generate_cube_H(int dim, double scale, double* A_out, double* b_out)
-   void generate_cross_H(int dim, double* A_out, double* b_out)
-   void generate_simplex_H(int dim, double* A_out, double* b_out)
-   void generate_prod_simplex_H(int dim, double* A_out, double* b_out)
-   void generate_skinny_cube_H(int dim, double* A_out, double* b_out)
-   void generate_birkhoff_H(int n, double* A_out, double* b_out)
+   void _generate_cube_H "generate_cube_H"(int dim, double scale, double* A_out, double* b_out)
+   void _generate_simplex_H "generate_simplex_H"(int dim, double* A_out, double* b_out)
+   void _generate_birkhoff_H "generate_birkhoff_H"(int n, double* A_out, double* b_out)
 
    cdef struct SBDiagnostics:
         double minESS
@@ -88,10 +84,10 @@ cdef extern from "bindings.h":
 
       int apply_boundary_sampling(int walk_len,int number_of_points,int number_of_points_to_burn,const char* sampler,int nreflections,double* samples)
 
-      void set_sb_state_from_buffer(int d, int N, const double* samples, SBDiagnostics diag)
-      void get_sb_samples(double* out)
-      void get_sb_diagnostics(double* out5)
-      void boundary_scaling_ratio(int d,int N,const double* samples,double tol,double min_ratio,double* scale_out,double* coverage_out,double* max_dev_out,double* avg_dev_out) const
+      void set_sb_state_from_buffer(int d, int N, const double* samples, const SBDiagnostics& diag)
+      void get_sb_samples(double* out) const
+      void get_sb_diagnostics(double* out3) const
+      void boundary_scaling_ratio(int d, int N, const double* samples,double tol, double min_ratio,double* scale_out,double* coverage_out,double* max_dev_out,double* avg_dev_out,int* zero_count_out,double* zero_pct_out) const
 
       @staticmethod
       SBDiagnostics sb_diagnostics(int d, int N, const double* samples)
@@ -216,41 +212,32 @@ cdef class HPolytope:
       Compute diagnostics directly from a given sample matrix S.
       Returns a Python dictionary with keys: minESS, maxPSRF, and N.
       """
-      cdef np.ndarray[np.float64_t, ndim=2] Snp = np.ascontiguousarray(S, dtype=np.float64)
+      cdef np.ndarray[np.float64_t, ndim=2] Snp = np.array(S, dtype=np.float64, order="F")
       cdef int d = <int> Snp.shape[0]
       cdef int N = <int> Snp.shape[1]
       cdef SBDiagnostics diag = HPolytopeCPP.sb_diagnostics(d, N, <const double*> &Snp[0,0])
       return {"minESS": diag.minESS, "maxPSRF": diag.maxPSRF, "N": diag.N}
    
    def boundary_scaling_ratio(self, S, double tol=1e-10, double min_ratio=0.01):
-        """
-        Compute boundary scaling-ratio diagnostics from a sample matrix S.
-        Returns
-        scale : np.ndarray, shape (K,)
-        coverage : np.ndarray, shape (m, K)
-        max_dev : np.ndarray, shape (m,)
-        avg_dev : np.ndarray, shape (m,)
-        """
-        cdef np.ndarray[np.float64_t, ndim=2, mode="fortran"] Snp = \
-            np.array(S, dtype=np.float64, order="F")
+      cdef np.ndarray[np.float64_t, ndim=2, mode="fortran"] Snp = \
+         np.array(S, dtype=np.float64, order="F")
 
-        cdef int d = <int> Snp.shape[0]
-        cdef int N = <int> Snp.shape[1]
-        cdef int m = <int> self._A.shape[0]
-        cdef int K = 10  # must match C++ scale(10)
+      cdef int d = <int> Snp.shape[0]
+      cdef int N = <int> Snp.shape[1]
+      cdef int m = <int> self._A.shape[0]
+      cdef int K = 10
 
-        cdef np.ndarray[np.float64_t, ndim=1] scale = \
-            np.zeros(K, dtype=np.float64)
-        cdef np.ndarray[np.float64_t, ndim=1] max_dev = \
-            np.zeros(m, dtype=np.float64)
-        cdef np.ndarray[np.float64_t, ndim=1] avg_dev = \
-            np.zeros(m, dtype=np.float64)
-        cdef np.ndarray[np.float64_t, ndim=2] coverage = \
-            np.zeros((m, K), dtype=np.float64, order="C")
+      cdef np.ndarray[np.float64_t, ndim=1] scale = np.zeros(K, dtype=np.float64)
+      cdef np.ndarray[np.float64_t, ndim=1] max_dev = np.zeros(m, dtype=np.float64)
+      cdef np.ndarray[np.float64_t, ndim=1] avg_dev = np.zeros(m, dtype=np.float64)
+      cdef np.ndarray[np.float64_t, ndim=2] coverage = np.zeros((m, K), dtype=np.float64, order="C")
 
-        self.polytope_cpp.boundary_scaling_ratio(d,N, <const double*> &Snp[0, 0],tol,min_ratio,&scale[0],&coverage[0, 0],&max_dev[0],&avg_dev[0])
+      cdef int zero_count = 0
+      cdef double zero_pct = 0.0
 
-        return (np.asarray(scale),np.asarray(coverage),np.asarray(max_dev),np.asarray(avg_dev),)
+      self.polytope_cpp.boundary_scaling_ratio(d, N, <const double*> &Snp[0,0],tol, min_ratio,<double*> &scale[0],<double*> &coverage[0,0],<double*> &max_dev[0],<double*> &avg_dev[0],&zero_count,&zero_pct)
+
+      return (np.asarray(scale),np.asarray(coverage),np.asarray(max_dev),np.asarray(avg_dev),int(zero_count),float(zero_pct))
 
    # The rounding() function; as in compute_volume, more than one method is available for this step
    def rounding(self, rounding_method = 'john_position', solver = None):
@@ -331,111 +318,55 @@ cdef class HPolytope:
    def dimension(self):
       return self._A.shape[1]
 
-def create_cube(int dim, double scale=1.0):
-    """
-    Create an H-polytope for a hypercube in R^dim with side length 2*scale
-    centered at the origin: [-scale, scale]^dim.
+def generate_cube(int dim, double scale=1.0):
+   """
+   Create an H-polytope for a hypercube in R^dim with side length 2*scale
+   centered at the origin: [-scale, scale]^dim.
 
-    """
-    cdef int m = 2 * dim
-    cdef int n = dim
+   """
+   cdef int m = 2 * dim
+   cdef int n = dim
 
-    cdef np.ndarray[np.float64_t, ndim=2] A = \
-        np.zeros((m, n), dtype=np.float64)
-    cdef np.ndarray[np.float64_t, ndim=1] b = \
-        np.zeros(m, dtype=np.float64)
+   cdef np.ndarray[np.float64_t, ndim=2] A = \
+      np.zeros((m, n), dtype=np.float64)
+   cdef np.ndarray[np.float64_t, ndim=1] b = \
+      np.zeros(m, dtype=np.float64)
 
-    generate_cube_H(dim, scale, &A[0, 0], &b[0])
+   _generate_cube_H(dim, scale, &A[0, 0], &b[0])
 
-    return np.asarray(A), np.asarray(b)
-
-
-def create_crosspolytope(int dim):
-    """
-    Create an H-polytope for the crosspolytope (l1-ball) in R^dim.
-
-    """
-    cdef int m = 1 << dim  # 2^(dim)
-    cdef int n = dim
-
-    cdef np.ndarray[np.float64_t, ndim=2] A = \
-        np.zeros((m, n), dtype=np.float64)
-    cdef np.ndarray[np.float64_t, ndim=1] b = \
-        np.zeros(m, dtype=np.float64)
-
-    generate_cross_H(dim, &A[0, 0], &b[0])
-
-    return np.asarray(A), np.asarray(b)
+   return np.asarray(A), np.asarray(b)
 
 
-def create_simplex(int dim):
-    """
-    Create an H-polytope for a standard simplex in R^dim.
+def generate_simplex(int dim):
+   """
+   Create an H-polytope for a standard simplex in R^dim.
 
-    """
-    cdef int m = dim + 1
-    cdef int n = dim
+   """
+   cdef int m = dim + 1
+   cdef int n = dim
 
-    cdef np.ndarray[np.float64_t, ndim=2] A = \
-        np.zeros((m, n), dtype=np.float64)
-    cdef np.ndarray[np.float64_t, ndim=1] b = \
-        np.zeros(m, dtype=np.float64)
+   cdef np.ndarray[np.float64_t, ndim=2] A = \
+      np.zeros((m, n), dtype=np.float64)
+   cdef np.ndarray[np.float64_t, ndim=1] b = \
+      np.zeros(m, dtype=np.float64)
 
-    generate_simplex_H(dim, &A[0, 0], &b[0])
+   _generate_simplex_H(dim, &A[0, 0], &b[0])
 
-    return np.asarray(A), np.asarray(b)
+   return np.asarray(A), np.asarray(b)
 
+def generate_birkhoff(int n):
+   """
+   Creates an H-polytope for the Birkhoff polytope of size n.
 
-def create_prod_simplex(int dim):
-    """
-    Create an H-polytope for the product of two dim-dimensional simplices.
+   """
+   cdef int m = n * n
+   cdef int d = n * n - 2 * n + 1
 
-    """
-    cdef int m = 2 * dim + 2
-    cdef int n = 2 * dim
+   cdef np.ndarray[np.float64_t, ndim=2] A = \
+      np.zeros((m, d), dtype=np.float64)
+   cdef np.ndarray[np.float64_t, ndim=1] b = \
+      np.zeros(m, dtype=np.float64)
 
-    cdef np.ndarray[np.float64_t, ndim=2] A = \
-        np.zeros((m, n), dtype=np.float64)
-    cdef np.ndarray[np.float64_t, ndim=1] b = \
-        np.zeros(m, dtype=np.float64)
+   _generate_birkhoff_H(n, &A[0, 0], &b[0])
 
-    generate_prod_simplex_H(dim, &A[0, 0], &b[0])
-
-    return np.asarray(A), np.asarray(b)
-
-
-def create_skinny_cube(int dim):
-    """
-    Create an H-polytope for a 'skinny cube' in R^dim,
-    where the first coordinate is scaled differently.
-
-    """
-    cdef int m = 2 * dim
-    cdef int n = dim
-
-    cdef np.ndarray[np.float64_t, ndim=2] A = \
-        np.zeros((m, n), dtype=np.float64)
-    cdef np.ndarray[np.float64_t, ndim=1] b = \
-        np.zeros(m, dtype=np.float64)
-
-    generate_skinny_cube_H(dim, &A[0, 0], &b[0])
-
-    return np.asarray(A), np.asarray(b)
-
-
-def create_birkhoff(int n):
-    """
-    Creates an H-polytope for the Birkhoff polytope of size n.
-
-    """
-    cdef int m = n * n
-    cdef int d = n * n - 2 * n + 1
-
-    cdef np.ndarray[np.float64_t, ndim=2] A = \
-        np.zeros((m, d), dtype=np.float64)
-    cdef np.ndarray[np.float64_t, ndim=1] b = \
-        np.zeros(m, dtype=np.float64)
-
-    generate_birkhoff_H(n, &A[0, 0], &b[0])
-
-    return np.asarray(A), np.asarray(b)
+   return np.asarray(A), np.asarray(b)

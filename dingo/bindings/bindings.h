@@ -19,6 +19,7 @@
 // from SOB volume - exactly the same for CG and CB methods
 #include <fstream>
 #include <iostream>
+#include <vector>
 #include "random_walks.hpp"
 #include "random.hpp"
 #include "random/uniform_int.hpp"
@@ -186,6 +187,7 @@ class HPolytopeCPP{
       // Set the internal Shake-and-Bake state from an external buffer.
       // Copies samples (d x N) and diagnostic values into internal members.
       void set_sb_state_from_buffer(int d, int N, const double* samples, const SBDiagnostics& diag);
+      void clear_sb_state();
 
       // Copy the internally stored sample matrix (sb_samples_) into a provided output buffer.
       // The output pointer must have enough space for d * N doubles.
@@ -200,23 +202,23 @@ class HPolytopeCPP{
       // - coverage_out: m x K coverage matrix, stored row-major (facet-major)
       // - max_dev_out: length m, maximum deviation per facet (in %)
       // - avg_dev_out: length m, average deviation per facet (in %)
-      void boundary_scaling_ratio(int d,int N,const double* samples,double tol,double min_ratio,double* scale_out,double* coverage_out,double* max_dev_out,double* avg_dev_out) const;
+      void boundary_scaling_ratio(int d,int N,const double* samples,double tol,double min_ratio,double* scale_out,double* coverage_out,double* max_dev_out,double* avg_dev_out,int* zero_count_out,double* zero_pct_out) const;
 
    private:
       SBDiagnostics sb_diag_;
       MT  sb_samples_;   
+      bool sb_has_state_ = false;
+      int  sb_last_facet_ = -1;
+      std::vector<double> sb_last_x_;
+      bool is_normalized_ = false;
 
 };
 
 // Known H-polytopes generators
 
 void generate_cube_H(int dim, double scale, double* A_out, double* b_out);
-void generate_cross_H(int dim, double* A_out, double* b_out);
 void generate_simplex_H(int dim, double* A_out, double* b_out);
-void generate_prod_simplex_H(int dim, double* A_out, double* b_out);
-void generate_skinny_cube_H(int dim, double* A_out, double* b_out);
 void generate_birkhoff_H(int n, double* A_out, double* b_out);
-
 
 
 #endif

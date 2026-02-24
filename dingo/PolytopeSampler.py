@@ -10,7 +10,7 @@
 
 import numpy as np
 import warnings
-from typing import Optional
+from typing import Optional, Tuple, Dict
 import math
 import time
 from dingo.MetabolicNetwork import MetabolicNetwork
@@ -195,49 +195,30 @@ class PolytopeSampler:
 
         return steady_states
 
-    def generate_steady_states_sb_once(self, n=1000, burn_in=0, sampler="sb", nreflections=None, walk_len=None):
+    def generate_steady_states_sb_once(
+        self,n: int = 1000,burn_in: int = 0,sampler: str = "sb",nreflections: Optional[int] = None,walk_len: Optional[int] = None,
+    ):
         """
-        Single-phase boundary sampler with clear separation of concerns.
-        - sampler: "sb"/"shake_and_bake" or "bsb"/"billiard_shake_and_bake"
-        - walk_len: default ceil(sqrt(d)) with a minimum of 5
-        - nreflections: only used for BSB; defaults to ceil(sqrt(d))
+        Single-call boundary sampler mapped to steady states.
         """
-
         self.get_polytope()
-        P = HPolytope(self._A, self._b)
+        if self._last_hpoly is None:
+            self._last_hpoly = HPolytope(self._A, self._b)
+        P = self._last_hpoly
         d = int(self._A.shape[1])
 
-        wl = int(walk_len) if walk_len is not None else max(5, int(np.sqrt(d)))
-        use_bsb = str(sampler).lower() in ("bsb", "billiard_shake_and_bake")
-        nref = (
-            int(nreflections)
-            if nreflections is not None
-            else (int(np.ceil(np.sqrt(d))) if use_bsb else 0)
-        )
-
         S = P.boundary_sample(
-            sampler="bsb" if use_bsb else "sb",
+            sampler=sampler,
             number_of_points=int(n),
             number_of_points_to_burn=int(burn_in),
-            walk_len=int(wl),
-            nreflections=int(nref),
+            walk_len=int(walk_len),
+            nreflections=int(nreflections),
         )
 
-        finite_cols = np.isfinite(S).all(axis=0)
-        if not finite_cols.all():
-            S = S[:, finite_cols]
-        if S.shape[1] == 0:
-            raise RuntimeError(
-                "All sample columns contain NaN/Inf; check walk_len, nreflections, or polytope constraints."
-            )
+        if not np.isfinite(S).all():
+            raise RuntimeError("boundary_sample returned NaN/Inf; check constraints or parameters.")
 
-        steady_states = map_samples_to_steady_states(S, self._N, self._N_shift)
-
-        self._last_hpoly = P  # cache if needed later
-        return steady_states
-
-
-
+        return map_samples_to_steady_states(S, self._N, self._N_shift)
 
     @staticmethod
     def sample_from_polytope(
@@ -288,65 +269,301 @@ class PolytopeSampler:
 
         samples_T = samples.T
         return samples_T
-    
+
     @staticmethod
-    def sample_from_polytope_sb_once(
-        A,
-        b,
-        n: int = 1000,
-        burn_in: int = 0,
-        sampler: str = "sb",
-        walk_len: Optional[int] = None,
-        nreflections: Optional[int] = None,
-    ):
+    def _parse_boundary_sampler_params(
+        d: int,
+        sampler: str,
+        walk_len: Optional[int],
+        nreflections: Optional[int],
+    ) -> Tuple[str, int, int]:
         """
-        Perform a single boundary-sampling phase on Ax <= b using SB or BSB.
-        Returns only the sample matrix (d x N). No timing or diagnostics inside.
+        Walk length defaults to 1. Reflections default to 0.25 * d for Billiard Shake and Bake, and 0 otherwise.
         """
+        wl = int(walk_len) if walk_len is not None else 1
 
-        import numpy as np
+        s = str(sampler).strip().lower()
+        if s in ("sb", "shake_and_bake"):
+            sampler_key = "sb"
+            use_bsb = False
+        elif s in ("bsb", "billiard_shake_and_bake"):
+            sampler_key = "bsb"
+            use_bsb = True
+        else:
+            raise ValueError(
+                'sampler must be one of {"sb","shake_and_bake","bsb","billiard_shake_and_bake"}'
+            )
 
+        if nreflections is not None:
+            nref = int(nreflections)
+        else:
+            nref = int(0.25 * d) if use_bsb else 0
+
+        return sampler_key, wl, nref
+
+
+    @staticmethod
+    def _first_k_exceeding_minESS(
+        P: HPolytope,S_all: np.ndarray,ess_target: int,
+    ) -> int:
+        """
+        Smallest k such that minESS(prefix k) >= ess_target.
+        """
+        S_all = np.asarray(S_all, dtype=np.float64, order="F")
+        Ntot = int(S_all.shape[1])
+        lo, hi = 1, Ntot
+
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if P.boundary_diag(S_all[:, :mid])["minESS"] >= ess_target:
+                hi = mid
+            else:
+                lo = mid + 1
+        return lo
+
+
+    @staticmethod
+    def boundary_sample_n(
+        A,b,n: int = 1000,burn_in: int = 0,sampler: str = "sb",walk_len: Optional[int] = None,nreflections: Optional[int] = None,
+    ) -> Tuple[np.ndarray, Dict]:
+        """
+        One boundary-sampling call for a predefined number of samples.
+        """
         A = np.ascontiguousarray(A, dtype=np.float64)
         b = np.ascontiguousarray(b, dtype=np.float64)
         P = HPolytope(A, b)
         d = int(A.shape[1])
-        wl = int(walk_len) if walk_len is not None else max(5, int(np.sqrt(d)))
-        use_bsb = str(sampler).lower() in ("bsb", "billiard_shake_and_bake")
-        nref = (
-            int(nreflections)
-            if nreflections is not None
-            else (int(np.ceil(np.sqrt(d))) if use_bsb else 0)
+
+        sampler_key, wl, nref = PolytopeSampler._parse_boundary_sampler_params(d=d,sampler=sampler,walk_len=walk_len,nreflections=nreflections,)
+
+        S = P.boundary_sample(sampler=sampler_key,number_of_points=int(n),number_of_points_to_burn=int(burn_in),walk_len=int(wl),nreflections=int(nref),)
+        S = np.asarray(S, dtype=np.float64, order="F")
+
+        diag = P.boundary_diag(S)
+
+        info = {
+            "minESS": float(diag["minESS"]),
+            "maxPSRF": float(diag["maxPSRF"]),
+            "N": int(diag["N"]),
+            "calls": 1,
+            "sampler": sampler_key,
+            "walk_len": int(wl),
+            "nreflections": int(nref),
+        }
+
+        return np.asarray(S), info
+
+
+    @staticmethod
+    def boundary_sample_ess(
+        A,b,ess_target: int = 1000,chunk_n: int = 5000, burn_in_first: int = 0,sampler: str = "sb",walk_len: Optional[int] = None,nreflections: Optional[int] = None,max_calls: int = 1000,
+    ) -> Tuple[np.ndarray, Dict]:
+        """
+        Iteratively samples the boundary of an H-polytope = in chunks until the 
+        minimum Effective Sample Size (minESS) across all dimensions reaches a specified target.
+
+        This function executes a specified random walk on the polytope boundary and accumulates 
+        samples in discrete batches of size `chunk_n`. After each batch is appended to the 
+        cumulative chain, MCMC diagnostics are evaluated. If the overall minESS meets or 
+        exceeds `ess_target`, the function identifies the exact step index (`k_star`) where 
+        the target was first achieved. The cumulative sample matrix is then strictly truncated 
+        to this length to avoid returning unnecessary over-sampled points.
+
+        Args:
+            ess_target (int): The target minimum Effective Sample Size to achieve.
+            chunk_n (int): Number of points to sample in each chunk (batch size).
+            burn_in_first (int): Number of initial samples to discard as burn-in (applied to the first chunk only).
+            max_calls (int): Maximum number of chunk iterations allowed to prevent infinite loops.
+
+        Returns:
+            S_star (np.ndarray): The truncated sample matrix of shape (d, k_star) that exactly meets the minESS target.
+            info (dict): A dictionary containing the final MCMC diagnostics (minESS, maxPSRF), sampling parameters, total iterations (calls), and the truncation index (k_star).
+        """
+        ess_target = int(ess_target)
+        A = np.ascontiguousarray(A, dtype=np.float64)
+        b = np.ascontiguousarray(b, dtype=np.float64)
+
+        P = HPolytope(A, b)
+        d = int(A.shape[1])
+
+        sampler_key, wl, nref = PolytopeSampler._parse_boundary_sampler_params(d=d,sampler=sampler,walk_len=walk_len,nreflections=nreflections,)
+        S_all = np.zeros((d, 0), dtype=np.float64, order="F")
+        calls = 0
+
+        while calls < int(max_calls):
+            calls += 1
+            burn = int(burn_in_first) if S_all.shape[1] == 0 else 0
+
+            S_chunk = P.boundary_sample(sampler=sampler_key,number_of_points=int(chunk_n),number_of_points_to_burn=int(burn),walk_len=int(wl),nreflections=int(nref))
+            S_chunk = np.asarray(S_chunk, dtype=np.float64, order="F")
+            S_all = np.asfortranarray(np.concatenate([S_all, S_chunk], axis=1))
+
+            diag_all = P.boundary_diag(S_all)
+            if diag_all["minESS"] < ess_target:
+                continue
+
+            k_star = PolytopeSampler._first_k_exceeding_minESS(P, S_all, ess_target)
+            S_star = S_all[:, :k_star]
+            diag_star = P.boundary_diag(S_star)
+
+            info = {
+                "minESS": float(diag_star["minESS"]),
+                "maxPSRF": float(diag_star["maxPSRF"]),
+                "N": int(diag_star["N"]),
+                "calls": int(calls),
+                "chunk_n": int(chunk_n),
+                "sampler": sampler_key,
+                "walk_len": int(wl),
+                "nreflections": int(nref),
+                "ess_target": int(ess_target),
+                "k_star": int(k_star),
+                "total_N": int(S_all.shape[1]),
+            }
+
+            return np.asarray(S_star), info
+
+        last_minESS = (
+            P.boundary_diag(S_all)["minESS"]
+            if S_all.shape[1]
+            else "N/A"
         )
 
-        S = P.boundary_sample(
-            sampler="bsb" if use_bsb else "sb",
-            number_of_points=int(n),
-            number_of_points_to_burn=int(burn_in),
-            walk_len=int(wl),
-            nreflections=int(nref),
+        raise RuntimeError(
+            f"ESS target not reached after max_calls={max_calls} "
+            f"(last minESS={last_minESS})."
         )
 
-        finite_cols = np.isfinite(S).all(axis=0)
-        if not finite_cols.all():
-            S = S[:, finite_cols]
-        if S.shape[1] == 0:
-            raise RuntimeError(
-                "All sample columns contain NaN/Inf; adjust walk_len, nreflections, or check constraints."
-            )
-
-        return S
 
     def boundary_diagnostics(self, S):
         """
-        Compute diagnostics (minESS, maxPSRF, N) for a given sample matrix S
-        using the current polytope stored in this sampler instance.
+        Diagnostics under current instance polytope.
         """
-        S = np.ascontiguousarray(S, dtype=np.float64)
+        self.get_polytope()
+
+        S = np.asarray(S, dtype=np.float64, order="F")
+
+        if S.shape[0] != self._A.shape[1]:
+            raise ValueError(
+                "S must have shape (d, N), where d = number of variables."
+            )
+
         P = HPolytope(self._A, self._b)
-        diag = P.boundary_diag(S)
-        return diag
+        return P.boundary_diag(S)
+    
+    @staticmethod
+    def _facet_coverage_count_from_sr(coverage_mat):
+        """
+        Counts the number of covered facets from a scaling ratio matrix.
+        """
+        cov = np.asarray(coverage_mat, dtype=float)
+        if cov.ndim != 2:
+            return 0
+        finite_row = np.any(np.isfinite(cov), axis=1)
+        return int(np.sum(finite_row))
 
+    @staticmethod
+    def boundary_sample_coverage(
+        A,b,target_pcts=(10, 20, 30, 40, 50, 60, 70, 80, 90, 100),sampler="bsb",chunk_n=5000,burn_in_first=0,walk_len=1,nreflections=None,max_calls=200,sr_tol=1e-10,sr_min_ratio=0.01,
+    ):
+        """
+        Samples an H-polytope boundary in chunks until specified percentages of facets are adequately visited. 
+        A facet counts as covered only when it has enough samples to produce a finite scaling ratio.
 
+        Returns:
+            rows (list[dict]): Diagnostics and metrics saved at each target coverage milestone.
+            final (dict): Total execution time and final sample counts.
+        """
+        A = np.asarray(A, dtype=np.float64, order="C")
+        b = np.asarray(b, dtype=np.float64, order="C")
+        P = HPolytope(A, b)
+
+        m = int(A.shape[0])
+        d = int(A.shape[1])
+
+        targets = []
+        for tp in target_pcts:
+            tc = int(math.ceil((float(tp) / 100.0) * m)) if m > 0 else 0
+            targets.append((int(tp), int(tc)))
+
+        rows = []
+        next_idx = 0
+        S_acc = None
+        t0 = time.perf_counter()
+        calls = 0
+        while calls < max_calls and next_idx < len(targets):
+            calls += 1
+
+            S_chunk = P.boundary_sample(
+                sampler=sampler,
+                number_of_points=int(chunk_n),
+                number_of_points_to_burn=(int(burn_in_first) if calls == 1 else 0),
+                walk_len=int(walk_len),
+                nreflections=(0 if nreflections is None else int(nreflections)),
+            )
+            S_chunk = np.asarray(S_chunk, dtype=np.float64, order="F")
+
+            if S_acc is None:
+                S_acc = S_chunk
+            else:
+                S_acc = np.concatenate([S_acc, S_chunk], axis=1)
+
+            # ESS/PSRF
+            diag = P.boundary_diag(S_acc)
+            minESS = float(diag.get("minESS", float("nan")))
+            maxPSRF = float(diag.get("maxPSRF", float("nan")))
+            N_samples = int(diag.get("N", S_acc.shape[1]))
+
+            # SR + zero facets
+            scale, coverage, max_dev, avg_dev, zc, zpct = P.boundary_scaling_ratio(
+                S_acc, tol=float(sr_tol), min_ratio=float(sr_min_ratio)
+            )
+
+            covered_facets = PolytopeSampler._facet_coverage_count_from_sr(coverage)
+            covered_pct = (100.0 * covered_facets / m) if m > 0 else 0.0
+
+            max_dev_arr = np.asarray(max_dev, dtype=float) if max_dev is not None else None
+            avg_dev_arr = np.asarray(avg_dev, dtype=float) if avg_dev is not None else None
+
+            sr_max_dev = float(np.nanmax(max_dev_arr)) if max_dev_arr is not None else float("nan")
+            sr_avg_dev_global = float(np.nanmean(avg_dev_arr)) if avg_dev_arr is not None else float("nan")
+
+            elapsed = time.perf_counter() - t0
+
+            while next_idx < len(targets) and covered_facets >= targets[next_idx][1]:
+                tp, tc = targets[next_idx]
+                rows.append({
+                    "target_pct": int(tp),
+                    "target_count": int(tc),
+                    "calls": int(calls),
+                    "chunk_n": int(chunk_n),
+                    "max_calls": int(max_calls),
+                    "dim": int(d),
+                    "m": int(m),
+
+                    "N_samples": int(N_samples),
+                    "covered_facets": int(covered_facets),
+                    "covered_pct": float(covered_pct),
+
+                    "minESS": float(minESS),
+                    "maxPSRF": float(maxPSRF),
+                    "elapsed_sec": float(elapsed),
+
+                    "sr_max_dev": float(sr_max_dev),
+                    "sr_avg_dev_global": float(sr_avg_dev_global),
+                    "zero_facets": int(zc),
+                    "zero_facets_pct": float(zpct),
+                })
+                next_idx += 1
+
+        # final state 
+        final = {
+            "calls": int(calls),
+            "dim": int(d),
+            "m": int(m),
+            "N_samples": int(S_acc.shape[1]) if S_acc is not None else 0,
+            "elapsed_sec": float(time.perf_counter() - t0),
+        }
+        return rows, final
 
     @staticmethod
     def round_polytope(
