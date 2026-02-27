@@ -66,9 +66,11 @@ class PolytopeSampler:
                 max_objective,
             ) = self._metabolic_network.fba()
 
-            if (
-                self._parameters["remove_redundant_facets"]
-            ):
+            solver_name = self._parameters["solver"]
+            if solver_name is None:
+                solver_name = self._metabolic_network.parameters["solver"]
+
+            if self._parameters["remove_redundant_facets"]:
 
                 A, b, Aeq, beq = remove_redundant_facets(
                     self._metabolic_network.lb,
@@ -76,7 +78,7 @@ class PolytopeSampler:
                     self._metabolic_network.S,
                     self._metabolic_network.objective_function,
                     self._parameters["opt_percentage"],
-                    self._parameters["solver"],
+                    solver_name,
                 )
             else:
 
