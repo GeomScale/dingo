@@ -311,6 +311,10 @@ def remove_redundant_facets(lb, ub, S, c, opt_percentage=100, solver_name=None):
     m = S.shape[0]
     n = S.shape[1]
 
+    # Work on copies so the caller's lb/ub arrays are not modified.
+    lb = lb.copy()
+    ub = ub.copy()
+
     # [v,-v] <= [ub,-lb]
     A = np.zeros((2 * n, n), dtype="float")
     A[0:n] = np.eye(n)

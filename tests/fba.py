@@ -9,8 +9,9 @@
 import unittest
 import os
 import sys
+import numpy as np
 from dingo import MetabolicNetwork
-from dingo.pyoptinterface_based_impl import set_default_solver
+from dingo.pyoptinterface_based_impl import set_default_solver, remove_redundant_facets
 
 class TestFba(unittest.TestCase):
 
@@ -77,6 +78,35 @@ class TestFba(unittest.TestCase):
         self.assertTrue(model.lb[glc_index] == -1.5 and model.lb[o2_index] == 0.5)
 
         self.assertTrue(initial_fba - model.fba()[-1] > 0)
+
+
+    def test_remove_redundant_facets_no_mutation(self):
+        # remove_redundant_facets must not modify the lb/ub arrays of the
+        # caller.  Before the fix it did, which caused the second call to
+        # generate_steady_states (or any subsequent FBA/FVA) to operate on
+        # corrupted bounds (issue #83).
+
+        input_file_json = os.getcwd() + "/ext_data/e_coli_core.json"
+        model = MetabolicNetwork.from_json(input_file_json)
+
+        lb_before = model.lb.copy()
+        ub_before = model.ub.copy()
+
+        remove_redundant_facets(
+            model.lb,
+            model.ub,
+            model.S,
+            model.objective_function,
+        )
+
+        self.assertTrue(
+            np.array_equal(lb_before, model.lb),
+            "remove_redundant_facets must not modify the model's lb array",
+        )
+        self.assertTrue(
+            np.array_equal(ub_before, model.ub),
+            "remove_redundant_facets must not modify the model's ub array",
+        )
 
 
 if __name__ == "__main__":
