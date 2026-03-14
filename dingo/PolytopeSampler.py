@@ -283,16 +283,18 @@ class PolytopeSampler:
         num_threads -- the number of threads to use for parallel mmcs
         """
 
+        tol = 1e-06
+
         A, b, Aeq, beq = get_matrices_of_low_dim_polytope(
-            S, min_fluxes, max_fluxes, opt_percentage, tol
+            S, min_fluxes, max_fluxes, min_fluxes, max_fluxes
         )
 
         A = np.vstack((A, -objective_function))
         b = np.append(
             b,
             -(opt_percentage / 100)
-            * self._parameters["tol"]
-            * math.floor(max_objective / self._parameters["tol"]),
+            * tol
+            * math.floor(max_objective / tol),
         )
 
         A, b, N, N_shift = get_matrices_of_full_dim_polytope(A, b, Aeq, beq)
