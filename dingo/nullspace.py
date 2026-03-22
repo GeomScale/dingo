@@ -8,7 +8,11 @@
 
 import numpy as np
 from scipy import linalg
-import sparseqr
+try:
+    import sparseqr
+    _HAS_SPARSEQR = True
+except ImportError:
+    _HAS_SPARSEQR = False
 import scipy.sparse.linalg
 
 
@@ -43,6 +47,15 @@ def nullspace_sparse(Aeq, beq):
     """
 
     N_shift = np.linalg.lstsq(Aeq, beq, rcond=None)[0]
+
+    # Fallback when sparseqr (PySPQR / SuiteSparse) is not installed:
+    # use scipy's dense null_space instead
+    if not _HAS_SPARSEQR:
+        N = linalg.null_space(Aeq)
+        N = np.asarray(N, dtype="float")
+        N = np.ascontiguousarray(N, dtype="float")
+        return N, N_shift
+
     Aeq = Aeq.T
     Aeq = scipy.sparse.csc_matrix(Aeq)
 
