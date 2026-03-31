@@ -317,3 +317,8 @@ The default number of cells is 5x5=25. dingo uses the package `plotly` for plott
 ![histogram](./doc/aconta_ppc_copula.png)
 
 
+## Citation
+
+Apostolos Chalkis, Vissarion Fisikopoulos, Elias Tsigaridas, Haris Zafeiropoulos, dingo: a Python package for metabolic flux sampling, Bioinformatics Advances, Volume 4, Issue 1, 2024, vbae037, [https://doi.org/10.1093/bioadv/vbae037](https://doi.org/10.1093/bioadv/vbae037)
+
+
