@@ -1,7 +1,7 @@
 {
   "name": "Codespace for dingo tutorial",
   "build": {
-    "dockerfile": "Dockerfile",
+    "dockerfile": "../Dockerfile",
     "context": ".."
   },
   "customizations": {
