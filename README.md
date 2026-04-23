@@ -16,17 +16,16 @@ metabolic network, namely Flux Balance Analysis and Flux Variability Analysis.
 [![Chat](https://badges.gitter.im/geomscale.png)](https://gitter.im/GeomScale/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link)
 
 
-## Installation
+## Installation (on Linux)
 
 **Note:** Python version should be 3.8.x. You can check this by running the following command in your terminal:
 ```bash
 python --version
 ```
+
 If you have a different version of Python installed, you'll need to install it ([start here](https://linuxize.com/post/how-to-install-python-3-8-on-ubuntu-18-04/)) and update-alternatives ([start here](https://linuxhint.com/update_alternatives_ubuntu/))
 
 **Note:** If you are using `GitHub Codespaces`. Start [here](https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/setting-up-your-python-project-for-codespaces) to set the python version. Once your Python version is `3.8.x` you can start following the below instructions.
-
-
 
 To load the submodules that dingo uses, run
 
@@ -70,6 +69,18 @@ pip3 install -i https://pypi.gurobi.com gurobipy
 
 Then, you will need a [license](https://www.gurobi.com/downloads/end-user-license-agreement-academic/). For more information, we refer to the Gurobi [download center](https://www.gurobi.com/downloads/).
 
+## Using `dingo` as a Docker container
+
+To use `dingo` as a container, you need to install Docker first. 
+
+Then you can clone the `dingo` repo and build its Docker image:
+
+```
+git clone https://github.com/GeomScale/dingo.git
+cd dingo 
+docker build -f Dockerfile -t dingo .
+```
+
 
 
 
@@ -97,8 +108,13 @@ python3 tests/sampling.py gurobi
 
 ## Tutorial
 
-You can have a look at our [Google Colab notebook](https://colab.research.google.com/github/GeomScale/dingo/blob/develop/tutorials/dingo_tutorial.ipynb)
-on how to use `dingo`.
+You may check out `dingo`'s main features through a GitHub codespace.
+To do this, you may click [here](https://github.com/codespaces/new?repo=GeomScale/dingo&ref=main) and fire a new codespace
+by clicking on the "Create codespace" button. 
+
+This will take a few minutes. 
+
+Once the codespace is ready, 
 
 
 ## Documentation
