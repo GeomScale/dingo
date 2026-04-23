@@ -26,7 +26,7 @@ RUN apt-get install libsuitesparse-dev
 RUN pip install matplotlib \
 	plotly \
 	networkx \
-	pyoptinterface
+	pyoptinterface[highs]
 
 # Get dingo
 WORKDIR /opt
