@@ -71,7 +71,8 @@ Then, you will need a [license](https://www.gurobi.com/downloads/end-user-licens
 
 ## Using `dingo` as a Docker container
 
-To use `dingo` as a container, you need to install Docker first. 
+To use `dingo` as a container, you need to [install Docker](https://docs.docker.com/engine/install/), 
+or [Docker desktop](https://docs.docker.com/desktop/), first.
 
 Then you can clone the `dingo` repo and build its Docker image:
 
@@ -81,7 +82,11 @@ cd dingo
 docker build -f Dockerfile -t dingo .
 ```
 
++Once the image is built, you may run:
 
+```
+docker run --rm -it -v <path_to_your_model>:/data dingo
+```
 
 
 ## Unit tests
@@ -114,7 +119,8 @@ by clicking on the "Create codespace" button.
 
 This will take a few minutes. 
 
-Once the codespace is ready, 
+Once the codespace is ready, you may try to follow the [`dingo_tutorial`](./tutorials/dingo_tutorial.ipynb)
+Jupyter notebook. 
 
 
 ## Documentation

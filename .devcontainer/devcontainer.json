@@ -13,6 +13,5 @@
       ]
     }
   },
-  "features": {},
-  "postCreateCommand": "bash .devcontainer/setup_codespace.sh"
+  "features": {}
 }
