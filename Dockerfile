@@ -46,4 +46,8 @@ RUN wget -O boost_1_76_0.tar.bz2 https://archives.boost.io/release/1.76.0/source
 	tar xjf boost_1_76_0.tar.bz2 &&\
 	rm boost_1_76_0.tar.bz2
 
+# Set environmental variable gurobi license path
+ENV GRB_LICENSE_FILE=/opt/gurobi/gurobi.lic
+
+# Install dingo
 RUN ["python", "setup.py", "install", "--user"]

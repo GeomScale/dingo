@@ -16,38 +16,69 @@ metabolic network, namely Flux Balance Analysis and Flux Variability Analysis.
 [![Chat](https://badges.gitter.im/geomscale.png)](https://gitter.im/GeomScale/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link)
 
 
-## Installation (on Linux)
+## Installation 
+
+### LP solver (optional, probably better performance)
+
+`dingo` makes use of [`pyoptinterface`](https://metab0t.github.io/PyOptInterface/) to interface with a range of linear programming solvers. 
+
+The default solver is [`highs`](https://highs.dev/#get-started). 
+
+However, one may switch to other solvers that `pyoptinterface` supports, for example the commonly used [`gurobi`](https://www.gurobi.com/). 
+Yet, in that case a Gurobi license is required. 
+
+> **Get a Gurobi license**
+> 
+> If you are affiliated in an academic insitute, you can generate a **free academic license**.
+> 
+> First, register and/or login to your [Gurobi account](https://portal.gurobi.com/iam/login/), and 
+> 
+> * if you are about to use `dingo` as a container, get a [**Web License Service (WLS) academic license**](https://support.gurobi.com/hc/en-us/articles/13210193318033-What-is-an-Academic-WLS-license)
+> * otherwise, you should go for the typical [**free academic license**](https://www.gurobi.com/academics)
+>  
+> 🔴 In both cases, make sure you are connected to the internet of an academic institution.
+
+
+### Installation (on Linux)
 
 **Note:** Python version should be 3.8.x. You can check this by running the following command in your terminal:
 ```bash
 python --version
 ```
 
-If you have a different version of Python installed, you'll need to install it ([start here](https://linuxize.com/post/how-to-install-python-3-8-on-ubuntu-18-04/)) and update-alternatives ([start here](https://linuxhint.com/update_alternatives_ubuntu/))
+If you have a different version of Python installed, you'll need to install it ([start here](https://linuxize.com/post/how-to-install-python-3-8-on-ubuntu-18-04/))
+and update-alternatives ([start here](https://linuxhint.com/update_alternatives_ubuntu/)).
 
-**Note:** If you are using `GitHub Codespaces`. Start [here](https://docs.github.com/en/codespaces/setting-up-your-project-for-codespaces/adding-a-dev-container-configuration/setting-up-your-python-project-for-codespaces) to set the python version. Once your Python version is `3.8.x` you can start following the below instructions.
+Clone the `dingo` repo by 
 
-To load the submodules that dingo uses, run
+```
+git clone https://github.com/GeomScale/dingo.git
+```
+
+
+and load the submodules that `dingo` uses:
 
 ````bash
+cd dingo
 git submodule update --init
 ````
 
-You will need to download and unzip the Boost library:
+You will then need to download and unzip the [Boost C++](https://www.boost.org/) library:
 ```
 wget -O boost_1_76_0.tar.bz2 https://archives.boost.io/release/1.76.0/source/boost_1_76_0.tar.bz2
 tar xjf boost_1_76_0.tar.bz2
 rm boost_1_76_0.tar.bz2
 ```
 
-You will also need to download and unzip the lpsolve library:
+You will also need to download and unzip the [`lpsolve`](https://lpsolve.sourceforge.net/5.5/) library:
 ```
 wget https://sourceforge.net/projects/lpsolve/files/lpsolve/5.5.2.11/lp_solve_5.5.2.11_source.tar.gz
 tar xzvf lp_solve_5.5.2.11_source.tar.gz
 rm lp_solve_5.5.2.11_source.tar.gz
 ```
 
-Then, you need to install the dependencies for the PySPQR library; for Debian/Ubuntu Linux, run
+Then, you need to install the dependencies for the [PySPQR](https://github.com/yig/PySPQR) library; 
+for this, you will most likely need `sudo` rights:
 
 ```bash
 sudo apt-get update -y
@@ -56,18 +87,25 @@ sudo apt-get install -y libsuitesparse-dev
 
 To install the Python dependencies, `dingo` is using [Poetry](https://python-poetry.org/),
 ```
-curl -sSL https://install.python-poetry.org | python3 - --version 1.3.2
+curl -sSL https://install.python-poetry.org | python - --version 1.3.2
 poetry shell
 poetry install
 ```
 
-You can install the [Gurobi solver](https://www.gurobi.com/) for faster linear programming optimization. Run
+otherwise, you may try:
 
 ```
-pip3 install -i https://pypi.gurobi.com gurobipy
+python setup.py install --user
 ```
 
-Then, you will need a [license](https://www.gurobi.com/downloads/end-user-license-agreement-academic/). For more information, we refer to the Gurobi [download center](https://www.gurobi.com/downloads/).
+
+Last, in case you are about to use Gurobi, remember to install the Python interface of Gurobi, [`gurobipy`](https://www.gurobi.com/resources/faq/gurobipy):
+
+```
+pip install -i https://pypi.gurobi.com gurobipy
+```
+
+
 
 ## Using `dingo` as a Docker container
 
@@ -82,33 +120,53 @@ cd dingo
 docker build -f Dockerfile -t dingo .
 ```
 
-+Once the image is built, you may run:
+Once the image is built, you may run:
 
 ```
 docker run --rm -it -v <path_to_your_model>:/data dingo
 ```
+
+or, if you are using Gurobi, you may run:
+
+```
+docker run --rm -it -v <path_to_WLS_license>:/opt/gurobi/gurobi.lic -v <path_to_your_model>:/data dingo
+```
+
+> **Remember** for this use need the WLS Gurobi license. 
+> 
+> This would look something like this:
+>
+> ```
+> # Gurobi WLS license file
+> # Your credentials are private and should not be shared or copied to public repositories.
+> # Visit https://license.gurobi.com/manager/doc/overview for more information.
+> WLSACCESSID=d5419c87-0d36-4a93-9385-773f5483b3c1
+> WLSSECRET=afa5d95f-ad0b-4a38-9550-a8913aacb7c0
+> LICENSEID=000000
+>```
+
 
 
 ## Unit tests
 
 Now, you can run the unit tests by the following commands (with the default solver `highs`):
 ```
-python3 tests/fba.py
-python3 tests/full_dimensional.py
-python3 tests/max_ball.py
-python3 tests/scaling.py
-python3 tests/rounding.py
-python3 tests/sampling.py
+python tests/fba.py
+python tests/full_dimensional.py
+python tests/max_ball.py
+python tests/scaling.py
+python tests/rounding.py
+python tests/sampling.py
 ```
 
-If you have installed Gurobi successfully, then run
+Or, assuming you have installed Gurobi successfully, or an other `pyoptinterface`-supported solver, you may run:
 ```
-python3 tests/fba.py gurobi
-python3 tests/full_dimensional.py gurobi
-python3 tests/max_ball.py gurobi
-python3 tests/scaling.py gurobi
-python3 tests/rounding.py gurobi
-python3 tests/sampling.py gurobi
+python tests/fba.py gurobi
+python tests/full_dimensional.py gurobi
+python tests/max_ball.py gurobi
+python tests/scaling.py gurobi
+python tests/rounding.py gurobi
+python tests/sampling.py gurobi
 ```
 
 ## Tutorial
@@ -213,14 +271,17 @@ The MCMC methods that dingo (through `volesti` library) provides are the followi
 
 #### Switch the linear programming solver
 
-We use `pyoptinterface` to interface with the linear programming solvers. To switch the solver that `dingo` uses, you can use the `set_default_solver` function. The default solver is `highs` and you can switch to `gurobi` by running,
+We use `pyoptinterface` to interface with the linear programming solvers. 
+To switch the solver that `dingo` uses, you can use the `set_default_solver` function. 
+The default solver is `highs` and you can switch to `gurobi` by running:
 
 ```python
 from dingo import set_default_solver
 set_default_solver("gurobi")
 ```
 
-You can also switch to other solvers that `pyoptinterface` supports, but we recommend using `highs` or `gurobi`. If you have issues with the solver, you can check the `pyoptinterface` [documentation](https://metab0t.github.io/PyOptInterface/getting_started.html).
+You can also switch to other solvers that `pyoptinterface` supports, but we recommend using `highs` or `gurobi`. 
+If you have issues with the solver, you can check the `pyoptinterface` [documentation](https://metab0t.github.io/PyOptInterface/getting_started.html).
 
 ### Apply FBA and FVA methods
 
