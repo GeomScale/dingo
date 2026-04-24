@@ -175,10 +175,9 @@ You may check out `dingo`'s main features through a GitHub codespace.
 To do this, you may click [here](https://github.com/codespaces/new?repo=GeomScale/dingo&ref=main) and fire a new codespace
 by clicking on the "Create codespace" button. 
 
-This will take a few minutes. 
+This will take a few minutes (~5'). 
 
-Once the codespace is ready, you may try to follow the [`dingo_tutorial`](./tutorials/dingo_tutorial.ipynb)
-Jupyter notebook. 
+Once the codespace is ready, you may try to follow the [`dingo_tutorial`](./tutorials/dingo_tutorial.ipynb) Jupyter notebook. 
 
 
 ## Documentation
