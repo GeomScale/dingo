@@ -132,7 +132,7 @@ or, if you are using Gurobi, you may run:
 docker run --rm -it -v <path_to_WLS_license>:/opt/gurobi/gurobi.lic -v <path_to_your_model>:/data dingo
 ```
 
-> **Remember** for this use need the WLS Gurobi license. 
+> **Remember!** in this case, where `dingo` is run in a containerized environment and Gurobi is used as the solver, a standard node-locked Gurobi license would not work; a WLS license is typically required instead.
 > 
 > This would look something like this:
 >
