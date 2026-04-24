@@ -29,14 +29,13 @@ RUN pip install matplotlib \
 	pyoptinterface[highs]
 
 # Get dingo
-WORKDIR /opt
-RUN git clone https://github.com/GeomScale/dingo.git &&\
-	cd dingo &&\
-	git submodule update --init
+WORKDIR /workspaces/dingo
+COPY . .
+
+# Get submodules
+git submodule update --init
 
 # Get lp-solve
-WORKDIR /opt/dingo
-
 RUN wget https://sourceforge.net/projects/lpsolve/files/lpsolve/5.5.2.11/lp_solve_5.5.2.11_source.tar.gz &&\
 	tar xzvf lp_solve_5.5.2.11_source.tar.gz &&\
 	rm lp_solve_5.5.2.11_source.tar.gz
