@@ -33,7 +33,7 @@ WORKDIR /workspaces/dingo
 COPY . .
 
 # Get submodules
-git submodule update --init
+RUN git submodule update --init
 
 # Get lp-solve
 RUN wget https://sourceforge.net/projects/lpsolve/files/lpsolve/5.5.2.11/lp_solve_5.5.2.11_source.tar.gz &&\
