@@ -11,9 +11,15 @@ metabolic network, namely Flux Balance Analysis and Flux Variability Analysis.
 
 `dingo` is part of [GeomScale](https://geomscale.github.io/) project.
 
-[![unit-tests](https://github.com/GeomScale/dingo/workflows/dingo-ubuntu/badge.svg)](https://github.com/GeomScale/dingo/actions?query=workflow%3Adingo-ubuntu)
-[![Tutorial In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/GeomScale/dingo/blob/develop/tutorials/dingo_tutorial.ipynb)
-[![Chat](https://badges.gitter.im/geomscale.png)](https://gitter.im/GeomScale/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link)
+<a href="https://github.com/GeomScale/dingo/actions?query=workflow%3Adingo-ubuntu">
+  <img src="https://github.com/GeomScale/dingo/workflows/dingo-ubuntu/badge.svg" height="20">
+</a>
+<a href="https://codespaces.new/GeomScale/dingo?quickstart=1">
+  <img src="https://github.com/codespaces/badge.svg" height="20">
+</a>
+<a href="https://gitter.im/GeomScale/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link">
+  <img src="https://badges.gitter.im/geomscale.png" height="20">
+</a>
 
 
 ## Installation 
