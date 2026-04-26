@@ -14,7 +14,7 @@ from dingo.utils import compute_copula
 import plotly.figure_factory as ff
 from scipy.cluster import hierarchy
 
-def plot_copula(data_flux1, data_flux2, n = 5, width = 900 , height = 600, export_format = "svg"):
+def plot_copula(data_flux1, data_flux2, n = 5, width = 900 , height = 600, save = True, export_format = "svg"):
     """A Python function to plot the copula between two fluxes
 
     Keyword arguments:
@@ -59,17 +59,21 @@ def plot_copula(data_flux1, data_flux2, n = 5, width = 900 , height = 600, expor
     )
 
     fig.update_layout(scene_camera=camera)
-    fig.to_image(format = export_format, engine="kaleido")
-    pio.write_image(fig, fig_name, scale=2)
+
+    if save:
+        fig.to_image(format = export_format, engine="kaleido")
+        pio.write_image(fig, fig_name, scale=2)
 
 
-def plot_histogram(reaction_fluxes, reaction, n_bins=40):
+def plot_histogram(reaction_fluxes, reaction, n_bins = 40, save = False, export_format = "png"):
     """A Python function to plot the histogram of a certain reaction flux.
 
     Keyword arguments:
     reaction_fluxes -- a vector that contains sampled fluxes of a reaction
     reaction -- a string with the name of the reacion
     n_bins -- the number of bins for the histogram
+    save -- save plot to a file
+    export_format -- file format to save the plot
     """
 
     plt.figure(figsize=(7, 7))
@@ -84,7 +88,11 @@ def plot_histogram(reaction_fluxes, reaction, n_bins=40):
     plt.title("Reaction: " + reaction, fontweight="bold", fontsize=18)
     plt.axis([np.amin(reaction_fluxes), np.amax(reaction_fluxes), 0, np.amax(n) * 1.2])
 
+    if save:
+        plt.savefig(reaction + "." + export_format, dpi = 150, bbox_inches = "tight", format = export_format)
+
     plt.show()
+
 
 
 
