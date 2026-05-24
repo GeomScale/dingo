@@ -3,6 +3,13 @@ from pyoptinterface import highs, gurobi, copt, mosek
 import numpy as np
 import sys
 
+# Ensure HiGHS shared library is loaded (needed on some platforms)
+try:
+    from pyoptinterface._src.highs import autoload_library
+    autoload_library()
+except Exception:
+    pass
+
 default_solver = "highs"
 
 def set_default_solver(solver_name):
@@ -14,7 +21,7 @@ def get_solver(solver_name):
     if solver_name in solvers:
         return solvers[solver_name]
     else: 
-        raise Exception("An unknown solver {solver_name} is requested.")
+        raise Exception(f"An unknown solver {solver_name} is requested.")
 
 def dot(c, x):
     return poi.quicksum(c[i] * x[i] for i in range(len(x)) if abs(c[i]) > 1e-12)
@@ -79,12 +86,9 @@ def fba(lb, ub, S, c, solver_name=None):
                 optimum_sol[i] = model.get_value(v[i])
         return optimum_sol, optimum_value
 
-    except poi.TerminationStatusCode.NUMERICAL_ERROR as e:
-        print(f"A numerical error occurred: {e}")
-    except poi.TerminationStatusCode.OTHER_ERROR as e:
-        print(f"An error occurred: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        raise
 
 
 def fva(lb, ub, S, c, opt_percentage=100, solver_name=None):
@@ -186,12 +190,9 @@ def fva(lb, ub, S, c, opt_percentage=100, solver_name=None):
             max_biomass_objective,
         )
 
-    except poi.TerminationStatusCode.NUMERICAL_ERROR as e:
-        print(f"A numerical error occurred: {e}")
-    except poi.TerminationStatusCode.OTHER_ERROR as e:
-        print(f"An error occurred: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        raise
 
 
 def inner_ball(A, b, solver_name=None):
@@ -488,9 +489,6 @@ def remove_redundant_facets(lb, ub, S, c, opt_percentage=100, solver_name=None):
         A_res = np.ascontiguousarray(A_res, dtype="float")
         return A_res, b_res, Aeq_res, beq_res
 
-    except poi.TerminationStatusCode.NUMERICAL_ERROR as e:
-        print(f"A numerical error occurred: {e}")
-    except poi.TerminationStatusCode.OTHER_ERROR as e:
-        print(f"An error occurred: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        raise
