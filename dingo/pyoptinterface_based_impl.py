@@ -5,6 +5,12 @@ import sys
 
 default_solver = "highs"
 
+
+def resolve_solver_name(solver_name=None):
+    if solver_name is None:
+        return default_solver
+    return solver_name
+
 def set_default_solver(solver_name):
     global default_solver
     default_solver = solver_name
@@ -48,8 +54,7 @@ def fba(lb, ub, S, c, solver_name=None):
     optimum_value = 0
     optimum_sol = np.zeros(n)
     try:
-        if solver_name is None:
-            solver_name = default_solver
+        solver_name = resolve_solver_name(solver_name)
         SOLVER = get_solver(solver_name)
         # Create a model
         model = SOLVER.Model()
@@ -79,12 +84,8 @@ def fba(lb, ub, S, c, solver_name=None):
                 optimum_sol[i] = model.get_value(v[i])
         return optimum_sol, optimum_value
 
-    except poi.TerminationStatusCode.NUMERICAL_ERROR as e:
-        print(f"A numerical error occurred: {e}")
-    except poi.TerminationStatusCode.OTHER_ERROR as e:
-        print(f"An error occurred: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        raise RuntimeError(f"FBA failed while using solver '{solver_name}'.") from e
 
 
 def fva(lb, ub, S, c, opt_percentage=100, solver_name=None):
@@ -125,8 +126,7 @@ def fva(lb, ub, S, c, opt_percentage=100, solver_name=None):
     )
 
     try:
-        if solver_name is None:
-            solver_name = default_solver
+        solver_name = resolve_solver_name(solver_name)
         SOLVER = get_solver(solver_name)
         # Create a model
         model = SOLVER.Model()
@@ -186,12 +186,8 @@ def fva(lb, ub, S, c, opt_percentage=100, solver_name=None):
             max_biomass_objective,
         )
 
-    except poi.TerminationStatusCode.NUMERICAL_ERROR as e:
-        print(f"A numerical error occurred: {e}")
-    except poi.TerminationStatusCode.OTHER_ERROR as e:
-        print(f"An error occurred: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        raise RuntimeError(f"FVA failed while using solver '{solver_name}'.") from e
 
 
 def inner_ball(A, b, solver_name=None):
@@ -218,8 +214,7 @@ def inner_ball(A, b, solver_name=None):
     column = np.asarray(extra_column)
     A_expand = np.c_[A, column]
 
-    if solver_name is None:
-        solver_name = default_solver
+    solver_name = resolve_solver_name(solver_name)
     SOLVER = get_solver(solver_name)
     model = SOLVER.Model()
     model.set_model_attribute(poi.ModelAttribute.Silent, True)
@@ -262,8 +257,7 @@ def set_model(n, lb, ub, Aeq, beq, A, b, solver_name=None):
     but without an objective function.
     """
     # Create a model
-    if solver_name is None:
-        solver_name = default_solver
+    solver_name = resolve_solver_name(solver_name)
     SOLVER = get_solver(solver_name)
     model = SOLVER.Model()
     model.set_model_attribute(poi.ModelAttribute.Silent, True)
@@ -488,9 +482,7 @@ def remove_redundant_facets(lb, ub, S, c, opt_percentage=100, solver_name=None):
         A_res = np.ascontiguousarray(A_res, dtype="float")
         return A_res, b_res, Aeq_res, beq_res
 
-    except poi.TerminationStatusCode.NUMERICAL_ERROR as e:
-        print(f"A numerical error occurred: {e}")
-    except poi.TerminationStatusCode.OTHER_ERROR as e:
-        print(f"An error occurred: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        raise RuntimeError(
+            f"Redundant facet removal failed while using solver '{solver_name}'."
+        ) from e
