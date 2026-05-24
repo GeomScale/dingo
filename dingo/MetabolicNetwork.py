@@ -7,12 +7,17 @@
 
 # Licensed under GNU LGPL.3, see LICENCE file
 
-import numpy as np
 import sys
 from typing import Dict
+
 import cobra
-from dingo.loading_models import read_json_file, read_mat_file, read_sbml_file, parse_cobra_model
-from dingo.pyoptinterface_based_impl import fba,fva,inner_ball,remove_redundant_facets
+import numpy as np
+
+from dingo.loading_models import (parse_cobra_model, read_json_file,
+                                  read_mat_file, read_sbml_file)
+from dingo.pyoptinterface_based_impl import (fba, fva, inner_ball,
+                                             remove_redundant_facets)
+
 
 class MetabolicNetwork:
     def __init__(self, tuple_args):
@@ -75,7 +80,7 @@ class MetabolicNetwork:
 
     @classmethod
     def from_sbml(cls, arg):
-        if (not isinstance(arg, str)) and ((arg[-3:] == "xml") or (arg[-4] == "sbml")):
+        if (not isinstance(arg, str)) or not ((arg[-3:] == "xml") or (arg[-4:] == "sbml")):
             raise Exception(
                 "An unknown input format given to initialize a metabolic network object."
             )
