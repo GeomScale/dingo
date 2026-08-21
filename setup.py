@@ -109,6 +109,12 @@ setup(
     author_email=author_email,
     name=name,
     packages=packages,
+    package_data={
+        "dingo": [
+            "matlab/volume_updating/*.m",
+            "matlab/volume_updating/LICENSE",
+        ],
+    },
     ext_modules=ext_modules,
 )
 
