@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "A python library for metabolic networks sampling and analysis. dingo is part of GeomScale project"
 authors = ["Apostolos Chalkis <tolis.chal@gmail.com>"]
 build = 'build.py'
+include = [
+    { path = "dingo/matlab/volume_updating/*.m", format = ["sdist", "wheel"] },
+    { path = "dingo/matlab/volume_updating/LICENSE", format = ["sdist", "wheel"] },
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
