@@ -1,6 +1,7 @@
 
 import cobra
 import cobra.manipulation
+import warnings
 from collections import Counter
 from dingo import MetabolicNetwork, PolytopeSampler
 from dingo.utils import correlated_reactions
@@ -165,7 +166,7 @@ class PreProcess:
         return self._model
    
             
-    def reduce(self, extend=False):
+    def reduce(self, extend=False, steady_states=None):
         """
         A function that calls the "remove_model_reactions" function
         and removes blocked, zero-flux and metabolically less efficient 
@@ -183,6 +184,15 @@ class PreProcess:
         If this removal produces an infeasible solution (or a solution of 0) 
         to the objective function, these reactions are restored to their initial bounds.
         
+        steady_states -- Optional precomputed steady states matrix. If provided,
+                        internal MCMC sampling is skipped and this matrix is used
+                        directly for correlation estimation. Expected shape is
+                        (n_reactions, n_samples) where n_reactions matches the
+                        number of reactions in the reduced model (after initial
+                        blocked/zero-flux/mle removal) and rows correspond to the
+                        reaction ordering of that reduced model. Default is None,
+                        which triggers the standard internal sampling path.
+
         A dingo-type tuple is then created from the cobra model 
         using the "cobra_dingo_tuple" function.
         
@@ -221,8 +231,23 @@ class PreProcess:
             
             reduced_dingo_model = MetabolicNetwork.from_cobra_model(self._model)
             reactions = reduced_dingo_model.reactions      
-            sampler = PolytopeSampler(reduced_dingo_model)
-            steady_states = sampler.generate_steady_states()
+
+            if steady_states is not None:
+                if steady_states.ndim != 2:
+                    raise ValueError("steady_states must be 2-dimensional")
+                if steady_states.shape[0] != len(reactions):
+                    raise ValueError(
+                        f"steady_states first dimension ({steady_states.shape[0]}) must match "
+                        f"the number of reactions in the reduced model ({len(reactions)})"
+                    )
+            else:
+                warnings.warn(
+                    "extend=True uses internal MCMC sampling, which may produce "
+                    "non-reproducible results. Provide steady_states for reproducibility.",
+                    UserWarning,
+                )
+                sampler = PolytopeSampler(reduced_dingo_model)
+                steady_states = sampler.generate_steady_states()
 
             # calculate correlation matrix with additional filtering from copula indicator       
             corr_matrix = correlated_reactions(

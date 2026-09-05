@@ -1,6 +1,6 @@
 
 from cobra.io import load_json_model
-from dingo import MetabolicNetwork
+from dingo import MetabolicNetwork, PolytopeSampler
 from dingo.preprocess import PreProcess
 import unittest
 import numpy as np
@@ -61,6 +61,62 @@ class TestPreprocess(unittest.TestCase):
         # perform an FBA to check the result after reactions removal
         final_fba_solution = final_dingo_model.fba()[1]
         self.assertTrue(abs(final_fba_solution - initial_fba_solution) < 1e-03)   
+
+
+    def test_reduce_extend_with_steady_states(self):
+        """Test that supplying the same steady_states produces deterministic results."""
+
+        # load cobra model
+        cobra_model = load_json_model("ext_data/e_coli_core.json")
+
+        # Create a preprocessor and perform initial removal to get the model state
+        obj = PreProcess(cobra_model.copy(), tol=1e-6, open_exchanges=False, verbose=False)
+        obj.reduce(extend=False)
+
+        # Get the reduced model after initial removal and generate steady states
+        reduced_model = MetabolicNetwork.from_cobra_model(obj._model)
+        sampler = PolytopeSampler(reduced_model)
+        steady_states = sampler.generate_steady_states()
+
+        # Create two new preprocessors from fresh model copies
+        cobra_model2 = load_json_model("ext_data/e_coli_core.json")
+        cobra_model3 = load_json_model("ext_data/e_coli_core.json")
+
+        obj2 = PreProcess(cobra_model2, tol=1e-6, open_exchanges=False, verbose=False)
+        obj3 = PreProcess(cobra_model3, tol=1e-6, open_exchanges=False, verbose=False)
+
+        # Both should produce identical results with the same steady_states
+        removed2, _ = obj2.reduce(extend=True, steady_states=steady_states)
+        removed3, _ = obj3.reduce(extend=True, steady_states=steady_states)
+
+        # Verify identical reaction sets
+        self.assertEqual(set(removed2), set(removed3))
+
+    def test_reduce_extend_invalid_dimensionality(self):
+        """Test that invalid steady_states dimensionality is rejected."""
+
+        cobra_model = load_json_model("ext_data/e_coli_core.json")
+        obj = PreProcess(cobra_model, tol=1e-6, open_exchanges=False, verbose=False)
+
+        # Test with 1D array
+        with self.assertRaises(ValueError):
+            obj.reduce(extend=True, steady_states=np.array([1, 2, 3]))
+
+        # Test with 3D array
+        with self.assertRaises(ValueError):
+            obj.reduce(extend=True, steady_states=np.random.rand(10, 5, 3))
+
+    def test_reduce_extend_reaction_count_mismatch(self):
+        """Test that reaction count mismatch is rejected."""
+
+        cobra_model = load_json_model("ext_data/e_coli_core.json")
+        obj = PreProcess(cobra_model, tol=1e-6, open_exchanges=False, verbose=False)
+
+        # Create steady_states with wrong number of reactions
+        wrong_steady_states = np.random.rand(50, 100)
+
+        with self.assertRaises(ValueError):
+            obj.reduce(extend=True, steady_states=wrong_steady_states)
 
 
 if __name__ == "__main__":
