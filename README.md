@@ -88,7 +88,7 @@ for this, you will most likely need `sudo` rights:
 
 ```bash
 sudo apt-get update -y
-sudo apt-get install -y libsuitesparse-dev
+sudo apt-get install -y libsuitesparse-dev libglpk-dev swig
 ```
 
 To install the Python dependencies, `dingo` is using [Poetry](https://python-poetry.org/),
