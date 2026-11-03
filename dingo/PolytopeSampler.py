@@ -136,6 +136,8 @@ class PolytopeSampler:
         parallel_mmcs -- a boolean flag to request the parallel mmcs
         num_threads -- the number of threads to use for parallel mmcs
         """
+        if not isinstance(ess, int) or ess < 10:
+            raise ValueError("The effective sample size (ess) must be an integer greater than or equal to 10.")
 
         self.get_polytope()
 

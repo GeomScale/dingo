@@ -51,6 +51,14 @@ class TestSampling(unittest.TestCase):
 
         self.assertTrue( steady_states.shape[0] == 95 )
         self.assertTrue( abs( steady_states[12].mean()  - 2.504 ) < 1e-02 )
+        
+    def test_invalid_ess(self):
+        input_file_json = os.getcwd() + "/ext_data/e_coli_core.json"
+        model = MetabolicNetwork.from_json(input_file_json)
+        sampler = PolytopeSampler(model)
+
+        with self.assertRaises(ValueError):
+            sampler.generate_steady_states(ess=5)
 
 
 
